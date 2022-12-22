@@ -24,11 +24,14 @@ namespace HSceneCrowdReaction.HSceneScreen
 
         internal static void RestoreActorsLookingDirection(HScene hScene)
         {
-            var actorList = GetActorsNotInvolvedInH(ActionScene.Instance, hScene);
-            foreach (var actor in actorList)
+            if (ActionScene.Instance != null)
             {
-                actor.Chara.ChangeLookEyesPtn(0);
-                actor.Chara.ChangeLookNeckPtn(0);
+                var actorList = GetActorsNotInvolvedInH(ActionScene.Instance, hScene);
+                foreach (var actor in actorList)
+                {
+                    actor.Chara.ChangeLookEyesPtn(0);
+                    actor.Chara.ChangeLookNeckPtn(0);
+                }
             }
         }
 
@@ -99,6 +102,31 @@ namespace HSceneCrowdReaction.HSceneScreen
                                 actor.Animation.SetAnimatorController(rac);
                             }
                             actor.PlayAnimOnce(reactionParam.animationParameter);
+
+                            Log.LogInfo("=============");
+                            Debug.PrintDetail(reactionParam.animationParameter);
+                            if(reactionParam.animationParameter.States != null)
+                                for(int i=0; i< reactionParam.animationParameter.States.Count; i++)
+                                {
+                                    for (int j = 0; j < reactionParam.animationParameter.States[i].Count; j++)
+                                        Log.LogInfo("States[" + i + "][" + j +  "]: " + reactionParam.animationParameter.States[i][j]);
+                                }
+                            if (reactionParam.animationParameter.StateHashes != null)
+                                for (int i = 0; i < reactionParam.animationParameter.StateHashes.Count; i++)
+                                {
+                                    for (int j = 0; j < reactionParam.animationParameter.StateHashes[i].Count; j++)
+                                    {
+                                        Log.LogInfo("StateHashes[" + i + "][" + j + "]: " + reactionParam.animationParameter.StateHashes[i][j]);
+                                    }
+                                }
+                            if (reactionParam.animationParameter.SpecifiedLayers != null)
+                                for (int i = 0; i < reactionParam.animationParameter.SpecifiedLayers.Count; i++)
+                                {
+                                    Log.LogInfo("SpecifiedLayers[" + i + "]: " + reactionParam.animationParameter.SpecifiedLayers[i]);
+                                        
+                                }
+
+                            Log.LogInfo("=============");
                         }
 
                         StateManager.Instance.CustomAnimationParameter.Add(actor.GetInstanceID(), reactionParam);
