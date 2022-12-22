@@ -133,9 +133,10 @@ namespace HSceneCrowdReaction.HSceneScreen
 
                         ChangeActorLookingAtHScene(actor);
                     }
+
+                    StateManager.Instance.HSceneSetup = true;
                 }
 
-                StateManager.Instance.HSceneSetup = true;
             }
         }
 
