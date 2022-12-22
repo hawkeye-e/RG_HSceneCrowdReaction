@@ -80,35 +80,9 @@ namespace HSceneCrowdReaction.HSceneScreen
 
 
                         //Move to a standing position if the animation is a standing one and the actor is sitting
-                        bool isPosChanged = false;
                         if (reactionParam.requireStanding && animType != Constant.AnimType.Standing)
                         {
-                            int i = 0;
-                            while (i < actor.OccupiedActionPoint._destinationToTalk.Count)
-                            {
-                                //Check if the point is occupied
-                                bool isOccupied = false;
-                                foreach (var a in ActionScene.Instance._actors)
-                                {
-                                    if (a.transform.position == actor.OccupiedActionPoint._destinationToTalk[i].position)
-                                    {
-                                        isOccupied = true;
-                                        break;
-                                    }
-                                }
-
-                                //Move if there is a non occupied position
-                                if (!isOccupied)
-                                {
-                                    actor.transform.position = actor.OccupiedActionPoint._destinationToTalk[i].position;
-                                    isPosChanged = true;
-                                    break;
-                                }
-
-                                i++;
-                            }
-
-                            if (!isPosChanged)
+                            if (!RelocateActor(actor))
                             {
                                 //Force the character to use default anim(awkward) if no such position is found
                                 reactionParam = CustomAnimation.Common.NoChange;
@@ -175,6 +149,38 @@ namespace HSceneCrowdReaction.HSceneScreen
             return possibleReaction;
         }
 
+        internal static bool RelocateActor(Actor actor)
+        {
+            bool isPosChanged = false;
+
+            int i = 0;
+            while (i < actor.OccupiedActionPoint._destinationToTalk.Count)
+            {
+                //Check if the point is occupied
+                bool isOccupied = false;
+                foreach (var a in ActionScene.Instance._actors)
+                {
+                    if (a.transform.position == actor.OccupiedActionPoint._destinationToTalk[i].position)
+                    {
+                        isOccupied = true;
+                        break;
+                    }
+                }
+
+                //Move if there is a non occupied position
+                if (!isOccupied)
+                {
+                    actor.transform.position = actor.OccupiedActionPoint._destinationToTalk[i].position;
+                    isPosChanged = true;
+                    break;
+                }
+
+                i++;
+            }
+
+            return isPosChanged;
+        }
+
         internal static void ChangeActorLookingAtHScene(Actor actor)
         {
             if (StateManager.Instance.CustomAnimationParameter.ContainsKey(actor.GetInstanceID()))
@@ -206,7 +212,7 @@ namespace HSceneCrowdReaction.HSceneScreen
                             StateManager.Instance.HeadDownLookTarget.transform.position = hSceneFirstFemaleChar.ObjNeckLookTarget.transform.position + new Vector3(6, -12, 0);
 
                         }
-                        
+
                         actor.Chara.ChangeLookNeckTarget(1, StateManager.Instance.HeadDownLookTarget.transform);
                     }
                     else
