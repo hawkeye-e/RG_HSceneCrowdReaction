@@ -88,6 +88,10 @@
       <HintPath>ref\UnityEngine.AssetBundleModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.AudioModule">
+      <HintPath>ref\UnityEngine.AudioModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>ref\UnityEngine.CoreModule.dll</HintPath>
       <Private>False</Private>
@@ -105,7 +109,11 @@
     <Compile Include="Config.cs" />
     <Compile Include="Constant.cs" />
     <Compile Include="CustomAnimation.cs" />
+    <Compile Include="CustomTimer.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Debug.cs" />
+    <Compile Include="HAnimation.cs" />
     <Compile Include="HSceneCrowdReaction.cs" />
     <Compile Include="HSceneScreen\HSceneScreen.Hook.cs" />
     <Compile Include="HSceneScreen\HSceneScreen.Patches.cs" />

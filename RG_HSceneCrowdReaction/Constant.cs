@@ -60,5 +60,31 @@ namespace HSceneCrowdReaction
             internal const int Excited = 6;
             internal const int Hurray = 7;
         }
+
+        internal class HeightKind
+        {
+            internal const string Small = "S_";
+            internal const string Medium = "M_";
+            internal const string Large = "L_";
+        }
+
+        internal class HAnimSpeed
+        {
+            internal const float Max = 2;
+            internal const float Min = 1;
+        }
+
+        internal class HAnimClipKeyword
+        {
+            internal const string Loop = "Loop";
+        }
+
+        internal enum HCharacterType
+        {
+            Female1,
+            Female2,
+            Male1,
+            Male2
+        }
     }
 }

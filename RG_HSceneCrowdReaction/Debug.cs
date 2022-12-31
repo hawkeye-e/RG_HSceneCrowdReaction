@@ -1,6 +1,6 @@
 ﻿using BepInEx.Logging;
 using RG.Scene.Action.Core;
-
+using RG.Scripts;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -161,7 +161,7 @@ namespace HSceneCrowdReaction
         }
 
         public static void PrintFullAnimationTable()
-        {            
+        {
             foreach (var a in Manager.Game.ActionCache.AnimationTableData._instance)
             {
                 Log.LogInfo("a.Key: " + a.Key + ", b count: " + a.Value.Count);
@@ -202,20 +202,107 @@ namespace HSceneCrowdReaction
                 foreach (var item in hScene._lstAnimInfo[i])
                 {
                     Debug.PrintDetail(item);
+                    for (int k = 0; k < item.LstPositons.Count; k++)
+                        Log.LogInfo("LstPositons[" + k + "]: " + item.LstPositons[k]);
+                    for (int k = 0; k < item.LstOffset.Count; k++)
+                        Log.LogInfo("LstOffset[" + k + "]: " + item.LstOffset[k]);
+                    for (int k = 0; k < item.VisiblePointMapObj.Count; k++)
+                        Log.LogInfo("VisiblePointMapObj[" + k + "]: " + item.VisiblePointMapObj[k]);
+
+                    Log.LogInfo("%%%%%%%%%%%%%%%%%%%");
                 }
 
             }
         }
 
+        public static void PrintAnimationParameter(AnimationParameter param)
+        {
+            Debug.PrintDetail(param);
+            if (param.States != null)
+                for (int i = 0; i < param.States.Count; i++)
+                {
+                    for (int j = 0; j < param.States[i].Count; j++)
+                        Log.LogInfo("States[" + i + "][" + j + "]: " + param.States[i][j]);
+                }
+            if (param.StateHashes != null)
+                for (int i = 0; i < param.StateHashes.Count; i++)
+                {
+                    for (int j = 0; j < param.StateHashes[i].Count; j++)
+                    {
+                        Log.LogInfo("StateHashes[" + i + "][" + j + "]: " + param.StateHashes[i][j]);
+                    }
+                }
+            if (param.SpecifiedLayers != null)
+                for (int i = 0; i < param.SpecifiedLayers.Count; i++)
+                {
+                    Log.LogInfo("SpecifiedLayers[" + i + "]: " + param.SpecifiedLayers[i]);
+
+                }
+        }
+
         public static void PrintCharacterParameter(Actor a)
         {
             Log.LogInfo("Name: " + a.Status.FullName);
-            for(int i=0; i< a.Status.Parameters.Count; i++)
+            for (int i = 0; i < a.Status.Parameters.Count; i++)
             {
                 Log.LogInfo("a.Status.Parameters[" + i + "]: " + a.Status.Parameters[i]);
             }
         }
 
+        internal static void PrintRenderer(Transform t, string currentPath)
+        {
+            if (t != null)
+            {
+                Log.LogInfo("Path: " + currentPath);
+                Log.LogInfo("Name: " + t.name);
+                Log.LogInfo("Active: " + t.gameObject.active + ", activeInHierarchy: " + t.gameObject.activeInHierarchy + ", activeSelf: " + t.gameObject.activeSelf);
+
+                var r = t.GetComponent<SkinnedMeshRenderer>();
+                if (r != null)
+                {
+
+                    PrintDetail(r);
+                    //r.updateWhenOffscreen = true;
+                    Log.LogInfo("rootBone: " + r.rootBone.position + ", local: " + r.rootBone.localPosition);
+
+                    for (int i = 0; i < r.bones.Count; i++)
+                        Log.LogInfo("bones[" + i + "]: " + r.bones[i].position + ", local: " + r.bones[i].localPosition);
+                }
+
+                for (int i = 0; i < t.GetChildCount(); i++)
+                {
+                    Log.LogInfo("Visiting the child of [" + t.name + "]");
+                    PrintRenderer(t.GetChild(i), currentPath + ".[" + t.name + "]");
+                }
+            }
+        }
+
+        internal static void PrintTransformTreeUpward(Transform t, string currentPath)
+        {
+
+            Log.LogInfo("Active: " + t.gameObject.active + ", activeInHierarchy: " + t.gameObject.activeInHierarchy + ", activeSelf: " + t.gameObject.activeSelf);
+
+            if (!t.gameObject.active)
+            {
+                Log.LogInfo("Visiting the parent of [" + t.name + "]");
+                PrintTransformTreeUpward(t.parent, "[" + t.name + "]." + currentPath);
+            }
+        }
+
+        internal static void PrintTransformTreeNameOnly(Transform t)
+        {
+            if (t != null)
+            {
+                Log.LogInfo(t.gameObject.name);
+
+                for (int i = 0; i < t.GetChildCount(); i++)
+                {
+
+                    //Log.LogInfo("Visiting the parent of [" + t.name + "]");
+                    PrintTransformTreeNameOnly(t.GetChild(i));
+                }
+            }
+        }
 
 
 

@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using System.Timers;
 
 namespace HSceneCrowdReaction
 {
@@ -16,5 +17,12 @@ namespace HSceneCrowdReaction
         internal Dictionary<int, CustomAnimation.CustomAnimationData> CustomAnimationParameter = null;
         internal HScene CurrentHSceneInstance = null;
         internal GameObject HeadDownLookTarget = null;
+
+        internal List<int> ForceActiveInstanceID = null;
+        internal List<Timer> HActionUpdateTimerList = null;
+        internal Dictionary<int, HPoint> HActionActorList = null;
+
+        internal bool isprint = false;
+
     }
 }

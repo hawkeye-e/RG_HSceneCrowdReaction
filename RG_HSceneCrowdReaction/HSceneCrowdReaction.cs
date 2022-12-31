@@ -23,6 +23,7 @@ namespace HSceneCrowdReaction
 
             if (HSceneCrowdReaction.Config.Enabled)
             {
+                HAnimation.InitExcludeList();
                 Harmony.CreateAndPatchAll(typeof(HSceneScreen.Hook), GUID);
             }
 

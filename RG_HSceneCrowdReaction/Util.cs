@@ -1,6 +1,8 @@
 ﻿using BepInEx.Logging;
 using UnityEngine;
 using RG.Scene.Action.Core;
+using UnhollowerRuntimeLib;
+using System.IO;
 
 namespace HSceneCrowdReaction
 {
@@ -318,6 +320,50 @@ namespace HSceneCrowdReaction
                 }
             }
             return Constant.AnimType.NotDetermined;
+        }
+
+        internal static GameObject InstantiateFromBundle(AssetBundle bundle, string assetName)
+        {
+            var asset = bundle.LoadAsset(assetName, Il2CppType.From(typeof(GameObject)));
+            var obj = Object.Instantiate(asset);
+            foreach (var rootGameObject in UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects())
+            {
+                if (rootGameObject.GetInstanceID() == obj.GetInstanceID())
+                {
+                    rootGameObject.name = assetName;
+                    return rootGameObject;
+                }
+            }
+            throw new FileLoadException("Could not instantiate asset " + assetName);
+        }
+
+        internal static string GetHeightKindAnimationPrefix(int heightKind)
+        {
+            switch (heightKind)
+            {
+                case 2: return Constant.HeightKind.Large;
+                case 1: return Constant.HeightKind.Medium;
+                default: return Constant.HeightKind.Small;
+            }
+        }
+
+        internal static string GetAssetBundlePath(string assetBundle)
+        {
+            //TODO: is there any place that storing the abdata path directly?
+            return Path.Combine(Application.dataPath.Replace("RoomGirl_Data", "abdata"), assetBundle);
+        }
+
+        internal static bool CheckHasEverSex(Actor actor1, Actor actor2)
+        {
+            foreach (var dict in actor1.Status.RelationshipParameter)
+            {
+                if (dict.ContainsKey(actor2.CharaFileName))
+                {
+                    return dict[actor2.CharaFileName].HasEverSex;
+                }
+            }
+
+            return false;
         }
     }
 }
