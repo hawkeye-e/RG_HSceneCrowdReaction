@@ -24,11 +24,14 @@ namespace HSceneCrowdReaction.HSceneScreen
 
         internal static void RestoreActorsLookingDirection(HScene hScene)
         {
-            var actorList = GetActorsNotInvolvedInH(ActionScene.Instance, hScene);
-            foreach (var actor in actorList)
+            if (ActionScene.Instance != null)
             {
-                actor.Chara.ChangeLookEyesPtn(0);
-                actor.Chara.ChangeLookNeckPtn(0);
+                var actorList = GetActorsNotInvolvedInH(ActionScene.Instance, hScene);
+                foreach (var actor in actorList)
+                {
+                    actor.Chara.ChangeLookEyesPtn(0);
+                    actor.Chara.ChangeLookNeckPtn(0);
+                }
             }
         }
 
