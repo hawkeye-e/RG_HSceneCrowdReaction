@@ -1,0 +1,7 @@
+﻿AnimName,Situation,CategoryID,AnimID,HPositionType,Actor,MouthType,Head,Lefthand,RightHand,LeftFoot,RightFoot,Penis,Allow?
+キス,MF,0,0,AibuKiss,Male1,Kiss,Kiss,ShoulderR,ShoulderL,NoChange,NoChange,NoChange,No
+キス,MF,0,0,AibuKiss,Female1,Kiss,NoChange,BackR,BackL,NoChange,NoChange,NoChange,No
+胸弄り,MF,0,2,AibuOthers,Male1,Common,NoChange,BreastR,BreastL,NoChange,NoChange,NoChange,No
+胸弄り,MF,0,2,AibuOthers,Female1,Common,NoChange,NoChange,NoChange,NoChange,NoChange,NoChange,No
+股間弄り,MF,0,3,AibuOthers,Male1,Common,NoChange,BreastR,BreastL,NoChange,NoChange,NoChange,Yes
+股間弄り,MF,0,3,AibuOthers,Female1,Common,NoChange,NoChange,NoChange,NoChange,NoChange,NoChange,Yes

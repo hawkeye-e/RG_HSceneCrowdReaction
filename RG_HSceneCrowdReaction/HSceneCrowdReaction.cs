@@ -3,7 +3,6 @@ using BepInEx.Logging;
 using HarmonyLib;
 using BepInEx.IL2CPP;
 
-
 namespace HSceneCrowdReaction
 {
     [BepInPlugin(GUID, PluginName, Version)]
@@ -23,7 +22,8 @@ namespace HSceneCrowdReaction
 
             if (HSceneCrowdReaction.Config.Enabled)
             {
-                HAnimation.InitExcludeList();
+                InfoList.HAnimation.Init();
+                InfoList.HVoice.Init();
                 Harmony.CreateAndPatchAll(typeof(HSceneScreen.Hook), GUID);
             }
 

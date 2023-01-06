@@ -3,6 +3,7 @@ using UnityEngine;
 using RG.Scene.Action.Core;
 using UnhollowerRuntimeLib;
 using System.IO;
+using HSceneCrowdReaction.InfoList;
 
 namespace HSceneCrowdReaction
 {
@@ -32,7 +33,7 @@ namespace HSceneCrowdReaction
         {
             int result = GetCurrentAnimationTypeCommon(sex, animID);
 
-            if(result == Constant.AnimType.NotDetermined)
+            if (result == Constant.AnimType.NotDetermined)
             {
                 switch (MapID)
                 {
@@ -63,8 +64,8 @@ namespace HSceneCrowdReaction
                         return GetCurrentAnimationTypeHomePrivate(sex, animID);
                 }
             }
-            
-            
+
+
             return result;
         }
 
@@ -266,11 +267,11 @@ namespace HSceneCrowdReaction
 
         internal static int GetCurrentAnimationTypeHomeWorkplace(byte sex, int animID)
         {
-            
+
             if (sex == 1)
             {
                 //No special action for female ?
-                
+
             }
             else
             {
@@ -344,6 +345,22 @@ namespace HSceneCrowdReaction
                 case 2: return Constant.HeightKind.Large;
                 case 1: return Constant.HeightKind.Medium;
                 default: return Constant.HeightKind.Small;
+            }
+        }
+
+        internal static HVoice.VoicePaceType GetVoicePaceTypeByAnimInfo(HScene.AnimationListInfo animInfo)
+        {
+            //General case: char[0]: height kind, char[1]: underscore, char[2]: the pace type
+            switch (animInfo.NameAnimation[2])
+            {
+                case Constant.HAnimationClipNameKind.Normal: 
+                    return HVoice.VoicePaceType.Normal;
+                case Constant.HAnimationClipNameKind.Rapid: 
+                    return HVoice.VoicePaceType.Rapid;
+                case Constant.HAnimationClipNameKind.NearOrgasm: 
+                    return HVoice.VoicePaceType.NearOrgasm;
+                default: 
+                    return HVoice.VoicePaceType.Idle;
             }
         }
 

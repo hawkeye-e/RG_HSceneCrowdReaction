@@ -19,9 +19,17 @@ namespace HSceneCrowdReaction
 
                     object value = prop.GetValue(a, null);
                     if (value != null)
-                        Log.Log(LogLevel.Info, prop.Name + "=" + value);
+                    {
+                        if (value is Transform)
+                            Log.Log(LogLevel.Info, prop.Name + "=" + value + ", name: " + ((Transform)value).name);
+                        else if (value is GameObject)
+                            Log.Log(LogLevel.Info, prop.Name + "=" + value + ", name: " + ((GameObject)value).name);
+                        else
+                            Log.Log(LogLevel.Info, prop.Name + "=" + value);
+                    }
                     else
                         Log.Log(LogLevel.Info, prop.Name + " is null!!");
+                    
                 }
                 catch { }
             }
@@ -277,16 +285,17 @@ namespace HSceneCrowdReaction
             }
         }
 
-        internal static void PrintTransformTreeUpward(Transform t, string currentPath)
+        internal static void PrintTransformTreeUpward(Transform t, string currentPath, string stopAt=null)
         {
 
             Log.LogInfo("Active: " + t.gameObject.active + ", activeInHierarchy: " + t.gameObject.activeInHierarchy + ", activeSelf: " + t.gameObject.activeSelf);
 
-            if (!t.gameObject.active)
-            {
-                Log.LogInfo("Visiting the parent of [" + t.name + "]");
+            //if (!t.gameObject.active)
+            //{
+                Log.LogInfo("Visiting the parent of [" + t.name + "]" + ", position: " + t.position);
+                if(t.parent != null && ( stopAt == null || t.name != stopAt))
                 PrintTransformTreeUpward(t.parent, "[" + t.name + "]." + currentPath);
-            }
+            //}
         }
 
         internal static void PrintTransformTreeNameOnly(Transform t)
@@ -343,6 +352,44 @@ namespace HSceneCrowdReaction
             }
         }
 
+        internal static void PrintVoiceList(HScene hScene)
+        {
+            if (hScene.CtrlVoice._voiceList != null)
+            {
+                Log.LogInfo("_voicelist not null ");
+                if (hScene.CtrlVoice._voiceList.DicDicDicDicVoice != null)
+                {
+                    Log.LogInfo("DicDicDicDicVoice Count: " + hScene.CtrlVoice._voiceList.DicDicDicDicVoice.Count);
+                    for (int i = 0; i < hScene.CtrlVoice._voiceList.DicDicDicDicVoice.Count; i++)
+                    {
+                        Log.LogInfo("i: " + i + ", item Count : " + hScene.CtrlVoice._voiceList.DicDicDicDicVoice[i].Count);
+
+                        foreach (var kvp in hScene.CtrlVoice._voiceList.DicDicDicDicVoice[i])
+                        {
+                            Log.LogInfo("i: " + i + ", kvp.Key: " + kvp.Key + ", item count: " + kvp.Value.Count);
+                            foreach (var kvp2 in kvp.Value)
+                            {
+                                Log.LogInfo("i: " + i + ", kvp.Key: " + kvp.Key + ", kvp2.Key: " + kvp2.Key + ", item count: " + kvp2.Value.Count);
+
+                                foreach (var kvp3 in kvp2.Value)
+                                {
+                                    Log.LogInfo("i: " + i + ", kvp.Key: " + kvp.Key + ", kvp2.Key: " + kvp2.Key + ", kvp3.Key: " + kvp3.Key + ", item count: " + kvp3.Value.Count);
+
+                                    foreach (var kvp4 in kvp3.Value)
+                                    {
+                                        Log.LogInfo("i: " + i + ", kvp.Key: " + kvp.Key + ", kvp2.Key: " + kvp2.Key + ", kvp3.Key: " + kvp3.Key + ", kvp4.Key: " + kvp4.Key);
+                                        Debug.PrintDetail(kvp4.Value);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+
+                }
+
+            }
+        }
         private static void GetComponentTypes(Transform t)
         {
             var c1 = t.GetComponent<Renderer>(); if (c1 != null) Log.LogInfo("has Renderer");

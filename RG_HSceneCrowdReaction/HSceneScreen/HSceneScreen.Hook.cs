@@ -15,73 +15,1343 @@ namespace HSceneCrowdReaction.HSceneScreen
     {
         private static ManualLogSource Log = HSceneCrowdReactionPlugin.Log;
 
-        
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.CharaInit))]
+        private static void CharaInitPre(HScene __instance)
+        {
+            Log.LogInfo("CharaInitPre");
+        }
+
         //Initialize when H scene start
         [HarmonyPostfix]
         [HarmonyPatch(typeof(HScene), nameof(HScene.CharaInit))]
         private static void CharaInitPost(HScene __instance)
         {
+            //TODO: need remove this
             StateManager.Instance.CurrentHSceneInstance = __instance;
             Log.LogInfo("CharaInitPost");
-            Patches.InitHScene(__instance);
+            //Patches.General.InitHScene(__instance);
         }
-        
+
+
         //Restore the look/neck target when scene end
         [HarmonyPrefix]
         [HarmonyPatch(typeof(HScene), nameof(HScene.OnDestroy))]
         private static void OnDestroyPre(HScene __instance)
         {
-            Patches.RestoreActorsLookingDirection(__instance);
-            Patches.DestroyTempObject();
-            Patches.DestroyStateManagerList();
+            Patches.HAnim.RecoverAllClothesState(ActionScene.Instance);
+            Patches.General.RestoreActorsLookingDirection(__instance);
+            Patches.General.DestroyTempObject();
+            Patches.General.DestroyStateManagerList();
+
         }
 
         //Reset the looking direction when H point moved
         [HarmonyPostfix]
         [HarmonyPatch(typeof(HScene), nameof(HScene.SetMovePositionPoint))]
-        private static void SetMovePositionPoint(HScene __instance, Transform trans, Vector3 offsetpos, Vector3 offsetrot, bool isWorld)
+        private static void SetMovePositionPointPost(HScene __instance, Transform trans, Vector3 offsetpos, Vector3 offsetrot, bool isWorld)
         {
-            Log.LogInfo("SetMovePositionPoint");
-            Patches.UpdateNonHActorsLookAt(__instance);
+            Log.LogInfo("SetMovePositionPointPost");
+            //Patches.General.UpdateNonHActorsLookAt(__instance);
         }
 
         //Reset the looking direction when H point moved
         [HarmonyPostfix]
         [HarmonyPatch(typeof(HScene), nameof(HScene.SetPosition), new[] { typeof(Transform), typeof(Vector3), typeof(Vector3), typeof(bool), typeof(bool) })]
-        private static void SetPosition1(HScene __instance, Transform _trans, Vector3 offsetpos, Vector3 offsetrot, bool _FadeStart, bool _isWorld)
+        private static void SetPosition1Post(HScene __instance, Transform _trans, Vector3 offsetpos, Vector3 offsetrot, bool _FadeStart, bool _isWorld)
         {
-            Log.LogInfo("SetPosition1");
-            Patches.UpdateNonHActorsLookAt(__instance);
+            Log.LogInfo("SetPosition1Post");
+            //Patches.General.UpdateNonHActorsLookAt(__instance);
         }
 
         //Reset the looking direction when H point moved
         [HarmonyPostfix]
         [HarmonyPatch(typeof(HScene), nameof(HScene.SetPosition), new[] { typeof(Vector3), typeof(Quaternion), typeof(Vector3), typeof(Vector3), typeof(bool), typeof(bool) })]
-        private static void SetPosition2(HScene __instance, Vector3 pos, Quaternion rot, Vector3 offsetpos, Vector3 offsetrot, bool _FadeStart, bool isWorld)
+        private static void SetPosition2Post(HScene __instance, Vector3 pos, Quaternion rot, Vector3 offsetpos, Vector3 offsetrot, bool _FadeStart, bool isWorld)
         {
-            Log.LogInfo("SetPosition2");
-            Patches.UpdateNonHActorsLookAt(__instance);
+            Log.LogInfo("SetPosition2Post");
+            //Patches.General.UpdateNonHActorsLookAt(__instance);
         }
 
         ////////Change the animation of actors not involved in H
         //////[HarmonyPostfix]
         //////[HarmonyPatch(typeof(HScene), nameof(HScene.StartPointSelect))]
-        //////private static void StartPointSelect(HScene __instance, int hpointLen, UnhollowerBaseLib.Il2CppReferenceArray<HPoint> hPoints, int checkCategory, HScene.AnimationListInfo info)
+        //////private static void StartPointSelectPost(HScene __instance, int hpointLen, UnhollowerBaseLib.Il2CppReferenceArray<HPoint> hPoints, int checkCategory, HScene.AnimationListInfo info)
         //////{
-        //////    Log.LogInfo("StartPointSelect");
+        //////    Log.LogInfo("StartPointSelectPost");
         //////    //Patches.ChangeActorsAnimation(__instance);
         //////}
 
+
+        /*
         //Change the animation of actors not involved in H
         [HarmonyPostfix]
         [HarmonyPatch(typeof(HScene), nameof(HScene.SetStartAnimationInfo))]
-        private static void SetStartAnimationInfo(HScene __instance)
+        private static void SetStartAnimationInfoPost(HScene __instance)
         {
-            Log.LogInfo("SetStartAnimationInfo");
-            
-            Patches.ChangeActorsAnimation(__instance);
-            
+            Log.LogInfo("SetStartAnimationInfoPost");
+            //Patches.General.InitHScene(__instance);
+            //Patches.General.ChangeActorsAnimation(__instance);
+
         }
+        */
+
+        //To Fix CTD?
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.SetClothStateStartMotion))]
+        private static void SetClothStateStartMotionPost(HScene __instance)
+        {
+            Log.LogInfo("SetClothStateStartMotionPost");
+
+            Patches.General.InitHScene(__instance);
+            Patches.General.ChangeActorsAnimation(__instance);
+        }
+
+        //Change the animation of actors not involved in HHScene.StartPointSelectPre
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Chara.ChaControl), nameof(Chara.ChaControl.LateUpdateForce))]
+        private static void LateUpdateForcePost(Chara.ChaControl __instance)
+        {
+            Patches.HAnim.CheckUpdateHAnim(__instance);
+        }
+
+
+
+
+
+        //Set all character not involved in H scene to nude in order to avoid transparent surface of body parts
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(ActionScene), nameof(ActionScene.ChangeToHScene))]
+        private static void ChangeToHScenePre(Actor target, Actor partner, Actor sub)
+        {
+            Log.LogInfo("ChangeToHScenePre");
+            foreach (var actor in ActionScene.Instance._actors)
+            {
+                if (target != null)
+                    if (actor.GetInstanceID() == target.GetInstanceID())
+                        continue;
+                if (partner != null)
+                    if (actor.GetInstanceID() == partner.GetInstanceID())
+                        continue;
+                if (sub != null)
+                    if (actor.GetInstanceID() == sub.GetInstanceID())
+                        continue;
+
+                //TODO: remember the clothes state and recover later
+                byte[] clothesState = new byte[8];
+                for(int i=0; i< Math.Min(actor.Chara.FileStatus.clothesState.Length, 8); i++)
+                {
+                    clothesState[i] = actor.Chara.FileStatus.clothesState[i];
+                    actor.Chara.FileStatus.clothesState[i] = 2;
+                }
+                StateManager.Instance.ActorClothesState.Add(actor.Chara.GetInstanceID(), clothesState);
+
+            }
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(ActionScene), nameof(ActionScene.ChangeToHScene))]
+        private static void ChangeToHScenePost(Actor target, Actor partner, Actor sub)
+        {
+            Log.LogInfo("ChangeToHScenePost");
+        }
+
+        [HarmonyFinalizer]
+        [HarmonyPatch(typeof(ActionScene), nameof(ActionScene.ChangeToHScene))]
+        private static Exception CatchLoadErrors(Exception __exception)
+        {
+            if (__exception != null)
+            {
+                //__result = false;
+                Log.LogWarning("exception in ActionScene.ChangeToHScene");
+                Log.LogInfo(__exception.Message);
+            }
+            return null;
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(ActionScene), nameof(ActionScene.BackFromADVScene))]
+        private static void BackFromADVScenePre()
+        {
+            Log.LogInfo("BackFromADVScenePre");
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(ActionScene), nameof(ActionScene.BackFromADVScene))]
+        private static void BackFromADVScenePost()
+        {
+            Log.LogInfo("BackFromADVScenePost");
+        }
+
+
+
+        /*
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.CharaInit))]
+        private static void CharaInitPre(HScene __instance)
+        {
+            Log.LogInfo("CharaInitPre");
+        }
+
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.SetMovePositionPoint))]
+        private static void SetMovePositionPointPre(HScene __instance, Transform trans, Vector3 offsetpos, Vector3 offsetrot, bool isWorld)
+        {
+            Log.LogInfo("SetMovePositionPointPre");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.SetPosition), new[] { typeof(Transform), typeof(Vector3), typeof(Vector3), typeof(bool), typeof(bool) })]
+        private static void SetPosition1Pre(HScene __instance, Transform _trans, Vector3 offsetpos, Vector3 offsetrot, bool _FadeStart, bool _isWorld)
+        {
+            Log.LogInfo("SetPosition1Pre");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.SetPosition), new[] { typeof(Vector3), typeof(Quaternion), typeof(Vector3), typeof(Vector3), typeof(bool), typeof(bool) })]
+        private static void SetPosition2Pre(HScene __instance, Vector3 pos, Quaternion rot, Vector3 offsetpos, Vector3 offsetrot, bool _FadeStart, bool isWorld)
+        {
+            Log.LogInfo("SetPosition2Pre");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.SetStartAnimationInfo))]
+        private static void SetStartAnimationInfoPre(HScene __instance)
+        {
+            Log.LogInfo("SetStartAnimationInfoPre");
+
+        }
+
+
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.CanSpeakChangeMotion))]
+        private static void CanSpeakChangeMotionPre(Animator _anim)
+        {
+            Log.LogInfo("CanSpeakChangeMotionPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.CanSpeakChangeMotion))]
+        private static void CanSpeakChangeMotion(Animator _anim)
+        {
+            Log.LogInfo("CanSpeakChangeMotionPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ChangeAnimation))]
+        private static void ChangeAnimationPre(HScene.AnimationListInfo _info, bool _isForceResetCamera, bool _isForceLoopAction, bool _UseFade, bool isLoadFirst)
+        {
+            Log.LogInfo("ChangeAnimationPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ChangeAnimation))]
+        private static void ChangeAnimationPost(HScene.AnimationListInfo _info, bool _isForceResetCamera, bool _isForceLoopAction, bool _UseFade, bool isLoadFirst)
+        {
+            Log.LogInfo("ChangeAnimationPost");
+        }
+        
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ChangeAnimPos))]
+        private static void ChangeAnimPosPre(HScene.AnimationListInfo _info, Vector3 pos, Vector3 rot, bool isLoadFirst)
+        {
+            Log.LogInfo("ChangeAnimPosPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ChangeAnimPos) )]
+        private static void ChangeAnimPosPost(HScene.AnimationListInfo _info, Vector3 pos, Vector3 rot, bool isLoadFirst)
+        {
+            Log.LogInfo("ChangeAnimPosPost");
+        }
+        */
+
+        /*
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ChangeAnimPosAndCamera))]
+        private static void ChangeAnimPosAndCameraPre(HScene.AnimationListInfo _info, bool _isForceResetCamera, bool isLoadFirst)
+        {
+            Log.LogInfo("ChangeAnimPosAndCameraPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ChangeAnimPosAndCamera))]
+        private static void ChangeAnimPosAndCameraPost(HScene.AnimationListInfo _info, bool _isForceResetCamera, bool isLoadFirst)
+        {
+            Log.LogInfo("ChangeAnimPosAndCameraPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ChangeItem))]
+        private static void ChangeItemPre()
+        {
+            Log.LogInfo("ChangeItemPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ChangeItem))]
+        private static void ChangeItemPost()
+        {
+            Log.LogInfo("ChangeItemPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ChangeModeCtrl))]
+        private static void ChangeModeCtrlPre(HScene.AnimationListInfo _info)
+        {
+            Log.LogInfo("ChangeModeCtrlPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ChangeModeCtrl))]
+        private static void ChangeModeCtrlPost(HScene.AnimationListInfo _info)
+        {
+            Log.LogInfo("ChangeModeCtrlPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ChangeMotionForPointProc))]
+        private static void ChangeMotionForPointProcPre()
+        {
+            Log.LogInfo("ChangeMotionForPointProcPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ChangeMotionForPointProc))]
+        private static void ChangeMotionForPointProcPost()
+        {
+            Log.LogInfo("ChangeMotionForPointProcPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ChangeOnly))]
+        private static void ChangeOnlyPre(HScene.AnimationListInfo select)
+        {
+            Log.LogInfo("ChangeOnlyPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ChangeOnly))]
+        private static void ChangeOnlyPost(HScene.AnimationListInfo select)
+        {
+            Log.LogInfo("ChangeOnlyPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ChangeReverb))]
+        private static void ChangeReverbPre(bool val)
+        {
+            Log.LogInfo("ChangeReverbPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ChangeReverb))]
+        private static void ChangeReverbPost(bool val)
+        {
+            Log.LogInfo("ChangeReverbPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ChangeWet))]
+        private static void ChangeWetPre(HPoint p)
+        {
+            Log.LogInfo("ChangeWetPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ChangeWet))]
+        private static void ChangeWetPost(HPoint p)
+        {
+            Log.LogInfo("ChangeWetPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.CharaInitF))]
+        private static void CharaInitFPre()
+        {
+            Log.LogInfo("CharaInitFPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.CharaInitF))]
+        private static void CharaInitFPost()
+        {
+            Log.LogInfo("CharaInitFPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.CharaInitM))]
+        private static void CharaInitMPre()
+        {
+            Log.LogInfo("CharaInitMPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.CharaInitM))]
+        private static void CharaInitMPost()
+        {
+            Log.LogInfo("CharaInitMPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.CheckEvent), new[] { typeof(int), typeof(UnhollowerBaseLib.Il2CppReferenceArray<HPoint>) })]
+        private static void CheckEventPre(int eventID, UnhollowerBaseLib.Il2CppReferenceArray<HPoint> hPoints)
+        {
+            Log.LogInfo("CheckEventPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.CheckEvent), new[] { typeof(int), typeof(UnhollowerBaseLib.Il2CppReferenceArray<HPoint>) })]
+        private static void CheckEventPost(int eventID, UnhollowerBaseLib.Il2CppReferenceArray<HPoint> hPoints)
+        {
+            Log.LogInfo("CheckEventPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.CheckEvent), new[] { typeof(Il2CppSystem.Collections.Generic.List<int>), typeof(int) })]
+        private static void CheckEventPre2(Il2CppSystem.Collections.Generic.List<int> infoEvents, int eventID)
+        {
+            Log.LogInfo("CheckEventPre2");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.CheckEvent), new[] {typeof(Il2CppSystem.Collections.Generic.List<int>), typeof(int)} )]
+        private static void CheckEventPost2(Il2CppSystem.Collections.Generic.List<int> infoEvents, int eventID)
+        {
+            Log.LogInfo("CheckEventPost2");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.CheckFaintness))]
+        private static void CheckFaintnessPre(HScene.AnimationListInfo info)
+        {
+            Log.LogInfo("CheckFaintnessPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.CheckFaintness))]
+        private static void CheckFaintnessPost(HScene.AnimationListInfo info)
+        {
+            Log.LogInfo("CheckFaintnessPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.CheckHpoint))]
+        private static void CheckHpointPre(UnhollowerBaseLib.Il2CppReferenceArray<HPoint> hPoints)
+        {
+            Log.LogInfo("CheckHpointPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.CheckHpoint))]
+        private static void CheckHpointPost(UnhollowerBaseLib.Il2CppReferenceArray<HPoint> hPoints)
+        {
+            Log.LogInfo("CheckHpointPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.CheckRelationFinish), new System.Type[] {})]
+        private static void CheckRelationFinishPre()
+        {
+            Log.LogInfo("CheckRelationFinishPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.CheckRelationFinish), new System.Type[] { })]
+        private static void CheckRelationFinishPost()
+        {
+            Log.LogInfo("CheckRelationFinishPost");
+        }
+        
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.CheckRelationFinish), new [] { typeof(Actor), typeof(Il2CppSystem.Collections.Generic.List<Actor>), typeof(int), typeof(int), typeof(int) }, new ArgumentType[] {ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Ref})]
+        private static void CheckRelationFinishPre2(Actor main, Il2CppSystem.Collections.Generic.List<Actor> subs, int length, int set, int setSub)
+        {
+            Log.LogInfo("CheckRelationFinishPre2");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.CheckRelationFinish), new[] { typeof(Actor), typeof(Il2CppSystem.Collections.Generic.List<Actor>), typeof(int), typeof(int), typeof(int) }, new ArgumentType[] { ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Ref })]
+        private static void CheckRelationFinishPost2(Actor main, Il2CppSystem.Collections.Generic.List<Actor> subs, int length, int set, int setSub)
+        {
+            Log.LogInfo("CheckRelationFinishPost2");
+        }
+        */
+
+        /*
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.CheckSpeek))]
+        private static void CheckSpeekPre()
+        {
+            Log.LogInfo("CheckSpeekPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.CheckSpeek))]
+        private static void CheckSpeekPost()
+        {
+            Log.LogInfo("CheckSpeekPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.CheckState))]
+        private static void CheckStatePre(int mode, int state)
+        {
+            Log.LogInfo("CheckStatePre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.CheckState))]
+        private static void CheckStatePost(int mode, int state)
+        {
+            Log.LogInfo("CheckStatePost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ConfigEnd))]
+        private static void ConfigEndPre()
+        {
+            Log.LogInfo("ConfigEndPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ConfigEnd))]
+        private static void ConfigEndPost()
+        {
+            Log.LogInfo("ConfigEndPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.CreateListAnimationFileName))]
+        private static void CreateListAnimationFileNamePre()
+        {
+            Log.LogInfo("CreateListAnimationFileNamePre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.CreateListAnimationFileName))]
+        private static void CreateListAnimationFileNamePost()
+        {
+            Log.LogInfo("CreateListAnimationFileNamePost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.EndParamNotPlayChara), new System.Type[] {} )]
+        private static void EndParamNotPlayCharaPre1()
+        {
+            Log.LogInfo("EndParamNotPlayCharaPre1");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.EndParamNotPlayChara), new System.Type[] { })]
+        private static void EndParamNotPlayCharaPost1()
+        {
+            Log.LogInfo("EndParamNotPlayCharaPost1");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.EndParamNotPlayChara), new [] { typeof(RG.User.Status) })]
+        private static void EndParamNotPlayCharaPre2(RG.User.Status status)
+        {
+            Log.LogInfo("EndParamNotPlayCharaPre2");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.EndParamNotPlayChara), new[] { typeof(RG.User.Status) })]
+        private static void EndParamNotPlayCharaPost2(RG.User.Status status)
+        {
+            Log.LogInfo("EndParamNotPlayCharaPost2");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.EndProc))]
+        private static void EndProc()
+        {
+            Log.LogInfo("EndProcPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.EndProc))]
+        private static void EndProcPost()
+        {
+            Log.LogInfo("EndProcPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.EndProcADV))]
+        private static void EndProcADVPre()
+        {
+            Log.LogInfo("EndProcADVPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.EndProcADV))]
+        private static void EndProcADVPost()
+        {
+            Log.LogInfo("EndProcADVPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.FemaleEndproc))]
+        private static void FemaleEndprocPre()
+        {
+            Log.LogInfo("FemaleEndprocPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.FemaleEndproc))]
+        private static void FemaleEndprocPrePost()
+        {
+            Log.LogInfo("FemaleEndprocPrePost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.GetAnimationListModeFromSelectInfo))]
+        private static void GetAnimationListModeFromSelectInfoPre(HScene.AnimationListInfo _info)
+        {
+            Log.LogInfo("GetAnimationListModeFromSelectInfoPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.GetAnimationListModeFromSelectInfo))]
+        private static void GetAnimationListModeFromSelectInfoPost(HScene.AnimationListInfo _info)
+        {
+            Log.LogInfo("GetAnimationListModeFromSelectInfoPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.GetAnimInfo))]
+        private static void GetAnimInfoPre(int category, int id)
+        {
+            Log.LogInfo("GetAnimInfoPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.GetAnimInfo))]
+        private static void GetAnimInfoPost(int category, int id)
+        {
+            Log.LogInfo("GetAnimInfoPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.GetAutoAnimation))]
+        private static void GetAutoAnimationPre(bool _isFirst)
+        {
+            Log.LogInfo("GetAutoAnimationPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.GetAutoAnimation))]
+        private static void GetAutoAnimationPost(bool _isFirst)
+        {
+            Log.LogInfo("GetAutoAnimationPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.GetConfigCloseProc))]
+        private static void GetConfigCloseProcPre()
+        {
+            Log.LogInfo("GetConfigCloseProcPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.GetConfigCloseProc))]
+        private static void GetConfigCloseProcPost()
+        {
+            Log.LogInfo("GetConfigCloseProcPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.GetFemales))]
+        private static void GetFemalesPre()
+        {
+            Log.LogInfo("GetFemalesPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.GetFemales))]
+        private static void GetFemalesPost()
+        {
+            Log.LogInfo("GetFemalesPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.GetMales))]
+        private static void GetMalesPre()
+        {
+            Log.LogInfo("GetMalesPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.GetMales))]
+        private static void GetMalesPost()
+        {
+            Log.LogInfo("GetMalesPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.GetPointIDMin))]
+        private static void GetPointIDMinPre(Dictionary<int, List<HScene.AnimationListInfo>> tmpDicLst)
+        {
+            Log.LogInfo("GetPointIDMinPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.GetPointIDMin))]
+        private static void GetPointIDMinPost(Dictionary<int, List<HScene.AnimationListInfo>> tmpDicLst)
+        {
+            Log.LogInfo("GetPointIDMinPost");
+        }
+        
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.GetProcBase))]
+        private static void GetProcBasePre()
+        {
+            Log.LogInfo("GetProcBasePre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.GetProcBase))]
+        private static void GetProcBasePost()
+        {
+            Log.LogInfo("GetProcBasePost");
+        }
+        */
+
+        /*
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.IsAfterIdle))]
+        private static void IsAfterIdlePre(Animator _anim)
+        {
+            Log.LogInfo("IsAfterIdlePre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.IsAfterIdle))]
+        private static void IsAfterIdlePost(Animator _anim)
+        {
+            Log.LogInfo("IsAfterIdlePost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.IsBathCheck))]
+        private static void IsBathCheckPre()
+        {
+            Log.LogInfo("IsBathCheckPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.IsBathCheck))]
+        private static void IsBathCheckPost()
+        {
+            Log.LogInfo("IsBathCheckPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.IsIdle))]
+        private static void IsIdlePre(Animator _anim)
+        {
+            Log.LogInfo("IsIdlePre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.IsIdle))]
+        private static void IsIdlePost(Animator _anim)
+        {
+            Log.LogInfo("IsIdlePost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.IsOloop))]
+        private static void IsOloopPre(Animator _anim)
+        {
+            Log.LogInfo("IsOloopPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.IsOloop))]
+        private static void IsOloopPost(Animator _anim)
+        {
+            Log.LogInfo("IsOloopPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ItemVisible))]
+        private static void ItemVisiblePre(bool val)
+        {
+            Log.LogInfo("ItemVisiblePre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ItemVisible))]
+        private static void ItemVisiblePost(bool val)
+        {
+            Log.LogInfo("ItemVisiblePost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.LimitInitiative))]
+        private static void LimitInitiativePre()
+        {
+            Log.LogInfo("LimitInitiativePre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.LimitInitiative))]
+        private static void LimitInitiativePost()
+        {
+            Log.LogInfo("LimitInitiativePost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.MetaClear))]
+        private static void MetaClearPre()
+        {
+            Log.LogInfo("MetaClearPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.MetaClear))]
+        private static void MetaClearPost()
+        {
+            Log.LogInfo("MetaClearPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.Method_Internal_Static_Boolean_Actor_0))]
+        private static void Method_Internal_Static_Boolean_Actor_0Pre(Actor actor)
+        {
+            Log.LogInfo("Method_Internal_Static_Boolean_Actor_0Pre"); 
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.Method_Internal_Static_Boolean_Actor_0))]
+        private static void Method_Internal_Static_Boolean_Actor_0Post(Actor actor)
+        {
+            Log.LogInfo("Method_Internal_Static_Boolean_Actor_0Post");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ParamContain))]
+        private static void ParamContainPre()
+        {
+            Log.LogInfo("ParamContainPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ParamContain))]
+        private static void ParamContainPost()
+        {
+            Log.LogInfo("ParamContainPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.PositionShift))]
+        private static void PositionShiftPre()
+        {
+            Log.LogInfo("PositionShiftPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.PositionShift))]
+        private static void PositionShiftPost()
+        {
+            Log.LogInfo("PositionShiftPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.PositionShiftMouseUp))]
+        private static void PositionShiftMouseUpPre()
+        {
+            Log.LogInfo("PositionShiftMouseUpPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.PositionShiftMouseUp))]
+        private static void PositionShiftMouseUpPost()
+        {
+            Log.LogInfo("PositionShiftMouseUpPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.RelationSet))]
+        private static void RelationSetPre()
+        {
+            Log.LogInfo("RelationSetPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.RelationSet))]
+        private static void RelationSetPost()
+        {
+            Log.LogInfo("RelationSetPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ReturnFromMovePoint))]
+        private static void ReturnFromMovePointPre()
+        {
+            Log.LogInfo("ReturnFromMovePointPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ReturnFromMovePoint))]
+        private static void ReturnFromMovePointPost()
+        {
+            Log.LogInfo("ReturnFromMovePointPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.SetCameraLoad))]
+        private static void SetCameraLoadPre()
+        {
+            Log.LogInfo("SetCameraLoadPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.SetCameraLoad))]
+        private static void SetCameraLoadPost()
+        {
+            Log.LogInfo("SetCameraLoadPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.SetClothStateStartMotion))]
+        private static void SetClothStateStartMotionPre()
+        {
+            Log.LogInfo("SetClothStateStartMotionPre");
+
+        }
+
+        
+        
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.SetOldAnimatorInfo))]
+        private static void SetOldAnimatorInfoPre()
+        {
+            Log.LogInfo("SetOldAnimatorInfoPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.SetOldAnimatorInfo))]
+        private static void SetOldAnimatorInfoPost()
+        {
+            Log.LogInfo("SetOldAnimatorInfoPost");
+        }
+        */
+
+        /*
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.SetStartVoice))]
+        private static void SetStartVoicePre()
+        {
+            Log.LogInfo("SetStartVoicePre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.SetStartVoice))]
+        private static void SetStartVoicePost()
+        {
+            Log.LogInfo("SetStartVoicePost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.SetStateHash))]
+        private static void SetStateHashPre()
+        {
+            Log.LogInfo("SetStateHashPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.SetStateHash))]
+        private static void SetStateHashPost()
+        {
+            Log.LogInfo("SetStateHashPost");
+        }
+        
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ShortcutKey))]
+        private static void ShortcutKeyPre()
+        {
+            Log.LogInfo("ShortcutKeyPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ShortcutKey))]
+        private static void ShortcutKeyPost()
+        {
+            Log.LogInfo("ShortcutKeyPost");
+        }
+        */
+
+        /*
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ShortcutKeyIsMoveScene))]
+        private static void ShortcutKeyIsMoveScenePre()
+        {
+            Log.LogInfo("ShortcutKeyIsMoveScenePre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ShortcutKeyIsMoveScene))]
+        private static void ShortcutKeyIsMoveScenePost()
+        {
+            Log.LogInfo("ShortcutKeyIsMoveScenePost");
+        }
+        */
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.Start))]
+        private static void HSceneStartPre()
+        {
+            Log.LogInfo("HScene.StartPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.Start))]
+        private static void HSceneStartPost()
+        {
+            Log.LogInfo("HScene.StartPost");
+        }
+        /*
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.StartAnim))]
+        private static void HSceneStartAnimPre()
+        {
+            Log.LogInfo("HScene.StartAnimPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.StartAnim))]
+        private static void HSceneStartAnimPost()
+        {
+            Log.LogInfo("HScene.StartAnimPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.StartAnimDef))]
+        private static void StartAnimDefPre()
+        {
+            Log.LogInfo("HScene.StartAnimDefPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.StartAnimDef))]
+        private static void StartAnimDefPost()
+        {
+            Log.LogInfo("HScene.StartAnimDefPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.StartFaintnessCheck), new System.Type[] { })]
+        private static void StartFaintnessCheckPre1()
+        {
+            Log.LogInfo("HScene.StartFaintnessCheckPre1");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.StartFaintnessCheck), new System.Type[] {} )]
+        private static void StartFaintnessCheckPost1()
+        {
+            Log.LogInfo("HScene.StartFaintnessCheckPost1");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.StartFaintnessCheck), new [] { typeof(Actor), typeof(int) })]
+        private static void StartFaintnessCheckPre2(Actor actor, int f)
+        {
+            Log.LogInfo("HScene.StartFaintnessCheckPre2");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.StartFaintnessCheck), new [] { typeof(Actor), typeof(int)})]
+        private static void StartFaintnessCheckPost2(Actor actor, int f)
+        {
+            Log.LogInfo("HScene.StartFaintnessCheckPost2");
+        }
+        
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.StartPointSelect))]
+        private static void StartPointSelectPre()
+        {
+            Log.LogInfo("HScene.StartPointSelectPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.StartPointSelect))]
+        private static void StartPointSelectPost()
+        {
+            Log.LogInfo("HScene.StartPointSelectPost");
+        }
+        */
+
+        /*
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.StartPointSelect))]
+        private static void StartPointSelectPre()
+        {
+            Log.LogInfo("HScene.StartPointSelectPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.StartPointSelect))]
+        private static void StartPointSelectPost()
+        {
+            Log.LogInfo("HScene.StartPointSelectPost");
+        }
+        */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        /*
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Manager.HSceneManager), nameof(Manager.HSceneManager.LoadHScene))]
+        private static void LoadHScenePre()
+        {
+            Log.LogInfo("Manager.HSceneManager.LoadHScenePre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Manager.HSceneManager), nameof(Manager.HSceneManager.LoadHScene))]
+        private static void LoadHScenePost()
+        {
+            Log.LogInfo("Manager.HSceneManager.LoadHScenePost");
+
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Manager.HSceneManager), nameof(Manager.HSceneManager.Start))]
+        private static void StartPre()
+        {
+            Log.LogInfo("Manager.HSceneManager.StartPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Manager.HSceneManager), nameof(Manager.HSceneManager.Start))]
+        private static void StartPost()
+        {
+            Log.LogInfo("Manager.HSceneManager.StartPost");
+
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Manager.HSceneManager), nameof(Manager.HSceneManager.GetStartPoint))]
+        private static void GetStartPointPre()
+        {
+            Log.LogInfo("Manager.HSceneManager.GetStartPointPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Manager.HSceneManager), nameof(Manager.HSceneManager.GetStartPoint))]
+        private static void GetStartPointPost()
+        {
+            Log.LogInfo("Manager.HSceneManager.GetStartPointPost");
+
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Manager.HSceneManager), nameof(Manager.HSceneManager.SetHFlag))]
+        private static void SetHFlagPre()
+        {
+            Log.LogInfo("Manager.HSceneManager.SetHFlagPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Manager.HSceneManager), nameof(Manager.HSceneManager.SetHFlag))]
+        private static void SetHFlagPost()
+        {
+            Log.LogInfo("Manager.HSceneManager.SetHFlagPost");
+
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Manager.HSceneManager), nameof(Manager.HSceneManager.SetStartPoint))]
+        private static void SetStartPointPre(HPoint point)
+        {
+            Log.LogInfo("Manager.HSceneManager.SetStartPointPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Manager.HSceneManager), nameof(Manager.HSceneManager.SetStartPoint))]
+        private static void SetStartPointPost(HPoint point)
+        {
+            Log.LogInfo("Manager.HSceneManager.SetStartPointPost");
+
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Manager.HSceneManager), nameof(Manager.HSceneManager.ChangeHEventID))]
+        private static void ChangeHEventIDPre()
+        {
+            Log.LogInfo("Manager.HSceneManager.ChangeHEventIDPre");
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Manager.HSceneManager), nameof(Manager.HSceneManager.ChangeHEventID))]
+        private static void ChangeHEventIDPost()
+        {
+            Log.LogInfo("Manager.HSceneManager.ChangeHEventIDPost");
+        }
+        */
+
+        /*
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Manager.HSceneManager), nameof(Manager.HSceneManager.CheckHChara))]
+        private static void CheckHCharaPre(Chara.ChaControl cha)
+        {
+            Log.LogInfo("Manager.HSceneManager.CheckHCharaPre cha: " + cha.FileParam.fullname);
+        }
+
+        
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Manager.HSceneManager), nameof(Manager.HSceneManager.CheckHChara))]
+        private static void CheckHCharaPost(Chara.ChaControl cha)
+        {
+            Log.LogInfo("Manager.HSceneManager.CheckHCharaPost cha: " + cha.FileParam.fullname);
+        }
+        */
+
+        /*
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Manager.HSceneManager), nameof(Manager.HSceneManager.MobAnimSet))]
+        private static void MobAnimSetPre()
+        {
+            Log.LogInfo("Manager.HSceneManager.MobAnimSetPre");
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Manager.HSceneManager), nameof(Manager.HSceneManager.MobAnimSet))]
+        private static void MobAnimSetPost()
+        {
+            Log.LogInfo("Manager.HSceneManager.MobAnimSetPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Manager.HSceneManager), nameof(Manager.HSceneManager.MoveForwardProgress))]
+        private static void MoveForwardProgressPre()
+        {
+            Log.LogInfo("Manager.HSceneManager.MoveForwardProgressPre");
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Manager.HSceneManager), nameof(Manager.HSceneManager.MoveForwardProgress))]
+        private static void MoveForwardProgressPost()
+        {
+            Log.LogInfo("Manager.HSceneManager.MoveForwardProgressPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Manager.HSceneManager), nameof(Manager.HSceneManager.MoveForwardProgressTotal))]
+        private static void MoveForwardProgressTotalPre()
+        {
+            Log.LogInfo("Manager.HSceneManager.MoveForwardProgressTotalPre");
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Manager.HSceneManager), nameof(Manager.HSceneManager.MoveForwardProgressTotal))]
+        private static void MoveForwardProgressTotalPost()
+        {
+            Log.LogInfo("Manager.HSceneManager.MoveForwardProgressTotalPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Manager.HSceneManager), nameof(Manager.HSceneManager.PropensitySetValid))]
+        private static void PropensitySetValidPre()
+        {
+            Log.LogInfo("Manager.HSceneManager.PropensitySetValidPre");
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Manager.HSceneManager), nameof(Manager.HSceneManager.PropensitySetValid))]
+        private static void PropensitySetValidPost()
+        {
+            Log.LogInfo("Manager.HSceneManager.PropensitySetValidPost");
+        }
+        */
+
+
+
+
+
+
         /*
         [HarmonyPostfix]
         [HarmonyPatch(typeof(HScene), nameof(HScene.Start))]
@@ -91,21 +1361,7 @@ namespace HSceneCrowdReaction.HSceneScreen
             //Patches.ChangeActorsAnimation(__instance);
         }
 
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(HScene), nameof(HScene.StartAnim))]
-        private static void StartAnim(HScene.AnimationListInfo StartAnimInfo)
-        {
-            Log.LogInfo("HScene.StartAnim");
-            //Patches.ChangeActorsAnimation(__instance);
-        }
 
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(HScene), nameof(HScene.StartAnimDef))]
-        private static void StartAnimDef()
-        {
-            Log.LogInfo("HScene.StartAnimDef");
-            //Patches.ChangeActorsAnimation(__instance);
-        }
         */
         /*
         [HarmonyPostfix]
@@ -150,38 +1406,150 @@ namespace HSceneCrowdReaction.HSceneScreen
         private static void FilterCommands(Actor __instance, IReadOnlyList<RG.Scripts.ActionCommand> commands, List<RG.Scripts.ActionCommand> dest, bool errorOnly)
         {
             //Debug.PrintDetail(__instance.Chara);
+
+
             if (__instance.Sex == 1)
             {
-                //__instance.Chara.VisibleSon = !__instance.Chara.VisibleSon;
-                Log.LogInfo("FilterCommands Name: " + __instance.Status.FullName);
+
+                Log.LogInfo("FilterCommands Name: " + __instance.Status.FullName + ", personality: " + __instance.Chara.FileParam.personality);
                 //Debug.PrintTransformTree(__instance.Chara.CmpBody.targetEtc.objMNPB.transform, "");
                 //Debug.PrintDetail(__instance.Chara.CmpBody.targetEtc.objDanTop);
 
+                //__instance.Chara.SetClothesStateAll(2);
+
+
+                /*
+                var lefthand = __instance.Partner.Chara.CmpBoneBody.targetEtc.trf_k_handL_00.parent;
+                var righthand = __instance.Partner.Chara.CmpBoneBody.targetEtc.trf_k_handR_00.parent;
+
+
+                //lefthand.gameObject.active = false;
+                //lefthand.position += new Vector3(5f, 5f, 5f);
+                //righthand.position += new Vector3(2f, 2f, 2f);cf_J_Hand_s_L
+
+                var lefthandmiddle = __instance.Partner.Chara.transform.Find("BodyTop/p_cf_anim/cf_J_Root/cf_N_height/cf_J_Hips/cf_J_Spine01/cf_J_Spine02/cf_J_Spine03/cf_J_ShoulderIK_L/cf_J_Shoulder_L/cf_J_ArmUp00_L/cf_J_ArmLow01_L/cf_J_Hand_L/cf_J_Hand_s_L/cf_J_Hand_Middle01_L");
+                var lefthandlittle = __instance.Partner.Chara.transform.Find("BodyTop/p_cf_anim/cf_J_Root/cf_N_height/cf_J_Hips/cf_J_Spine01/cf_J_Spine02/cf_J_Spine03/cf_J_ShoulderIK_L/cf_J_Shoulder_L/cf_J_ArmUp00_L/cf_J_ArmLow01_L/cf_J_Hand_L/cf_J_Hand_s_L/cf_J_Hand_Little01_L");
+
+                var righthandmiddle = __instance.Partner.Chara.transform.Find("BodyTop/p_cf_anim/cf_J_Root/cf_N_height/cf_J_Hips/cf_J_Spine01/cf_J_Spine02/cf_J_Spine03/cf_J_ShoulderIK_R/cf_J_Shoulder_R/cf_J_ArmUp00_R/cf_J_ArmLow01_R/cf_J_Hand_R/cf_J_Hand_s_R/cf_J_Hand_Middle01_R");
+                var righthandlittle = __instance.Partner.Chara.transform.Find("BodyTop/p_cf_anim/cf_J_Root/cf_N_height/cf_J_Hips/cf_J_Spine01/cf_J_Spine02/cf_J_Spine03/cf_J_ShoulderIK_R/cf_J_Shoulder_R/cf_J_ArmUp00_R/cf_J_ArmLow01_R/cf_J_Hand_R/cf_J_Hand_s_R/cf_J_Hand_Little01_R");
+
+                var lefthandtiptest = __instance.Partner.Chara.transform.Find("BodyTop/p_cf_anim/cf_J_Root/cf_N_height/cf_J_Hips/cf_J_Spine01/cf_J_Spine02/cf_J_Spine03/cf_J_ShoulderIK_L/cf_J_Shoulder_L/cf_J_ArmUp00_L/cf_J_ArmLow01_L/cf_J_Hand_L/cf_J_Hand_s_L/cf_J_Hand_Middle01_L/N_Middle_L");
+                var righthandtiptest = __instance.Partner.Chara.transform.Find("BodyTop/p_cf_anim/cf_J_Root/cf_N_height/cf_J_Hips/cf_J_Spine01/cf_J_Spine02/cf_J_Spine03/cf_J_ShoulderIK_R/cf_J_Shoulder_R/cf_J_ArmUp00_R/cf_J_ArmLow01_R/cf_J_Hand_R/cf_J_Hand_s_R/cf_J_Hand_Middle01_R/N_Middle_R");
+
+                if (StateManager.Instance.left == null)
+                    StateManager.Instance.left = lefthandtiptest;
+                if (StateManager.Instance.right == null)
+                    StateManager.Instance.right = righthandtiptest;
+
+                //lefthandmiddle.gameObject.active = false;
+                //righthandlittle.gameObject.active = false;
+
+                var leftbreast = __instance.Chara.transform.Find("BodyTop/p_cf_anim/cf_J_Root/cf_N_height/cf_J_Hips/cf_J_Spine01/cf_J_Spine02/cf_J_Spine03/cf_J_Mune00/cf_J_Mune00_t_L");
+                var rightbreast = __instance.Chara.transform.Find("BodyTop/p_cf_anim/cf_J_Root/cf_N_height/cf_J_Hips/cf_J_Spine01/cf_J_Spine02/cf_J_Spine03/cf_J_Mune00/cf_J_Mune00_t_R");
+
+                var leftNipple = __instance.Chara.transform.Find("BodyTop/p_cf_anim/cf_J_Root/cf_N_height/cf_J_Hips/cf_J_Spine01/cf_J_Spine02/cf_J_Spine03/cf_J_Mune00/cf_J_Mune00_t_L/cf_J_Mune00_L/cf_J_Mune00_s_L/cf_J_Mune00_d_L/cf_J_Mune01_L/cf_J_Mune01_s_L/cf_J_Mune01_t_L/cf_J_Mune02_L/cf_J_Mune02_s_L/cf_J_Mune02_t_L/cf_J_Mune03_L/cf_J_Mune03_s_L/cf_J_Mune04_s_L/cf_J_Mune_Nip01_L/cf_J_Mune_Nip01_s_L/cf_J_Mune_Nip02_L/cf_J_Mune_Nipacs01_L/N_Tikubi_L");
+                var rightNipple = __instance.Chara.transform.Find("BodyTop/p_cf_anim/cf_J_Root/cf_N_height/cf_J_Hips/cf_J_Spine01/cf_J_Spine02/cf_J_Spine03/cf_J_Mune00/cf_J_Mune00_t_R/cf_J_Mune00_R/cf_J_Mune00_s_R/cf_J_Mune00_d_R/cf_J_Mune01_R/cf_J_Mune01_s_R/cf_J_Mune01_t_R/cf_J_Mune02_R/cf_J_Mune02_s_R/cf_J_Mune02_t_R/cf_J_Mune03_R/cf_J_Mune03_s_R/cf_J_Mune04_s_R/cf_J_Mune_Nip01_R/cf_J_Mune_Nip01_s_R/cf_J_Mune_Nip02_R/cf_J_Mune_Nipacs01_R/N_Tikubi_R");
+                //var leftNipple = __instance.Chara.transform.Find("BodyTop/p_cf_anim/cf_J_Root/cf_N_height/cf_J_Hips/cf_J_Spine01/cf_J_Spine02/cf_J_Spine03/cf_J_Mune00/cf_J_Mune00_t_L/cf_J_Mune00_L/cf_J_Mune00_s_L/cf_J_Mune00_d_L/cf_J_Mune01_L/cf_J_Mune01_s_L/cf_J_Mune01_t_L/cf_J_Mune02_L/cf_J_Mune02_s_L/cf_J_Mune02_t_L/cf_J_Mune03_L/cf_J_Mune03_s_L/cf_J_Mune04_s_L/cf_J_Mune_Nip01_L/cf_J_Mune_Nip01_s_L");
+                //var rightNipple = __instance.Chara.transform.Find("BodyTop/p_cf_anim/cf_J_Root/cf_N_height/cf_J_Hips/cf_J_Spine01/cf_J_Spine02/cf_J_Spine03/cf_J_Mune00/cf_J_Mune00_t_R/cf_J_Mune00_R/cf_J_Mune00_s_R/cf_J_Mune00_d_R/cf_J_Mune01_R/cf_J_Mune01_s_R/cf_J_Mune01_t_R/cf_J_Mune02_R/cf_J_Mune02_s_R/cf_J_Mune02_t_R/cf_J_Mune03_R/cf_J_Mune03_s_R/cf_J_Mune04_s_R/cf_J_Mune_Nip01_R/cf_J_Mune_Nip01_s_R");
+
+                var leftdiff = rightNipple.position - StateManager.Instance.left.position;
+                var rightdiff = leftNipple.position - StateManager.Instance.right.position;
+
+                var tkb = __instance.Chara.CmpBoneBody.targetAccessory.acs_Tikubi_L;
+
+                __instance.Chara.SetClothesStateAll(2);
+                leftNipple.gameObject.active = false;
+                rightNipple.gameObject.active = false;
+                
+                lefthand.position = rightNipple.position + leftdiff;
+                righthand.position = leftNipple.position + rightdiff;
+                
+
+                //__instance.Partner.Chara.SetPosition(leftNipple.position);
+                __instance.Chara.SetPosition(lefthand.position);
+
+                Log.LogInfo("lefthand: " + lefthand.position
+                    + ", righthand: " + righthand.position
+                    + ", lefthandmiddle: " + lefthandmiddle.position
+                    + ", lefthandlittle: " + lefthandlittle.position
+                    + ", lefthandtiptest: " + lefthandtiptest.position
+                    );
+                Log.LogInfo("leftbreast: " + leftbreast.position
+                    + ", rightbreast: " + rightbreast.position
+                    + ", leftNipple: " + leftNipple.position
+                    + ", rightNipple: " + rightNipple.position
+
+                    + ", leftdiff: " + leftdiff
+                    + ", rightdiff: " + rightdiff
+                    );
+                Log.LogInfo("tkb left: " + tkb.position + ", name: " + tkb.name);
+                */
+
+                //leftbreast.gameObject.active = false;
+                //rightbreast.gameObject.active = false;
+
                 if (__instance.CharaFileName == "default3")
                 {
-                    //Debug.PrintRenderer(__instance.Chara.CmpBody.targetEtc.objDanTop.transform, "");
                     /*
-                    StateManager.Instance.dantama = __instance.Chara.CmpBody.targetEtc.objDanTama;
-                    StateManager.Instance.dansao = __instance.Chara.CmpBody.targetEtc.objDanSao;
-                    StateManager.Instance.dantop = __instance.Chara.CmpBody.targetEtc.objDanTop;
+                    StateManager.Instance.ActorHAnimationList = new Dictionary<int, InfoList.HAnimation.ActorHAnimData>();
+                    Patches.HAnim.StartHAnimation(__instance);
                     */
 
-                    HPoint hPoint = __instance.OccupiedActionPoint.HPointLink[0];
-                    Log.LogInfo("hPoint: " + hPoint.name + ", hpointlink count: " + __instance.OccupiedActionPoint.HPointLink.Count);
-                    if (hPoint._moveObjects != null)
+
+
+
+
+
+
+                    /*
+                    var lefthand = __instance.Chara.CmpBoneBody.targetEtc.trf_k_handL_00.parent.parent;
+                    lefthand.position += new Vector3(.5f, .5f, .5f);
+                    */
+                    //__instance.Chara.CmpBoneBody.targetEtc.trfHeadParent.transform.position += new Vector3(-10, -20, -30);
+                    //__instance.Chara.CmpBoneBody.targetEtc.trf_k_handL_00.transform.position += new Vector3(10, 20, 30);
+                    //__instance.Chara.CmpBoneBody.targetEtc.trf_k_shoulderR_00.transform.position += new Vector3(10, 20, 30);
+
+                    /*
+                    if (Manager.HSceneManager.HResourceTables != null)
                     {
-                        for (int i = 0; i < hPoint._moveObjects.Count; i++)
-                            Log.LogInfo("_moveObjects[" + i + "]: " + hPoint._moveObjects[i].MoveObjName);
+                        Log.LogInfo("Manager.HSceneManager.HResourceTables not null");
+                        if(Manager.HSceneManager.HResourceTables.LstAnimInfo != null)
+                        {
+                            Log.LogInfo("Manager.HSceneManager.HResourceTables.LstAnimInfo not null, count: " + Manager.HSceneManager.HResourceTables.LstAnimInfo.Count);
+                        }
+                        
                     }
-                    hPoint.ChangeHideProcBefore();
-                    hPoint.ChangeHideProc(1);
-                    
-                    //hPoint.ChangeHideProcAll();
-                    hPoint.HpointObjVisibleChange(true);
+                    */
+
+                    /*
+                    //__instance.Chara.CmpBoneBody.targetEtc.trfHeadParent.transform.position += new Vector3(10, 20, 30);
+                    __instance.Chara.CmpBoneBody.targetEtc.trfNeckLookTarget.transform.position += new Vector3(10, 20, 30);
+
+                    //Debug.PrintRenderer(__instance.Chara.CmpBody.targetEtc.objDanTop.transform, "");
+                    Log.LogInfo("==========");
+                    Log.LogInfo("__instance.Chara.CmpBody: " + __instance.Chara.CmpBody.gameObject.name);
+                    Debug.PrintDetail(__instance.Chara.CmpBody.targetEtc);
+                    Log.LogInfo("==========");
+                    Log.LogInfo("__instance.Chara.CmpBoneBody: " + __instance.Chara.CmpBoneBody.gameObject.name);
+                    Debug.PrintDetail(__instance.Chara.CmpBoneBody.targetEtc);
+                    Log.LogInfo("==========");
+                    Log.LogInfo("__instance.Chara.CmpFace: " + __instance.Chara.CmpFace.gameObject.name);
+                    Debug.PrintDetail(__instance.Chara.CmpFace.targetEtc);
+                    Log.LogInfo("==========");
+                    Log.LogInfo("__instance.Chara.CmpSimpleBody: " + __instance.Chara.CmpSimpleBody.gameObject.name);
+                    Debug.PrintDetail(__instance.Chara.CmpSimpleBody.targetEtc);
+                    Log.LogInfo("==========");
+                    Log.LogInfo("__instance.Chara.CmpBoneHead: " + __instance.Chara.CmpBoneHead.gameObject.name);
+                    Debug.PrintDetail(__instance.Chara.CmpBoneHead.targetEtc);
+                    Log.LogInfo("==========");
+
+                    Debug.PrintDetail(__instance.Chara);
+                    */
                 }
+
             }
 
-            Log.LogInfo("Name: " + __instance.Status.FullName + ", OccupyiedPt: " + __instance.OccupiedActionPoint?.name);
+            //Log.LogInfo("Name: " + __instance.Status.FullName + ", OccupyiedPt: " + __instance.OccupiedActionPoint?.name);
             /*
             Log.LogInfo("%%%%%%%%%");
             Log.LogInfo("Name: " + __instance.Status.FullName);
@@ -202,6 +1570,7 @@ namespace HSceneCrowdReaction.HSceneScreen
         {
             if (StateManager.Instance.CurrentHSceneInstance != null && StateManager.Instance.ForceActiveInstanceID != null)
             {
+                //Log.LogInfo("SetActivePost");
                 if (StateManager.Instance.ForceActiveInstanceID.Contains(__instance.GetInstanceID()))
                     __instance.active = true;
             }
@@ -217,80 +1586,79 @@ namespace HSceneCrowdReaction.HSceneScreen
         {
             Log.LogInfo("OnClickConfig");
 
-            //Manager.Game.ActionMap.APTContainer.ActionPoints[0].HPointLink
+            var male = StateManager.Instance.CurrentHSceneInstance._chaMales[0];
+            var female = StateManager.Instance.CurrentHSceneInstance._chaFemales[0];
 
-            //StateManager.Instance.CurrentHSceneInstance.
+            var animInfo = Manager.HSceneManager.HResourceTables.LstAnimInfo[4][0];
+            for (int i = 0; i < animInfo.FemaleLowerCloths.Count; i++)
+            {
+                Log.LogInfo("animInfo.FemaleLowerCloths[" + i + "]: " + animInfo.FemaleLowerCloths[i]);
+            }
+            for (int i = 0; i < animInfo.FemaleUpperCloths.Count; i++)
+            {
+                Log.LogInfo("animInfo.FemaleUpperCloths[" + i + "]: " + animInfo.FemaleUpperCloths[i]);
+            }
+            var lefthand = male.CmpBoneBody.targetEtc.trf_k_handL_00.parent;
+            lefthand.position += new Vector3(10, 10, 10);
+
+            
+
+
+
+
 
 
             /*
-            for (int i=0; i< Manager.Game.ActionMap.APTContainer._actionPoints.Count; i++)
+            if (male.NeckLookCtrl != null)
             {
-                var pt = Manager.Game.ActionMap.APTContainer.ActionPoints[i];
-                Log.LogInfo("Action pt id: " + pt.UniqueID + " name: " + pt.name + ", HPoint link count: " + pt.HPointLink?.Count);
-
-                if(pt.HPointLink != null)
+                if (male.NeckLookCtrl.neckLookScript != null)
                 {
-                    for (int j = 0; j < pt.HPointLink.Count; j++)
-                    {
-                        var hpoint = pt.HPointLink[j];
-                        Log.LogInfo("Hpoint id: " + hpoint.ID + " name: " + hpoint.name + ", move obj count: " + hpoint._moveObjects?.Count);
-                        if (hpoint._moveObjects != null)
-                        {
-                            foreach (var item in hpoint._moveObjects)
-                            {
-                                Log.LogInfo("Hpoint name: " + hpoint.name + ", move obj name: " + item.MoveObjName);
-                            }
-                        }
-
-                        if(hpoint.ID == 29)
-                        {
-                            hpoint.ChangeHideProcBefore();
-                            //hpoint.ChangeHideProc(1);
-                            hpoint.ChangeHideProcAll();
-                            hpoint.HpointObjVisibleChange(true);
-
-                            foreach (var item in hpoint._moveObjects)
-                            {
-                                Log.LogInfo("Hpoint name: " + hpoint.name + ", move obj name: " + item.MoveObjName);
-                                for(int k=0; k< item.OffSetInfos.Count; k++)
-                                {
-
-                                    Log.LogInfo("item.OffSetInfos[" + k + "] pos: " + item.OffSetInfos[k].Pos + ", ang: " + item.OffSetInfos[k].Ang
-                                         + ", UsePos: " + item.OffSetInfos[k].UsePos
-                                          + ", UseAng: " + item.OffSetInfos[k].UseAng
-                                        );
-                                }
-                                item.SetOffset(0);
-                            }
-                        }
-                    }
-
-                        
-
+                    Debug.PrintDetail(male.NeckLookCtrl.neckLookScript);
+                    //Debug.PrintTransformTreeUpward(male.NeckLookCtrl.neckLookScript.boneCalcAngle, "");
                 }
-                
+            }
+            if (female.NeckLookCtrl != null)
+            {
+                if (female.NeckLookCtrl.neckLookScript != null)
+                {
+                    Debug.PrintDetail(female.NeckLookCtrl.neckLookScript);
+                    //Debug.PrintTransformTreeUpward(female.NeckLookCtrl.neckLookScript.boneCalcAngle, "");
+                }
             }
             */
 
 
             /*
-            Log.LogInfo("%%%%%%%%%");
-            if (HPoint._animationLists != null)
-            {
-                Log.LogInfo("HPoint._animationLists Count: " + HPoint._animationLists.Count);
-                for (int i = 0; i < HPoint._animationLists.Count; i++)
-                {
-                    Log.LogInfo("HPoint._animationLists[" + i + "] list count: " + HPoint._animationLists[i].Count);
-                    foreach (var item in HPoint._animationLists[i])
-                    {
-                        Debug.PrintDetail(item);
-                    }
-                }
-            }
-            Log.LogInfo("$$$$$$$$$$");
+            var character = StateManager.Instance.CurrentHSceneInstance._chaFemales[0];
+            Log.LogInfo("character.CmpBoneHead.name: " + character.CmpBoneHead.name);
+            Log.LogInfo("character.ObjHead.name: " + character.ObjHead.name);
+            Log.LogInfo("character.ObjHeadBone.name: " + character.ObjHeadBone.name);
+            Log.LogInfo("character.ObjHitHead.name: " + character.ObjHitHead.name);
+            Log.LogInfo("character.CmpBoneHead.targetEtc.trfHairParent.name: " + character.CmpBoneHead.targetEtc.trfHairParent.name);
+            Log.LogInfo("character.CmpBoneHead.targetEtc.trfMouthAdjustWidth.name: " + character.CmpBoneHead.targetEtc.trfMouthAdjustWidth.name);
+
+            Debug.PrintDetail(character.CmpBoneBody.targetEtc);
+            Debug.PrintDetail(character.CmpBody.targetEtc);
             */
+
+            //Debug.PrintDetail(character);
+
+            //Debug.PrintTransformTree(character.transform, "");
+            /*
+            if (Manager.Voice._transTable != null)
+            {
+                Log.LogInfo("_transTable Count: " + Manager.Voice._transTable.Count);
+                foreach (var kvp in Manager.Voice._transTable)
+                {
+                    Log.LogInfo("_transTable kvp.Key: " + kvp.Key + ", transform: " + kvp.Value.name);
+                    Debug.PrintTransformTree(kvp.Value, "");
+                }
+
+            }
+            */
+
         }
-        
+
         internal static void PrintHitObjectCtrl(HitObjectCtrl ctrl)
         {
             if (ctrl != null)
@@ -371,15 +1739,15 @@ namespace HSceneCrowdReaction.HSceneScreen
         private static void OnClickTaiiCategory(HSceneSprite __instance)
         {
             Log.LogInfo("OnClickTaiiCategory");
-            
 
 
-            
+
+
             if (ActionScene.Instance != null)
             {
                 Actor male = null;
                 Actor female = null;
-                var list = Patches.GetActorsInvolvedInH(ActionScene.Instance, StateManager.Instance.CurrentHSceneInstance);
+                var list = Patches.General.GetActorsInvolvedInH(ActionScene.Instance, StateManager.Instance.CurrentHSceneInstance);
                 foreach (var actor in list)
                 {
                     Log.LogInfo("Name: " + actor.Status.FullName);
@@ -526,7 +1894,7 @@ namespace HSceneCrowdReaction.HSceneScreen
                             counter++;
                         }
                         hitObjectCtrlMale.getChild = maleTransformArray;
-                        
+
                         hitObjectCtrlMale.SetActiveObject(false);
                         hitObjectCtrlMale.HitObjLoadExcel("rgh_m_19");
                         hitObjectCtrlMale.Proc("WLoop");
@@ -690,7 +2058,9 @@ namespace HSceneCrowdReaction.HSceneScreen
 
             }
         }
-        [HarmonyPostfix]
+
+        /*
+        [HarmonyPrefix]
         [HarmonyPatch(typeof(HMotionEyeNeckFemale), nameof(HMotionEyeNeckFemale.SetPartner))]
         private static void SetPartnerPre(HMotionEyeNeckFemale __instance, GameObject _objMale1Bone, GameObject _objMale2Bone, GameObject _objFemale1Bone)
         {
@@ -708,7 +2078,7 @@ namespace HSceneCrowdReaction.HSceneScreen
             Log.LogInfo("HMotionEyeNeckFemale.SetPartnerPost name: " + __instance.chaFemale?.FileParam.fullname);
         }
 
-        [HarmonyPostfix]
+        [HarmonyPrefix]
         [HarmonyPatch(typeof(HMotionEyeNeckFemale), nameof(HMotionEyeNeckFemale.SetPartnerFemaleObj))]
         private static void SetPartnerFemaleObjPre(HMotionEyeNeckFemale __instance, GameObject _objFemale1Bone)
         {
@@ -723,7 +2093,7 @@ namespace HSceneCrowdReaction.HSceneScreen
             Log.LogInfo("HMotionEyeNeckFemale.SetPartnerFemaleObjPost name: " + __instance.chaFemale?.FileParam.fullname);
         }
 
-        [HarmonyPostfix]
+        [HarmonyPrefix]
         [HarmonyPatch(typeof(HMotionEyeNeckFemale), nameof(HMotionEyeNeckFemale.SetPartnerMaleObj))]
         private static void SetPartnerMaleObjPre(HMotionEyeNeckFemale __instance, GameObject _objMale1Bone, GameObject _objMale2Bone)
         {
@@ -740,6 +2110,226 @@ namespace HSceneCrowdReaction.HSceneScreen
             Log.LogInfo("HMotionEyeNeckFemale.SetPartnerMaleObjPost name: " + __instance.chaFemale?.FileParam.fullname);
         }
 
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HMotionEyeNeckFemale), nameof(HMotionEyeNeckFemale.ChangeAnimSet))]
+        private static void ChangeAnimSetPre(bool neck, bool eye)
+        {
+            Log.LogInfo("HMotionEyeNeckFemale.ChangeAnimSetPre neck: " + neck
+                + ", eye: " + eye
+                );
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HMotionEyeNeckFemale), nameof(HMotionEyeNeckFemale.ChangeAnimSet))]
+        private static void ChangeAnimSetPost(bool neck , bool eye )
+        {
+            Log.LogInfo("HMotionEyeNeckFemale.ChangeAnimSetPost neck: " + neck
+                + ", eye: " + eye
+                );
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HMotionEyeNeckFemale), nameof(HMotionEyeNeckFemale.EyeCalc))]
+        private static void EyeCalcPre(Vector3 targetEyeRot)
+        {
+            Log.LogInfo("HMotionEyeNeckFemale.EyeCalcPre targetEyeRot: " + targetEyeRot
+                );
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HMotionEyeNeckFemale), nameof(HMotionEyeNeckFemale.EyeCalc))]
+        private static void EyeCalcPost(Vector3 targetEyeRot)
+        {
+            Log.LogInfo("HMotionEyeNeckFemale.EyeCalcPost targetEyeRot: " + targetEyeRot
+                );
+        }
+        */
+        /*
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HMotionEyeNeckFemale), nameof(HMotionEyeNeckFemale.EyeNeckCalc))]
+        private static void EyeNeckCalcPre()
+        {
+            Log.LogInfo("HMotionEyeNeckFemale.EyeNeckCalcPre"
+                );
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HMotionEyeNeckFemale), nameof(HMotionEyeNeckFemale.EyeNeckCalc))]
+        private static void EyeNeckCalcPost()
+        {
+            Log.LogInfo("HMotionEyeNeckFemale.EyeNeckCalcPost"
+                );
+        }
+        */
+        /*
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HMotionEyeNeckFemale), nameof(HMotionEyeNeckFemale.GetObjectName))]
+        private static void GetObjectNamePre(Transform top, string name)
+        {
+            Log.LogInfo("HMotionEyeNeckFemale.GetObjectNamePre top: " + top + ", name: " + name
+                );
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HMotionEyeNeckFemale), nameof(HMotionEyeNeckFemale.GetObjectName))]
+        private static void GetObjectNamePost(Transform top, string name)
+        {
+            Log.LogInfo("HMotionEyeNeckFemale.GetObjectNamePost top: " + top + ", name: " + name
+                );
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HMotionEyeNeckFemale), nameof(HMotionEyeNeckFemale.Init))]
+        private static void InitPre(Chara.ChaControl _female, int id, HScene hScene)
+        {
+            Log.LogInfo("HMotionEyeNeckFemale.InitPre name: " + _female?.FileParam.fullname + ", id: " + id + ", hscene: " + hScene?.name
+                );
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HMotionEyeNeckFemale), nameof(HMotionEyeNeckFemale.Init))]
+        private static void InitPost(Chara.ChaControl _female, int id, HScene hScene)
+        {
+            Log.LogInfo("HMotionEyeNeckFemale.InitPost name: " + _female?.FileParam.fullname + ", id: " + id + ", hscene: " + hScene?.name
+                );
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HMotionEyeNeckFemale), nameof(HMotionEyeNeckFemale.Load))]
+        private static void LoadPre(string _assetpath, string _file)
+        {
+            Log.LogInfo("HMotionEyeNeckFemale.LoadPre _assetpath: " + _assetpath + ", _file: " + _file
+                );
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HMotionEyeNeckFemale), nameof(HMotionEyeNeckFemale.Load))]
+        private static void LoadPost(string _assetpath, string _file)
+        {
+            Log.LogInfo("HMotionEyeNeckFemale.LoadPost _assetpath: " + _assetpath + ", _file: " + _file
+                );
+        }
+        */
+        /*
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HMotionEyeNeckFemale), nameof(HMotionEyeNeckFemale.NeckCalc))]
+        private static void NeckCalcPre(Vector3 targetNeckRot, Vector3 targetHeadRot)
+        {
+            Log.LogInfo("HMotionEyeNeckFemale.NeckCalcPre targetNeckRot: " + targetNeckRot + ", targetHeadRot: " + targetHeadRot
+                );
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HMotionEyeNeckFemale), nameof(HMotionEyeNeckFemale.NeckCalc))]
+        private static void NeckCalcPost(Vector3 targetNeckRot, Vector3 targetHeadRot)
+        {
+            Log.LogInfo("HMotionEyeNeckFemale.NeckCalcPost targetNeckRot: " + targetNeckRot + ", targetHeadRot: " + targetHeadRot
+                );
+        }
+        */
+
+        /*
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HMotionEyeNeckFemale), nameof(HMotionEyeNeckFemale.Proc))]
+        private static void ProcPre(AnimatorStateInfo _ai, HVoiceCtrl.FaceInfo _faceVoice, int _main)
+        {
+            Log.LogInfo("HMotionEyeNeckFemale.ProcPre _ai: " + _ai.m_Name + ", _faceVoice: " + _faceVoice + ", _main: " + _main
+                );
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HMotionEyeNeckFemale), nameof(HMotionEyeNeckFemale.Proc))]
+        private static void ProcPost(AnimatorStateInfo _ai, HVoiceCtrl.FaceInfo _faceVoice, int _main)
+        {
+            Log.LogInfo("HMotionEyeNeckFemale.ProcPost _ai: " + _ai.m_Name + ", _faceVoice: " + _faceVoice + ", _main: " + _main
+                );
+        }
+        */
+
+        /*
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HMotionEyeNeckFemale), nameof(HMotionEyeNeckFemale.SetBehaviourEyes))]
+        private static void SetBehaviourEyesPre(int _behaviour)
+        {
+            Log.LogInfo("HMotionEyeNeckFemale.SetBehaviourEyesPre _behaviour: " + _behaviour
+                );
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HMotionEyeNeckFemale), nameof(HMotionEyeNeckFemale.SetBehaviourEyes))]
+        private static void SetBehaviourEyesPost(int _behaviour)
+        {
+            Log.LogInfo("HMotionEyeNeckFemale.SetBehaviourEyesPost _behaviour: " + _behaviour
+                );
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HMotionEyeNeckFemale), nameof(HMotionEyeNeckFemale.SetBehaviourNeck))]
+        private static void SetBehaviourNeckPre(int _behaviour)
+        {
+            Log.LogInfo("HMotionEyeNeckFemale.SetBehaviourNeckPre _behaviour: " + _behaviour
+                );
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HMotionEyeNeckFemale), nameof(HMotionEyeNeckFemale.SetBehaviourNeck))]
+        private static void SetBehaviourNeckPost(int _behaviour)
+        {
+            Log.LogInfo("HMotionEyeNeckFemale.SetBehaviourNeckPost _behaviour: " + _behaviour
+                );
+        }
+        */
+        /*
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HMotionEyeNeckFemale), nameof(HMotionEyeNeckFemale.SetConfigBehaviour))]
+        private static void SetConfigBehaviourPre(AnimatorStateInfo _ai, bool neck, bool eye)
+        {
+            Log.LogInfo("HMotionEyeNeckFemale.SetBehaviourNeckPre _ai: " + _ai.m_Name + ", neck: " + neck + ", eye: " + eye
+                );
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HMotionEyeNeckFemale), nameof(HMotionEyeNeckFemale.SetConfigBehaviour))]
+        private static void SetConfigBehaviourPost(AnimatorStateInfo _ai, bool neck, bool eye)
+        {
+            Log.LogInfo("HMotionEyeNeckFemale.SetBehaviourNeckPost _ai: " + _ai.m_Name + ", neck: " + neck + ", eye: " + eye
+                );
+        }
+        */
+        /*
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HMotionEyeNeckFemale), nameof(HMotionEyeNeckFemale.SetEyesTarget))]
+        private static void SetEyesTargetPre(int _tag)
+        {
+            Log.LogInfo("HMotionEyeNeckFemale.SetEyesTargetPre _tag: " + _tag
+                );
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HMotionEyeNeckFemale), nameof(HMotionEyeNeckFemale.SetEyesTarget))]
+        private static void SetEyesTargetPost(int _tag)
+        {
+            Log.LogInfo("HMotionEyeNeckFemale.SetEyesTargetPost _tag: " + _tag
+                );
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HMotionEyeNeckFemale), nameof(HMotionEyeNeckFemale.SetNeckTarget))]
+        private static void SetNeckTargetPre(int _tag)
+        {
+            Log.LogInfo("HMotionEyeNeckFemale.SetNeckTargetPre _tag: " + _tag
+                );
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HMotionEyeNeckFemale), nameof(HMotionEyeNeckFemale.SetNeckTarget))]
+        private static void SetNeckTargetPost(int _tag)
+        {
+            Log.LogInfo("HMotionEyeNeckFemale.SetNeckTargetPost _tag: " + _tag
+                );
+        }
+        */
+        /*
         [HarmonyPrefix]
         [HarmonyPatch(typeof(HScene), nameof(HScene.ChangeAnimation))]
         private static void ChangeAnimationPre(HScene __instance, HScene.AnimationListInfo _info, bool _isForceResetCamera, bool _isForceLoopAction, bool _UseFade, bool isLoadFirst)
@@ -766,7 +2356,7 @@ namespace HSceneCrowdReaction.HSceneScreen
                 );
             Log.LogInfo("Name: " + __instance._chaMales[0]?.FileParam.fullname + ", visibleson: " + __instance._chaMales[0]?.VisibleSon);
         }
-        
+
 
 
         [HarmonyPatch(MethodType.Constructor)]
@@ -820,30 +2410,14 @@ namespace HSceneCrowdReaction.HSceneScreen
             Log.LogInfo("ProcBase ReInitPlay _playAnimationHash: " + _playAnimationHash + ", _normalizetime: " + _normalizetime);
         }
 
-        
+
         [HarmonyPostfix]
         [HarmonyPatch(typeof(ProcBase), nameof(ProcBase.SetPlay), new[] { typeof(string), typeof(bool) })]
         private static void SetPlayPost(ProcBase __instance, string _playAnimation, bool _isFade)
         {
             Log.LogInfo("ProcBase SetPlayPost, _playAnimation: " + _playAnimation + ", _isFade: " + _isFade);
             Log.LogInfo("Name: " + __instance._chaMales[0]?.FileParam.fullname + ", visibleson: " + __instance._chaMales[0]?.VisibleSon);
-            /*
-            //need to rectify the position of the hanimation crowd
-            if(StateManager.Instance.CurrentHSceneInstance != null && ActionScene.Instance != null)
-            {
-                foreach (var a in ActionScene.Instance._actors)
-                {
-                    if (StateManager.Instance.HActionActorList.ContainsKey(a.GetInstanceID()))
-                    {
-                        var hpoint = StateManager.Instance.HActionActorList[a.GetInstanceID()];
-                        Patches.SetActorToHPoint(a, StateManager.Instance.HActionActorList[a.GetInstanceID()]);
-                        //Log.LogInfo("HPoint pos: " + hpoint.transform.position + ", localpos: " + hpoint.transform.localPosition);
-                        //Debug.PrintDetail(a.Chara.transform);
-                        
-                    }
-                }
-            }
-            */
+
         }
 
         [HarmonyPrefix]
@@ -888,7 +2462,7 @@ namespace HSceneCrowdReaction.HSceneScreen
         {
             Log.LogInfo("ChaControl.PlayPost _strAnmName: " + _strAnmName + ", _nLayer: " + _nLayer);
         }
-        
+
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(HSceneSprite), nameof(HSceneSprite.OnValuePositionMoveSpeed))]
@@ -911,7 +2485,9 @@ namespace HSceneCrowdReaction.HSceneScreen
         {
             Log.LogInfo("AnimationController.PlayPost stateNameHash: " + stateNameHash + ", layer: " + layer + ", normalizedTime: " + normalizedTime);
         }
+        */
 
+        /*
         [HarmonyPrefix]
         [HarmonyPatch(typeof(AnimationController), nameof(AnimationController.PlayAnim))]
         private static void PlayAnimPre(int blendMode, float blendTime, float fadeoutTime, bool useOffset, bool useRandomSpeed, UnhollowerBaseLib.Il2CppStructArray<int> layers,
@@ -935,8 +2511,8 @@ namespace HSceneCrowdReaction.HSceneScreen
                 + ", fadeoutTime: " + fadeoutTime
                 );
         }
-
-
+        */
+        /*
         [HarmonyPrefix]
         [HarmonyPatch(typeof(AnimationController), nameof(AnimationController.PlayAnimPrimitive))]
         private static void PlayAnimPrimitivePre(int stateNameHash, int blendMode, float blendTime, bool useOffset, bool useRandomSpeed, UnhollowerBaseLib.Il2CppStructArray<int> layers,
@@ -947,7 +2523,7 @@ namespace HSceneCrowdReaction.HSceneScreen
                 + ", useRandomSpeed: " + useRandomSpeed
                 );
         }
-
+        
         [HarmonyPostfix]
         [HarmonyPatch(typeof(AnimationController), nameof(AnimationController.PlayAnimPrimitive))]
         private static void PlayAnimPrimitivePost(int stateNameHash, int blendMode, float blendTime, bool useOffset, bool useRandomSpeed, UnhollowerBaseLib.Il2CppStructArray<int> layers,
@@ -955,7 +2531,8 @@ namespace HSceneCrowdReaction.HSceneScreen
         {
             Log.LogInfo("AnimationController.PlayAnimPrimitivePost blendMode: " + blendMode + ", blendTime: " + blendTime + ", useOffset: " + useOffset);
         }
-
+        */
+        /*
         [HarmonyPostfix]
         [HarmonyPatch(typeof(AnimationController), nameof(AnimationController.SetAnimatorController))]
         private static void SetAnimatorController(AnimationController __instance, RuntimeAnimatorController rac)
@@ -969,9 +2546,11 @@ namespace HSceneCrowdReaction.HSceneScreen
         {
             Log.LogInfo("AnimationController.SetRegularAnimator Name: " + __instance.Actor?.Status.FullName);
         }
+        **/
 
+        /*
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(Chara.ChaControl), nameof(Chara.ChaControl.SetPosition), new[] {typeof(Vector3)} )]
+        [HarmonyPatch(typeof(Chara.ChaControl), nameof(Chara.ChaControl.SetPosition), new[] { typeof(Vector3) })]
         private static void SetPosition1(Chara.ChaControl __instance, Vector3 pos)
         {
             Log.LogInfo("Chara.ChaControl.SetPosition1 Name: " + __instance.FileParam.fullname + ", pos: " + pos);
@@ -987,423 +2566,1334 @@ namespace HSceneCrowdReaction.HSceneScreen
                 + ", z: " + z
                 );
         }
+        */
 
+        /*
         [HarmonyPostfix]
         [HarmonyPatch(typeof(Chara.ChaControl), nameof(Chara.ChaControl.SetVoiceTransform))]
         private static void SetVoiceTransform(Chara.ChaControl __instance, AudioSource voice)
         {
             Log.LogInfo("Chara.ChaControl.SetVoiceTransform Name: " + __instance.FileParam.fullname
-                + ", voice: " + voice.name
-                );
+                + ", voice: " + voice?.name
+                
+                ); ;
+        }
+        */
+
+
+
+
+
+
+
+
+
+        /*
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Chara.ChaControl), nameof(Chara.ChaControl.ChangeMouthPtn))]
+        private static void ChangeMouthPtn(Chara.ChaControl __instance, int ptn, bool blend)
+        {
+            Log.LogInfo("ChangeMouthPtn name: " + __instance.FileParam.fullname + ", ptn: " + ptn + ", blend: " + blend);
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(Manager.Sound), nameof(Manager.Sound.Create))]
-        private static void Create(Manager.Sound.Type type, bool isCache)
+        [HarmonyPatch(typeof(CharaCustom.CustomBase), nameof(CharaCustom.CustomBase.ChangeMouthPtnNo))]
+        private static void ChangeMouthPtnNo(int no)
         {
-            Log.LogInfo("Manager.Sound.Create type: " + type
-                + ", isCache: " + isCache
-                );
+            Log.LogInfo("ChangeMouthPtnNo no: " + no);
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(Manager.Sound), nameof(Manager.Sound.CreateCache), new[] {typeof(Manager.Sound.Type), typeof(AssetBundleData) } )]
-        private static void CreateCache1(Manager.Sound.Type type, AssetBundleData data)
+        [HarmonyPatch(typeof(CharaCustom.CustomBase), nameof(CharaCustom.CustomBase.ChangeMouthPtnNext))]
+        private static void ChangeMouthPtnNext(int next)
         {
-            Log.LogInfo("Manager.Sound.CreateCache1 type: " + type
+            Log.LogInfo("ChangeMouthPtnNext next: " + next);
+        }
+        */
+
+
+
+
+        /*
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Manager.Voice), nameof(Manager.Voice.Create))]
+        private static void CreatePre(Transform vt)
+        {
+            Log.LogInfo("Manager.Voice.CreatePre type: " + vt.name);
+            //Debug.PrintDetail(__result);
+
+        }
+
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Manager.Voice), nameof(Manager.Voice.Create))]
+        private static void CreatePost(Transform vt, AudioSource __result)
+        {
+            Log.LogInfo("Manager.Voice.CreatePost type: " + vt.name + ", result: " + __result.name);
+            //Debug.PrintDetail(__result);
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Manager.Voice), nameof(Manager.Voice.CreateCache), new[] { typeof(int), typeof(AssetBundleData) })]
+        private static void CreateCache1(int voiceNo, AssetBundleData data)
+        {
+            Log.LogInfo("Manager.Voice.CreateCache1 voiceNo: " + voiceNo
                 + ", data: " + data.Bundle + " | " + data.Asset
                 );
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(Manager.Sound), nameof(Manager.Sound.CreateCache), new[] { typeof(Manager.Sound.Type), typeof(AssetBundleManifestData) })]
-        private static void CreateCache2(Manager.Sound.Type type, AssetBundleManifestData data)
+        [HarmonyPatch(typeof(Manager.Voice), nameof(Manager.Voice.CreateCache), new[] { typeof(int), typeof(AssetBundleManifestData) })]
+        private static void CreateCache2(int voiceNo, AssetBundleManifestData data)
         {
-            Log.LogInfo("Manager.Sound.CreateCache2 type: " + type
+            Log.LogInfo("Manager.Voice.CreateCache2 voiceNo: " + voiceNo
                 + ", data: " + data.Bundle + " | " + data.Asset + " | " + data.Manifest
                 );
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(Manager.Sound), nameof(Manager.Sound.CreateCache), new[] { typeof(Manager.Sound.Type), typeof(string), typeof(string), typeof(string) })]
-        private static void CreateCache3(Manager.Sound.Type type, string bundle, string asset, string manifest)
+        [HarmonyPatch(typeof(Manager.Voice), nameof(Manager.Voice.CreateCache), new[] { typeof(int), typeof(string), typeof(string), typeof(string) })]
+        private static void CreateCache3(int voiceNo, string bundle, string asset, string manifest)
         {
-            Log.LogInfo("Manager.Sound.CreateCache3 type: " + type
+            Log.LogInfo("Manager.Voice.CreateCache3 voiceNo: " + voiceNo
                 + ", bundle: " + bundle
                 + ", asset: " + asset
                 + ", manifest: " + manifest
                 );
         }
+        
+
+
+
+
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Manager.Voice), nameof(Manager.Voice.OncePlay), new[] { typeof(Manager.Voice.Loader) })]
+        private static void OncePlayPre(Manager.Voice.Loader loader)
+        {
+            Log.LogInfo("Manager.Voice.OncePlayPre"
+                );
+
+            //Debug.PrintDetail(loader);
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Manager.Voice), nameof(Manager.Voice.OncePlay), new[] { typeof(Manager.Voice.Loader) })]
+        private static void OncePlayPost(Manager.Voice.Loader loader)
+        {
+            Log.LogInfo("Manager.Voice.OncePlayPost"
+                );
+
+            //Debug.PrintDetail(loader);
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Manager.Voice), nameof(Manager.Voice.OncePlayChara), new[] { typeof(Manager.Voice.Loader) })]
+        private static void OncePlayCharaPre(Manager.Voice.Loader loader)
+        {
+            Log.LogInfo("Manager.Voice.OncePlayCharaPre loader.bundle: " + loader?.Bundle + ", loader.asset: " + loader?.Asset
+                );
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Manager.Voice), nameof(Manager.Voice.OncePlayChara), new[] { typeof(Manager.Voice.Loader) })]
+        private static void OncePlayCharaPost(Manager.Voice.Loader loader)
+        {
+            Log.LogInfo("Manager.Voice.OncePlayCharaPost loader.bundle: " + loader?.Bundle + ", loader.asset: " + loader?.Asset
+                );
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Manager.Voice), nameof(Manager.Voice.Play), new[] { typeof(Manager.Voice.Loader) })]
+        private static void PlayPre(Manager.Voice.Loader loader)
+        {
+            Log.LogInfo("========");
+            Log.LogInfo("Manager.Voice.PlayPre loader bundle: " + loader?.Bundle + ", asset: " + loader?.Asset + ", voicetrans name: " + loader?.VoiceTrans?.name
+                );
+            //Debug.PrintDetail(loader);
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Manager.Voice), nameof(Manager.Voice.Play), new[] { typeof(Manager.Voice.Loader) })]
+        private static void PlayPost(Manager.Voice.Loader loader)
+        {
+            Log.LogInfo("Manager.Voice.PlayPost loader bundle: " + loader?.Bundle + ", asset: " + loader?.Asset + ", voicetrans name: " + loader?.VoiceTrans?.name
+                );
+            //Debug.PrintDetail(loader);
+        }
+        */
 
         /*
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(HPoint), nameof(HPoint.BackUpPosition))]
-        private static void BackUpPosition(HPoint __instance)
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Manager.Voice), nameof(Manager.Voice.PlayStandby))]
+        private static void PlayStandbyPre(AudioSource audioSource, Manager.Voice.Loader loader)
         {
-            Log.LogInfo("BackUpPosition name: " + __instance.name);
+            Log.LogInfo("Manager.Voice.PlayStandbyPre audioSource: " + audioSource.name + ", loader.bundle: " + loader?.Bundle + ", loader.asset: " + loader?.Asset);
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(HPoint), nameof(HPoint.ChangeHideProc))]
-        private static void ChangeHideProc(HPoint __instance, int hideUseProc)
+        [HarmonyPatch(typeof(Manager.Voice), nameof(Manager.Voice.PlayStandby))]
+        private static void PlayStandbyPost(AudioSource audioSource, Manager.Voice.Loader loader)
         {
-            Log.LogInfo("ChangeHideProc name: " + __instance.name + ", hideUseProc: " + hideUseProc);
+            Log.LogInfo("Manager.Voice.PlayStandbyPost audioSource: " + audioSource.name + ", loader.bundle: " + loader?.Bundle + ", loader.asset: " + loader?.Asset);
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(HPoint), nameof(HPoint.ChangeHideProcAll))]
-        private static void ChangeHideProcAll(HPoint __instance)
+        [HarmonyPatch(typeof(Manager.Voice), nameof(Manager.Voice.ReleaseCache))]
+        private static void ReleaseCache(int voiceNo, string bundle, string asset, string manifest)
         {
-            Log.LogInfo("ChangeHideProcAll name: " + __instance.name);
+            Log.LogInfo("Manager.Voice.ReleaseCache voiceNo: " + voiceNo + ", bundle: " + bundle + ", asset: " + asset + ", manifest: " + manifest);
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(HPoint), nameof(HPoint.ChangeHideProcBefore))]
-        private static void ChangeHideProcBefore(HPoint __instance)
+        [HarmonyPatch(typeof(Manager.Voice), nameof(Manager.Voice.ResetConfig))]
+        private static void ResetConfig()
         {
-            Log.LogInfo("ChangeHideProcBefore name: " + __instance.name);
+            Log.LogInfo("Manager.Voice.ResetConfig");
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(HPoint), nameof(HPoint.ChangeShowerVisible))]
-        private static void ChangeShowerVisible(HPoint __instance)
+        [HarmonyPatch(typeof(Manager.Voice), nameof(Manager.Voice.SetParent))]
+        private static void SetParent(int no, Transform t)
         {
-            Log.LogInfo("ChangeShowerVisible name: " + __instance.name);
+            Log.LogInfo("Manager.Voice.SetParent no: " + no + ", t: " + t.name);
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(HPoint), nameof(HPoint.CheckVisible))]
-        private static void CheckVisible(HPoint __instance, GameObject obj)
+        [HarmonyPatch(typeof(Manager.Voice), nameof(Manager.Voice.Stop), new[] {typeof(int)} )]
+        private static void Stop1(int no)
         {
-            Log.LogInfo("CheckVisible name: " + __instance.name + ",  obj: " + obj.name);
-        }
-        
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(HPoint), nameof(HPoint.FindObjsMove))]
-        private static void FindObjsMove(HPoint __instance, Transform root, UnhollowerBaseLib.Il2CppReferenceArray<HPoint.MoveObjectSet> move)
-        {
-            Log.LogInfo("FindObjsMove name: " + __instance.name + ",  root: " + root.name);
+            Log.LogInfo("Manager.Voice.Stop1 no: " + no);
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(HPoint), nameof(HPoint.HpointObjVisibleChange))]
-        private static void HpointObjVisibleChange(HPoint __instance, bool val)
+        [HarmonyPatch(typeof(Manager.Voice), nameof(Manager.Voice.Stop), new[] { typeof(Transform) })]
+        private static void Stop2(Transform voiceTrans)
         {
-            Log.LogInfo("HpointObjVisibleChange name: " + __instance.name + ",  val: " + val);
+            Log.LogInfo("Manager.Voice.Stop2 voiceTrans: " + voiceTrans.name);
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Manager.Voice), nameof(Manager.Voice.Stop), new[] { typeof(int), typeof(Transform) })]
+        private static void Stop3Pre(int no, Transform voiceTrans)
+        {
+            Log.LogInfo("Manager.Voice.Stop3Pre no: " + no + ", voiceTrans: " + voiceTrans.name);
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(HPoint), nameof(HPoint.Init))]
-        private static void Init(HPoint __instance, GameObject MapObj)
+        [HarmonyPatch(typeof(Manager.Voice), nameof(Manager.Voice.Stop), new[] { typeof(int), typeof(Transform) })]
+        private static void Stop3Post(int no, Transform voiceTrans)
         {
-            Log.LogInfo("HPoint.Init name: " + __instance?.name + ", MapObj: " + MapObj?.name);
+            Log.LogInfo("Manager.Voice.Stop3Post no: " + no + ", voiceTrans: " + voiceTrans.name);
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(HPoint), nameof(HPoint.MoveBackUpPos))]
-        private static void MoveBackUpPos(HPoint __instance)
+        [HarmonyPatch(typeof(Manager.Voice), nameof(Manager.Voice.StopAll))]
+        private static void StopAll(bool isLoopStop)
         {
-            Log.LogInfo("MoveBackUpPos name: " + __instance.name);
+            Log.LogInfo("Manager.Voice.StopAll isLoopStop: " + isLoopStop );
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(HPoint), nameof(HPoint.MoveBackUpPosAll))]
-        private static void MoveBackUpPosAll(HPoint __instance)
+        [HarmonyPatch(typeof(Manager.Voice), nameof(Manager.Voice.ToPlaying))]
+        private static void ToPlaying(int no)
         {
-            Log.LogInfo("MoveBackUpPosAll name: " + __instance.name);
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(HPoint), nameof(HPoint.MoveOffset))]
-        private static void MoveOffset(HPoint __instance)
-        {
-            Log.LogInfo("MoveOffset name: " + __instance.name);
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(HPoint), nameof(HPoint.MoveOffsetAll))]
-        private static void MoveOffsetAll(HPoint __instance)
-        {
-            Log.LogInfo("MoveOffsetAll name: " + __instance.name);
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(HPoint), nameof(HPoint.ReInit))]
-        private static void ReInit(HPoint __instance)
-        {
-            Log.LogInfo("ReInit name: " + __instance.name);
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(HPoint), nameof(HPoint.ResetOffset))]
-        private static void ResetOffset(HPoint __instance)
-        {
-            Log.LogInfo("ResetOffset name: " + __instance.name);
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(HPoint), nameof(HPoint.SaveOffsetAng))]
-        private static void SaveOffsetAng(HPoint __instance)
-        {
-            Log.LogInfo("SaveOffsetAng name: " + __instance.name);
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(HPoint), nameof(HPoint.SaveOffsetPos))]
-        private static void SaveOffsetPos(HPoint __instance)
-        {
-            Log.LogInfo("SaveOffsetPos name: " + __instance.name);
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(HPoint), nameof(HPoint.SetOffset), new System.Type[] { })]
-        private static void SetOffset(HPoint __instance)
-        {
-            Log.LogInfo("SetOffset name: " + __instance.name);
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(HPoint), nameof(HPoint.SetOffset), new[] { typeof(int) })]
-        private static void SetOffset(HPoint __instance, int ptn)
-        {
-            Log.LogInfo("SetOffset name: " + __instance.name + ", ptn: " + ptn);
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(HPoint), nameof(HPoint.SetShowerMasturbationFlag))]
-        private static void SetShowerMasturbationFlag(HPoint __instance, bool val)
-        {
-            Log.LogInfo("SetShowerMasturbationFlag name: " + __instance.name + ", val: " + val);
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(HPoint), nameof(HPoint.VisibleObj))]
-        private static void VisibleObj(HPoint __instance, List<int> visible)
-        {
-            Log.LogInfo("VisibleObj name: " + __instance.name + ",  visible Count: " + visible.Count);
-            foreach (var i in visible) Log.LogInfo("Visible: " + i);
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(HPoint.MoveObjectSet), nameof(HPoint.MoveObjectSet.ResetPosRot))]
-        private static void ResetPosRot(HPoint.MoveObjectSet __instance)
-        {
-            Log.LogInfo("MoveObjectSet.ResetPosRot name: " + __instance?.MoveObjName);
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(HPoint.MoveObjectSet), nameof(HPoint.MoveObjectSet.SetBasePosAng))]
-        private static void SetBasePosAng(HPoint.MoveObjectSet __instance)
-        {
-            Log.LogInfo("MoveObjectSet.SetBasePosAng name: " + __instance?.MoveObjName);
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(HPoint.MoveObjectSet), nameof(HPoint.MoveObjectSet.SetOffset))]
-        private static void SetOffset(HPoint.MoveObjectSet __instance, int ptn)
-        {
-            Log.LogInfo("MoveObjectSet.SetBasePosAng name: " + __instance?.MoveObjName + ", ptn: " + ptn);
+            Log.LogInfo("Manager.Voice.Stop3 ToPlaying: " + no);
         }
 
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(RootmotionOffset), nameof(RootmotionOffset.OffsetBlend))]
-        private static void OffsetBlend(RootmotionOffset __instance, RootmotionOffset.Info info)
+        [HarmonyPatch(typeof(Chara.ChaControl), nameof(Chara.ChaControl.PlaySync), new[] {typeof(string), typeof(int), typeof(float)})]
+        private static void PlaySync1(Chara.ChaControl __instance, string _strameHash, int _nLayer, float _fnormalizedTime)
         {
-            Log.LogInfo("RootmotionOffset.OffsetBlend name: " + __instance?.Chara?.FileParam.fullname);
+            Log.LogInfo("Chara.ChaControl.PlaySync1 name: " + __instance.FileParam.fullname + ", _strameHash: " + _strameHash);
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(RootmotionOffset), nameof(RootmotionOffset.OffsetInit))]
-        private static void OffsetInit(RootmotionOffset __instance, string _file)
+        [HarmonyPatch(typeof(Chara.ChaControl), nameof(Chara.ChaControl.PlaySync), new[] { typeof(int), typeof(int), typeof(float) })]
+        private static void PlaySync2(Chara.ChaControl __instance, int _nameHash, int _nLayer, float _fnormalizedTime)
         {
-            Log.LogInfo("RootmotionOffset.OffsetInit name: " + __instance?.Chara?.FileParam.fullname + ", file: " + _file);
+            Log.LogInfo("Chara.ChaControl.PlaySync2 name: " + __instance.FileParam.fullname + ", _nameHash: " + _nameHash);
         }
+        */
 
+
+        /*
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(RootmotionOffset), nameof(RootmotionOffset.Set), new[] { typeof(string) })]
-        private static void Set1(RootmotionOffset __instance, string _state)
+        [HarmonyPatch(typeof(HVoiceCtrl), nameof(HVoiceCtrl.ShortBreathProc))]
+        private static void ShortBreathProc(Chara.ChaControl _female, int _main)
         {
-            Log.LogInfo("RootmotionOffset.Set1 name: " + __instance?.Chara?.FileParam.fullname + ", _state: " + _state);
+            Log.LogInfo("HVoiceCtrl.ShortBreathProc name: " + _female.FileParam.fullname + ", main: " + _main);
         }
+        */
 
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(RootmotionOffset), nameof(RootmotionOffset.Set), new[] { typeof(int) })]
-        private static void Set2(RootmotionOffset __instance, int _state)
-        {
-            Log.LogInfo("RootmotionOffset.Set2 name: " + __instance?.Chara?.FileParam.fullname + ", _state: " + _state);
-        }
 
-        //Reset the looking direction when H point moved
+        /*
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(HScene), nameof(HScene.SetPosition), new[] { typeof(Transform), typeof(Vector3), typeof(Vector3), typeof(bool), typeof(bool) })]
-        private static void SetPositiona(HScene __instance, Transform _trans, Vector3 offsetpos, Vector3 offsetrot, bool _FadeStart, bool _isWorld)
+        [HarmonyPatch(typeof(Chara.ChaControl), nameof(Chara.ChaControl.ChangeLookNeckTarget))]
+        private static void ChangeLookNeckTarget(Chara.ChaControl __instance, int targetType, Transform trfTarg, float rate, float rotDeg, float range, float dis)
         {
-            Log.LogInfo("SetPositiona trans name: " + _trans.gameObject.name
-                + "+ offsetpos: " + offsetpos
-                + "+ offsetrot: " + offsetrot
+            Log.LogInfo("Chara.ChaControl.ChangeLookNeckTarget name: " + __instance.FileParam.fullname + ", targetType: " + targetType
+                 + ", rate: " + rate
+                  + ", rotDeg: " + rotDeg
+                   + ", range: " + range
+                    + ", dis: " + dis
                 );
+            if (trfTarg != null)
+                Log.LogInfo("trfTarg: " + trfTarg.name);
+            Log.LogInfo("__instance.NeckLookCtrl.target.name: " + __instance.NeckLookCtrl?.target?.name);
+            Log.LogInfo("__instance.EyeLookCtrl.target.name: " + __instance.EyeLookCtrl?.target?.name);
+            
         }
 
-        //Reset the looking direction when H point moved
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(HScene), nameof(HScene.SetPosition), new[] { typeof(Vector3), typeof(Quaternion), typeof(Vector3), typeof(Vector3), typeof(bool), typeof(bool) })]
-        private static void SetPositionb(HScene __instance, Vector3 pos, Quaternion rot, Vector3 offsetpos, Vector3 offsetrot, bool _FadeStart, bool isWorld)
+        [HarmonyPatch(typeof(Chara.ChaControl), nameof(Chara.ChaControl.ChangeLookNeckPtn))]
+        private static void ChangeLookNeckPtn(Chara.ChaControl __instance, int ptn, float rate)
         {
-            Log.LogInfo("SetPositionb "
-                + "+ offsetpos: " + offsetpos
-                + "+ offsetrot: " + offsetrot
-                                + "+ pos: " + pos
-                + "+ rot: " + rot
+            Log.LogInfo("Chara.ChaControl.ChangeLookNeckPtn name: " + __instance.FileParam.fullname + ", ptn: " + ptn
+                 + ", rate: " + rate
                 );
-        }
-
-
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(HitObjectCtrl), nameof(HitObjectCtrl.EndPloc))]
-        private static void EndPlocPre()
-        {
-            Log.LogInfo("HitObjectCtrl.EndPlocPre");
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(HitObjectCtrl), nameof(HitObjectCtrl.EndPloc))]
-        private static void EndPlocPost()
-        {
-            Log.LogInfo("HitObjectCtrl.EndPlocPost");
-        }
-
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(HitObjectCtrl), nameof(HitObjectCtrl.GetObjParent))]
-        private static void GetObjParentPre(Transform objTop, string name)
-        {
-            Log.LogInfo("HitObjectCtrl.GetObjParentPre objTop: " + objTop.gameObject.name + ", name: " + name);
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(HitObjectCtrl), nameof(HitObjectCtrl.GetObjParent))]
-        private static void GetObjParentPost(Transform objTop, string name, GameObject __result)
-        {
-            Log.LogInfo("HitObjectCtrl.GetObjParentPost objTop: " + objTop.gameObject.name + ", name: " + name + ", result: " + __result?.name);
-        }
-
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(HitObjectCtrl), nameof(HitObjectCtrl.HitObjInit))]
-        private static void HitObjInitPre(int Sex, GameObject _objBody, Chara.ChaControl _custom)
-        {
-            Log.LogInfo("HitObjectCtrl.HitObjInitPre sex: " + Sex + ", objbody: " + _objBody.name + ", custom: " + _custom?.FileParam?.fullname);
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(HitObjectCtrl), nameof(HitObjectCtrl.HitObjInit))]
-        private static void HitObjInitPost(int Sex, GameObject _objBody, Chara.ChaControl _custom, Il2CppSystem.Collections.IEnumerator __result)
-        {
-            Log.LogInfo("HitObjectCtrl.HitObjInitPost sex: " + Sex + ", objbody: " + _objBody.name + ", custom: " + _custom?.FileParam?.fullname);
-
-        }
-        
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(HitObjectCtrl), nameof(HitObjectCtrl.HitObjLoadExcel))]
-        private static void HitObjLoadExcelPre(string _file)
-        {
-            Log.LogInfo("HitObjectCtrl.HitObjLoadExcelPre file: " + _file);
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(HitObjectCtrl), nameof(HitObjectCtrl.HitObjLoadExcel))]
-        private static void HitObjLoadExcelPost(string _file)
-        {
-            Log.LogInfo("HitObjectCtrl.HitObjLoadExcelPost file: " + _file);
-        }
-
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(HitObjectCtrl), nameof(HitObjectCtrl.PreEndPloc))]
-        private static void PreEndPlocPre()
-        {
-            Log.LogInfo("HitObjectCtrl.PreEndPlocPre");
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(HitObjectCtrl), nameof(HitObjectCtrl.PreEndPloc))]
-        private static void PreEndPlocPost()
-        {
-            Log.LogInfo("HitObjectCtrl.PreEndPlocPost");
-        }
-
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(HitObjectCtrl), nameof(HitObjectCtrl.Proc), new[] { typeof(string) })]
-        private static void Proc1Pre(string _nextAnim)
-        {
-            Log.LogInfo("HitObjectCtrl.Proc1Pre _nextAnim: " + _nextAnim);
-
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(HitObjectCtrl), nameof(HitObjectCtrl.Proc), new[] { typeof(string) })]
-        private static void Proc1Post(string _nextAnim)
-        {
-            Log.LogInfo("HitObjectCtrl.Proc1Post _nextAnim: " + _nextAnim);
-        }
-
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(HitObjectCtrl), nameof(HitObjectCtrl.Proc), new[] { typeof(int) })]
-        private static void Proc2Pre(int _nextAnimHash)
-        {
-            Log.LogInfo("HitObjectCtrl.Proc2Pre _nextAnimHash: " + _nextAnimHash);
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(HitObjectCtrl), nameof(HitObjectCtrl.Proc), new[] { typeof(int) })]
-        private static void Proc2Post(int _nextAnimHash)
-        {
-            Log.LogInfo("HitObjectCtrl.Proc2Post _nextAnimHash: " + _nextAnimHash);
-        }
-
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(HitObjectCtrl), nameof(HitObjectCtrl.Visible))]
-        private static void VisiblePre(bool _visible)
-        {
-            Log.LogInfo("HitObjectCtrl.VisiblePre _visible: " + _visible);
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(HitObjectCtrl), nameof(HitObjectCtrl.Visible))]
-        private static void VisiblePost(bool _visible)
-        {
-            Log.LogInfo("HitObjectCtrl.VisiblePost _visible: " + _visible);
-        }
-
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(HitObjectCtrl), nameof(HitObjectCtrl.SetActiveObject))]
-        private static void SetActiveObjectPre(bool val)
-        {
-            Log.LogInfo("HitObjectCtrl.SetActiveObjectPre val: " + val);
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(HitObjectCtrl), nameof(HitObjectCtrl.SetActiveObject))]
-        private static void SetActiveObjectPost(bool val)
-        {
-            Log.LogInfo("HitObjectCtrl.SetActiveObjectPost val: " + val);
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(Chara.ChaControl), nameof(Chara.ChaControl.LoadHitObject))]
-        private static void LoadHitObject(Chara.ChaControl __instance)
-        {
-            Log.LogInfo("Chara.ChaControl.LoadHitObject name: " + __instance.FileParam.fullname);
         }
         */
 
         /*
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(Chara.ChaControl), nameof(Chara.ChaControl.SetShapeBodyValue))]
-        private static void SetShapeBodyValue(Chara.ChaControl __instance, int index, float value)
+        [HarmonyPatch(typeof(Chara.ChaControl), nameof(Chara.ChaControl.ChangeLookEyesTarget))]
+        private static void ChangeLookEyesTarget(Chara.ChaControl __instance, int targetType, Transform trfTarg, float rate, float rotDeg, float range, float dis)
         {
-            Log.LogInfo("Chara.ChaControl.SetShapeBodyValue, name: " + __instance?.FileParam.fullname + ", index: " + index + ", value: " + value);
+            Log.LogInfo("Chara.ChaControl.ChangeLookEyesTarget name: " + __instance.FileParam.fullname + ", targetType: " + targetType
+                 + ", rate: " + rate
+                  + ", rotDeg: " + rotDeg
+                   + ", range: " + range
+                    + ", dis: " + dis
+                );
+            if (trfTarg != null)
+                Log.LogInfo("trfTarg: " + trfTarg.name);
+            
+            
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Chara.ChaControl), nameof(Chara.ChaControl.ChangeLookEyesPtn))]
+        private static void ChangeLookEyesPtn(Chara.ChaControl __instance, int ptn)
+        {
+            Log.LogInfo("Chara.ChaControl.ChangeLookEyesPtn name: " + __instance.FileParam.fullname + ", ptn: " + ptn
+                );
+        }
+        */
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.Setup))]
+        private static void MotionIK_SetupPre(List<Chara.ChaControl> infos)
+        {
+            Log.LogInfo("MotionIK.SetupPre ");
+            for (int i = 0; i < infos.Count; i++)
+            {
+                Log.LogInfo(infos[i].FileParam.fullname);
+                //infos[i].FullBodyIK
+            }
+        }
+
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.Setup))]
+        private static void MotionIK_SetupPost(List<Chara.ChaControl> infos)
+        {
+            Log.LogInfo("MotionIK.SetupPost ");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.SetData))]
+        private static void MotionIK_SetDataPre(MotionIKData data)
+        {
+            Log.LogInfo("MotionIK_SetDataPre dataname:" + data?.dataName);
+
+        }
+
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.SetData))]
+        private static void MotionIK_SetDataPost(MotionIKData data)
+        {
+            Log.LogInfo("MotionIK_SetDataPost dataname:" + data?.dataName);
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.LoadData), new[] { typeof(TextAsset) })]
+        private static void MotionIK_LoadDataPre(MotionIK __instance, TextAsset ta)
+        {
+            Log.LogInfo("MotionIK_LoadDataPre name: " + __instance.Info.FileParam.fullname);
+        }
+
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.LoadData), new[] { typeof(TextAsset) })]
+        private static void MotionIK_LoadDataPost(MotionIK __instance, TextAsset ta)
+        {
+            Log.LogInfo("MotionIK_LoadDataPost name: " + __instance.Info.FileParam.fullname);
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.LoadData), new[] { typeof(string) })]
+        private static void MotionIK_LoadDataPre2(string path)
+        {
+            Log.LogInfo("MotionIK_LoadDataPre2 path:" + path);
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.LoadData), new[] { typeof(string) })]
+        private static void MotionIK_LoadDataPost2(string path)
+        {
+            Log.LogInfo("MotionIK_LoadDataPost2 path:" + path);
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.AddDicStateContain), new[] { typeof(Il2CppSystem.Collections.Generic.List<MotionIKData.State>), typeof(UnhollowerBaseLib.Il2CppReferenceArray<MotionIKData.State>) })]
+        private static void AddDicStateContainPre1(Il2CppSystem.Collections.Generic.List<MotionIKData.State> setList, UnhollowerBaseLib.Il2CppReferenceArray<MotionIKData.State> dicState)
+        {
+            Log.LogInfo("AddDicStateContainPre1");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.AddDicStateContain), new[] { typeof(Il2CppSystem.Collections.Generic.List<MotionIKData.State>), typeof(UnhollowerBaseLib.Il2CppReferenceArray<MotionIKData.State>) })]
+        private static void AddDicStateContainPost1(Il2CppSystem.Collections.Generic.List<MotionIKData.State> setList, UnhollowerBaseLib.Il2CppReferenceArray<MotionIKData.State> dicState)
+        {
+            Log.LogInfo("AddDicStateContainPost1");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.AddDicStateContain), new[] { typeof(Il2CppSystem.Collections.Generic.List<MotionIKData.State>), typeof(MotionIKData.State) })]
+        private static void AddDicStateContainPre2(Il2CppSystem.Collections.Generic.List<MotionIKData.State> setList, MotionIKData.State state)
+        {
+            Log.LogInfo("AddDicStateContainPre1");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.AddDicStateContain), new[] { typeof(Il2CppSystem.Collections.Generic.List<MotionIKData.State>), typeof(MotionIKData.State) })]
+        private static void AddDicStateContainPost2(Il2CppSystem.Collections.Generic.List<MotionIKData.State> setList, MotionIKData.State state)
+        {
+            Log.LogInfo("AddDicStateContainPost1");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.BlendAllDispose))]
+        private static void BlendAllDisposePre()
+        {
+            Log.LogInfo("BlendAllDisposePre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.BlendAllDispose))]
+        private static void BlendAllDisposePost()
+        {
+            Log.LogInfo("BlendAllDisposePost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.BlendAnimDispose))]
+        private static void BlendAnimDisposePre(bool overrideNext, int overridehash)
+        {
+            Log.LogInfo("BlendAnimDisposePre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.BlendAnimDispose))]
+        private static void BlendAnimDisposePost(bool overrideNext, int overridehash)
+        {
+            Log.LogInfo("BlendAnimDisposePost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.Calc), new[] { typeof(string) })]
+        private static void CalcPre(MotionIK __instance, string stateName)
+        {
+            Log.LogInfo("CalcPre name: " + __instance.Info.FileParam.fullname + ", stateName: " + stateName);
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.Calc), new[] { typeof(string) })]
+        private static void CalcPost(MotionIK __instance, string stateName)
+        {
+            Log.LogInfo("CalcPost name: " + __instance.Info.FileParam.fullname + ", stateName: " + stateName);
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.Calc), new[] { typeof(int), typeof(int) })]
+        private static void Calc2Pre(int hashName, int fkID)
+        {
+            Log.LogInfo("Calc2Pre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.Calc), new[] { typeof(int), typeof(int) })]
+        private static void Calc2Post(int hashName, int fkID)
+        {
+            Log.LogInfo("Calc2Post");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.CalcAnimBlend))]
+        private static void CalcAnimBlendPre(int hashName, float blendTime, int fkID)
+        {
+            Log.LogInfo("CalcAnimBlendPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.CalcAnimBlend))]
+        private static void CalcAnimBlendPost(int hashName, float blendTime, int fkID)
+        {
+            Log.LogInfo("CalcAnimBlendPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.CalcBlendAnimProc))]
+        private static void CalcBlendAnimProcPre()
+        {
+            Log.LogInfo("CalcBlendAnimProcPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.CalcBlendAnimProc))]
+        private static void CalcBlendAnimProcPost()
+        {
+            Log.LogInfo("CalcBlendAnimProcPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.ChangeWeight))]
+        private static void ChangeWeightPre(int nameHash, int fkID)
+        {
+            Log.LogInfo("ChangeWeightPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.ChangeWeight))]
+        private static void ChangeWeightPost()
+        {
+            Log.LogInfo("ChangeWeightPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.ChangeWeightDispose))]
+        private static void ChangeWeightDisposePre(int idx)
+        {
+            Log.LogInfo("ChangeWeightDisposePre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.ChangeWeightDispose))]
+        private static void ChangeWeightDisposePost()
+        {
+            Log.LogInfo("ChangeWeightDisposePost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.ChangeWeightFK))]
+        private static void ChangeWeightFKPre(int nameHash, float normalizedTime)
+        {
+            Log.LogInfo("ChangeWeightFKPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.ChangeWeightFK))]
+        private static void ChangeWeightFKPost(int nameHash, float normalizedTime)
+        {
+            Log.LogInfo("ChangeWeightFKPost");
+        }
+        /*
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.ChangeWeightIK))]
+        private static void ChangeWeightIKPre(int nameHash, float normalizedTime)
+        {
+            Log.LogInfo("ChangeWeightIKPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.ChangeWeightIK))]
+        private static void ChangeWeightIKPost(int nameHash, float normalizedTime)
+        {
+            Log.LogInfo("ChangeWeightIKPost");
+        }
+        */
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.GetNowFKState))]
+        private static void GetNowFKStatePre(int ID)
+        {
+            Log.LogInfo("GetNowFKStatePre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.GetNowFKState))]
+        private static void GetNowFKStatePost(int ID)
+        {
+            Log.LogInfo("GetNowFKStatePost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.IKBaseOverride))]
+        private static void IKBaseOverridePre(MotionIK __instance, bool val)
+        {
+            Log.LogInfo("IKBaseOverridePre name: " + __instance.Info.FileParam.fullname + ", val: " + val);
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.IKBaseOverride))]
+        private static void IKBaseOverridePost(MotionIK __instance, bool val)
+        {
+            Log.LogInfo("IKBaseOverridePost name: " + __instance.Info.FileParam.fullname + ", val: " + val);
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.InitFrameCalc))]
+        private static void InitFrameCalcPre(MotionIK __instance, bool changeFKEnable)
+        {
+            Log.LogInfo("InitFrameCalcPre name: " + __instance.Info.FileParam.fullname + ", changeFKEnable: " + changeFKEnable);
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.InitFrameCalc))]
+        private static void InitFrameCalcPost(MotionIK __instance, bool changeFKEnable)
+        {
+            Log.LogInfo("InitFrameCalcPost name: " + __instance.Info.FileParam.fullname + ", changeFKEnable: " + changeFKEnable);
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.InitState))]
+        private static void InitStatePre(string stateName)
+        {
+            Log.LogInfo("InitStatePre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.InitState))]
+        private static void InitStatePost(string stateName)
+        {
+            Log.LogInfo("InitStatePost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.LinkIK))]
+        private static void LinkIKPre(int index, MotionIKData.State state, MotionIK.IKTargetPair pair, float initNormalizeTime, bool forceLateUpdate)
+        {
+            Log.LogInfo("LinkIKPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.LinkIK))]
+        private static void LinkIKPost(int index, MotionIKData.State state, MotionIK.IKTargetPair pair, float initNormalizeTime, bool forceLateUpdate)
+        {
+            Log.LogInfo("LinkIKPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.LinkIKAnimBlend))]
+        private static void LinkIKAnimBlendPre(int index, UnhollowerBaseLib.Il2CppReferenceArray<MotionIKData.State> state, MotionIK.IKTargetPair pair, float startTime, float blendTime)
+        {
+            Log.LogInfo("LinkIKAnimBlendPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.LinkIKAnimBlend))]
+        private static void LinkIKAnimBlendPost(int index, UnhollowerBaseLib.Il2CppReferenceArray<MotionIKData.State> state, MotionIK.IKTargetPair pair, float startTime, float blendTime)
+        {
+            Log.LogInfo("LinkIKAnimBlendPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.Release))]
+        private static void ReleasePre(MotionIK __instance)
+        {
+            Log.LogInfo("ReleasePre name: " + __instance.Info.FileParam.fullname);
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.Release))]
+        private static void ReleasePost(MotionIK __instance)
+        {
+            Log.LogInfo("ReleasePost name: " + __instance.Info.FileParam.fullname);
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.Reset))]
+        private static void ResetPre(MotionIK __instance)
+        {
+            Log.LogInfo("ResetPre name: " + __instance.Info.FileParam.fullname);
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.Reset))]
+        private static void ResetPost(MotionIK __instance)
+        {
+            Log.LogInfo("ResetPost name: " + __instance.Info.FileParam.fullname);
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.ReSetPartner))]
+        private static void ReSetPartnerPre()
+        {
+            Log.LogInfo("ReSetPartnerPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.ReSetPartner))]
+        private static void ReSetPartnerPost()
+        {
+            Log.LogInfo("ReSetPartnerPost");
+        }
+        /*
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.Set), new[] { typeof(Illusion.Component.Correct.BaseData), typeof(UnhollowerBaseLib.Il2CppStructArray<Vector3>) })]
+        private static void Set1Pre(Illusion.Component.Correct.BaseData data, UnhollowerBaseLib.Il2CppStructArray<Vector3> dirs)
+        {
+            Log.LogInfo("Set1Pre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.Set), new[] { typeof(Illusion.Component.Correct.BaseData), typeof(UnhollowerBaseLib.Il2CppStructArray<Vector3>) })]
+        private static void Set1Post(Illusion.Component.Correct.BaseData data, UnhollowerBaseLib.Il2CppStructArray<Vector3> dirs)
+        {
+            Log.LogInfo("Set1Post");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.Set), new[] { typeof(Illusion.Component.Correct.BaseData), typeof(Il2CppSystem.ValueTuple<Vector3, Vector3>) })]
+        private static void Set2Pre(Illusion.Component.Correct.BaseData data, Il2CppSystem.ValueTuple<Vector3, Vector3> vt)
+        {
+            Log.LogInfo("Set2Pre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.Set), new[] { typeof(Illusion.Component.Correct.BaseData), typeof(Il2CppSystem.ValueTuple<Vector3, Vector3>) })]
+        private static void Set2Post(Illusion.Component.Correct.BaseData data, Il2CppSystem.ValueTuple<Vector3, Vector3> vt)
+        {
+            Log.LogInfo("Set2Post");
+        }
+        */
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.SetActorSex))]
+        private static void SetActorSexPre(Actor actor)
+        {
+            Log.LogInfo("SetActorSexPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.SetActorSex))]
+        private static void SetActorSexPost(Actor actor)
+        {
+            Log.LogInfo("SetActorSexPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.SetData))]
+        private static void SetDataPre(MotionIKData data)
+        {
+            Log.LogInfo("SetDataPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.SetData))]
+        private static void SetDataPost(MotionIKData data)
+        {
+            Log.LogInfo("SetDataPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.SetFK))]
+        private static void SetFKPre(int hashName, float initTime, bool forceLateUpdate)
+        {
+            Log.LogInfo("SetFKPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.SetFK))]
+        private static void SetFKPost(int hashName, float initTime, bool forceLateUpdate)
+        {
+            Log.LogInfo("SetFKPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.SetFKBlend))]
+        private static void SetFKBlendPre(int nowHash, int nextHash, float start, float blendTime)
+        {
+            Log.LogInfo("SetFKBlendPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.SetFKBlend))]
+        private static void SetFKBlendPost(int nowHash, int nextHash, float start, float blendTime)
+        {
+            Log.LogInfo("SetFKBlendPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.SetItems))]
+        private static void SetItemsPre(MotionIK __instance, UnhollowerBaseLib.Il2CppReferenceArray<GameObject> items)
+        {
+            Log.LogInfo("SetItemsPre name: " + __instance.Info.FileParam.fullname);
+            if (items != null) Log.LogInfo("item count: " + items.Count);
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.SetItems))]
+        private static void SetItemsPost(MotionIK __instance, UnhollowerBaseLib.Il2CppReferenceArray<GameObject> items)
+        {
+            Log.LogInfo("SetItemsPost name: " + __instance.Info.FileParam.fullname);
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.SetMapFK))]
+        private static void SetMapFKPre(string AnimatorName)
+        {
+            Log.LogInfo("SetMapFKPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.SetMapFK))]
+        private static void SetMapFKPost(string AnimatorName)
+        {
+            Log.LogInfo("SetMapFKPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.SetMapIK))]
+        private static bool SetMapIKPre(MotionIK __instance, string AnimatorName)
+        {
+            Log.LogInfo("SetMapIKPre name: " + __instance.Info.FileParam.fullname + ", animatorname: " + AnimatorName + ", id: " + __instance.Controller.GetInstanceID());
+            return true;
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.SetMapIK))]
+        private static void SetMapIKPost(string AnimatorName)
+        {
+            Log.LogInfo("SetMapIKPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.SetNotBlendHashList))]
+        private static void SetNotBlendHashListPre(string assetName, UnhollowerBaseLib.Il2CppReferenceArray<MotionIKData.State> states)
+        {
+            Log.LogInfo("SetNotBlendHashListPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.SetNotBlendHashList))]
+        private static void SetNotBlendHashListPost(string assetName, UnhollowerBaseLib.Il2CppReferenceArray<MotionIKData.State> states)
+        {
+            Log.LogInfo("SetNotBlendHashListPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.SetPartnerAdd))]
+        private static void SetPartnerAddPre(MotionIK add)
+        {
+            Log.LogInfo("SetPartnerAddPre");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.SetPartnerAdd))]
+        private static void SetPartnerAddPost(MotionIK add)
+        {
+            Log.LogInfo("SetPartnerAddPost");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.SetPartners), new[] { typeof(Il2CppSystem.Collections.Generic.IEnumerable<MotionIK>) })]
+        private static void SetPartnersPre1(Il2CppSystem.Collections.Generic.IEnumerable<MotionIK> partners)
+        {
+            Log.LogInfo("SetPartnersPre1");
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.SetPartners), new[] { typeof(Il2CppSystem.Collections.Generic.IEnumerable<MotionIK>) })]
+        private static void SetPartnersPost1(Il2CppSystem.Collections.Generic.IEnumerable<MotionIK> partners)
+        {
+            Log.LogInfo("SetPartnersPost1");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.SetPartners), new[] { typeof(Il2CppSystem.Collections.Generic.IReadOnlyCollection<Il2CppSystem.ValueTuple<int, int, MotionIK>>) })]
+        private static void SetPartnersPre2(MotionIK __instance, Il2CppSystem.Collections.Generic.IReadOnlyCollection<Il2CppSystem.ValueTuple<int, int, MotionIK>> partners)
+        {
+            Log.LogInfo("SetPartnersPre2 name: " + __instance.Info.FileParam.fullname);
+            if (partners != null)
+            {
+                Log.LogInfo("Partner count: " + partners.Count);
+            }
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.SetPartners), new[] { typeof(Il2CppSystem.Collections.Generic.IReadOnlyCollection<Il2CppSystem.ValueTuple<int, int, MotionIK>>) })]
+        private static void SetPartnersPost2(MotionIK __instance, Il2CppSystem.Collections.Generic.IReadOnlyCollection<Il2CppSystem.ValueTuple<int, int, MotionIK>> partners)
+        {
+            Log.LogInfo("SetPartnersPost2 name: " + __instance.Info.FileParam.fullname);
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.SetPartners), new[] { typeof(UnhollowerBaseLib.Il2CppReferenceArray<MotionIK>) })]
+        private static void SetPartnersPre3(MotionIK __instance, UnhollowerBaseLib.Il2CppReferenceArray<MotionIK> partners)
+        {
+            Log.LogInfo("SetPartnersPre3 name: " + __instance.Info.FileParam.fullname);
+            if (partners != null)
+            {
+                Log.LogInfo("Partner count: " + partners.Count);
+                foreach (var p in partners)
+                {
+                    Log.LogInfo("partners: " + p.Info.FileParam.fullname);
+                }
+            }
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.SetPartners), new[] { typeof(UnhollowerBaseLib.Il2CppReferenceArray<MotionIK>) })]
+        private static void SetPartnersPost3(MotionIK __instance, UnhollowerBaseLib.Il2CppReferenceArray<MotionIK> partners)
+        {
+            Log.LogInfo("SetPartnersPost3 name: " + __instance.Info.FileParam.fullname);
+        }
+
+        /*
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.BlendAnimLinkFK))]
+        private static void BlendAnimLinkFKPre(MotionIK ik, float blendTime, float startTime)
+        {
+            Log.LogInfo("BlendAnimLinkFKPre name: " + ik.Info.FileParam.fullname);
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.BlendAnimLinkFK))]
+        private static void BlendAnimLinkFKPost(MotionIK ik, float blendTime, float startTime)
+        {
+            Log.LogInfo("BlendAnimLinkFKPost name: " + ik.Info.FileParam.fullname);
+        }
+        */
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.BlendAnimLinkFKNextProc))]
+        private static void BlendAnimLinkFKNextProcPre(MotionIK ik)
+        {
+            Log.LogInfo("BlendAnimLinkFKNextProcPre name: " + ik.Info.FileParam.fullname);
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.BlendAnimLinkFKNextProc))]
+        private static void BlendAnimLinkFKNextProcPost(MotionIK ik)
+        {
+            Log.LogInfo("BlendAnimLinkFKNextProcPost name: " + ik.Info.FileParam.fullname + ", id: " + ik.Controller.GetInstanceID());
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.BlendAnimLinkIK))]
+        private static void BlendAnimLinkIKPre(MotionIK ik, float blendTime, UnhollowerBaseLib.Il2CppReferenceArray<MotionIKData.State> state, float startTime)
+        {
+            Log.LogInfo("BlendAnimLinkIKPre name: " + ik.Info.FileParam.fullname);
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.BlendAnimLinkIK))]
+        private static void BlendAnimLinkIKPost(MotionIK ik, float blendTime, UnhollowerBaseLib.Il2CppReferenceArray<MotionIKData.State> state, float startTime)
+        {
+            Log.LogInfo("BlendAnimLinkIKPost name: " + ik.Info.FileParam.fullname);
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.BlendAnimLinkIKNextProc))]
+        private static void BlendAnimLinkIKNextProcPre(MotionIK ik, UnhollowerBaseLib.Il2CppReferenceArray<MotionIKData.State> state)
+        {
+            Log.LogInfo("BlendAnimLinkIKNextProcPre name: " + ik.Info.FileParam.fullname);
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.BlendAnimLinkIKNextProc))]
+        private static void BlendAnimLinkIKNextProcPost(MotionIK ik, UnhollowerBaseLib.Il2CppReferenceArray<MotionIKData.State> state)
+        {
+            Log.LogInfo("BlendAnimLinkIKNextProcPost name: " + ik.Info.FileParam.fullname);
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.WeightSet))]
+        private static void WeightSetPre(int pattern, float start, float end, float key)
+        {
+            Log.LogInfo("WeightSetPre ");
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.WeightSet))]
+        private static void WeightSetPost(int pattern, float start, float end, float key)
+        {
+            Log.LogInfo("WeightSetPost ");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.CalcBlend))]
+        private static void CalcBlendPre()
+        {
+            Log.LogInfo("CalcBlendPre ");
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIK), nameof(MotionIK.CalcBlend))]
+        private static void CalcBlendPost()
+        {
+            Log.LogInfo("CalcBlendPost ");
+        }
+        /*
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.Copy), new System.Type[] {} )]
+        private static void CopyPre1()
+        {
+            Log.LogInfo("CopyPre1 ");
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.Copy), new System.Type[] { })]
+        private static void CopyPost1()
+        {
+            Log.LogInfo("CalcBlendPost ");
+        }
+        
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.Copy), new []{ typeof(MotionIKData) })]
+        private static void CopyPre2(MotionIKData src)
+        {
+            Log.LogInfo("CopyPre2 ");
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.Copy), new[] { typeof(MotionIKData) })]
+        private static void CopyPost2(MotionIKData src)
+        {
+            Log.LogInfo("CopyPost2 ");
+        }
+        
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.Copy), new[] { typeof(UnhollowerBaseLib.Il2CppReferenceArray<MotionIKData.State>) })]
+        private static void CopyPre3(UnhollowerBaseLib.Il2CppReferenceArray<MotionIKData.State> srcArray)
+        {
+            Log.LogInfo("CopyPre3 ");
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.Copy), new[] { typeof(UnhollowerBaseLib.Il2CppReferenceArray<MotionIKData.State>) })]
+        private static void CopyPost3(UnhollowerBaseLib.Il2CppReferenceArray<MotionIKData.State> srcArray)
+        {
+            Log.LogInfo("CopyPost3 ");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.InitFrame))]
+        private static void InitFramePre(MotionIKData.State state)
+        {
+            Log.LogInfo("InitFramePre ");
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.InitFrame))]
+        private static void InitFramePost(MotionIKData.State state)
+        {
+            Log.LogInfo("InitFramePost ");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.InitShape))]
+        private static void InitShapePre(MotionIKData.Frame frame)
+        {
+            Log.LogInfo("InitShapePre ");
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.InitShape))]
+        private static void InitShapePost(MotionIKData.Frame frame)
+        {
+            Log.LogInfo("InitShapePost ");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.InitState))]
+        private static void MotionIKData_InitStatePre(string stateName)
+        {
+            Log.LogInfo("MotionIKData_InitStatePre ");
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.InitState))]
+        private static void MotionIKData_InitStatePost(string stateName)
+        {
+            Log.LogInfo("MotionIKData_InitStatePost ");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.Read), new[] {typeof(TextAsset)} )]
+        private static void ReadPre1(TextAsset ta)
+        {
+            Log.LogInfo("ReadPre1 ");
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.Read), new[] { typeof(TextAsset) })]
+        private static void ReadPost1(TextAsset ta)
+        {
+            Log.LogInfo("ReadPost1 ");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.Read), new[] { typeof(string) })]
+        private static void ReadPre2(string path)
+        {
+            Log.LogInfo("ReadPre2 ");
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.Read), new[] { typeof(string) })]
+        private static void ReadPost2(string path)
+        {
+            Log.LogInfo("ReadPost2 ");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.Read), new[] { typeof(Il2CppSystem.IO.Stream) })]
+        private static void ReadPre3(Il2CppSystem.IO.Stream stream)
+        {
+            Log.LogInfo("ReadPre3 ");
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.Read), new[] { typeof(Il2CppSystem.IO.Stream) })]
+        private static void ReadPost3(Il2CppSystem.IO.Stream stream)
+        {
+            Log.LogInfo("ReadPost3 ");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.ReadBlend))]
+        private static void ReadBlendPre(Il2CppSystem.IO.BinaryReader r)
+        {
+            Log.LogInfo("ReadBlendPre ");
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.ReadBlend))]
+        private static void ReadBlendPost(Il2CppSystem.IO.BinaryReader r)
+        {
+            Log.LogInfo("ReadBlendPost ");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.ReadBlendFK))]
+        private static void ReadBlendFKPre(Il2CppSystem.IO.BinaryReader r)
+        {
+            Log.LogInfo("ReadBlendFKPre ");
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.ReadBlendFK))]
+        private static void ReadBlendFKPost(Il2CppSystem.IO.BinaryReader r)
+        {
+            Log.LogInfo("ReadBlendFKPost ");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.ReadFK))]
+        private static void ReadFKPre(Il2CppSystem.IO.Stream stream)
+        {
+            Log.LogInfo("ReadFKPre ");
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.ReadFK))]
+        private static void ReadFKPost(Il2CppSystem.IO.Stream stream)
+        {
+            Log.LogInfo("ReadFKPost ");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.ReadNormal))]
+        private static void ReadNormalPre(Il2CppSystem.IO.BinaryReader r)
+        {
+            Log.LogInfo("ReadNormalPre ");
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.ReadNormal))]
+        private static void ReadNormalPost(Il2CppSystem.IO.BinaryReader r)
+        {
+            Log.LogInfo("ReadNormalPost ");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.ReadOut), new[] { typeof(TextAsset) })]
+        private static void ReadOutPre1(TextAsset ta)
+        {
+            Log.LogInfo("ReadOutPre1 ");
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.ReadOut), new[] {typeof(TextAsset) } )]
+        private static void ReadOutPost1(TextAsset ta)
+        {
+            Log.LogInfo("ReadOutPost1 ");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.ReadOut), new[] { typeof(Il2CppSystem.IO.Stream) })]
+        private static void ReadOutPre2(Il2CppSystem.IO.Stream stream)
+        {
+            Log.LogInfo("ReadOutPre2 ");
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.ReadOut), new[] { typeof(Il2CppSystem.IO.Stream) })]
+        private static void ReadOutPost2(Il2CppSystem.IO.Stream stream)
+        {
+            Log.LogInfo("ReadOutPost2 ");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.ReadOutFK), new[] { typeof(TextAsset) })]
+        private static void ReadOutFKPre1(TextAsset ta)
+        {
+            Log.LogInfo("ReadOutFKPre1 ");
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.ReadOutFK), new[] { typeof(TextAsset) })]
+        private static void ReadOutFKPost1(TextAsset ta)
+        {
+            Log.LogInfo("ReadOutFKPost1 ");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.ReadOutFK), new[] { typeof(Il2CppSystem.IO.Stream) })]
+        private static void ReadOutFKPre2(Il2CppSystem.IO.Stream stream)
+        {
+            Log.LogInfo("ReadOutFKPre2 ");
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.ReadOutFK), new[] { typeof(Il2CppSystem.IO.Stream) })]
+        private static void ReadOutFKPost2(Il2CppSystem.IO.Stream stream)
+        {
+            Log.LogInfo("ReadOutFKPost2 ");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.Release))]
+        private static void ReleasePre()
+        {
+            Log.LogInfo("ReleasePre ");
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.Release))]
+        private static void ReleasePost()
+        {
+            Log.LogInfo("ReleasePost ");
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.SetStates))]
+        private static void SetStatesPre(UnhollowerBaseLib.Il2CppReferenceArray<MotionIKData.State> states)
+        {
+            Log.LogInfo("SetStatesPre ");
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MotionIKData), nameof(MotionIKData.SetStates))]
+        private static void SetStatesPost(UnhollowerBaseLib.Il2CppReferenceArray<MotionIKData.State> states)
+        {
+            Log.LogInfo("SetStatesPost ");
+        }
+        */
+
+
+
+
+
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(AnimationController), nameof(AnimationController.MapIKCalc))]
+        private static bool MapIKCalcPre(AnimationController __instance, int stateNameHash, float blendTime)
+        {
+            Log.LogInfo("MapIKCalcPre id: " + __instance.GetInstanceID() + ", stateNameHash: " + stateNameHash + ", blendTime: " + blendTime);
+            /*
+            if (StateManager.Instance.animCtrlIDs.Contains(__instance.GetInstanceID()))
+            {
+                blendTime = -1;
+            }*/
+            return true;
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(AnimationController), nameof(AnimationController.MapIKCalc))]
+        private static void MapIKCalcPost(AnimationController __instance, int stateNameHash, float blendTime)
+        {
+            Log.LogInfo("MapIKCalcPost id: " + __instance.GetInstanceID() + ", stateNameHash: " + stateNameHash + ", blendTime: " + blendTime);
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(AnimationController), nameof(AnimationController.MapIKCalc))]
+        private static void MapIKInitPre(AnimationController __instance)
+        {
+            Log.LogInfo("MapIKInitPre id: " + __instance.GetInstanceID());
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(AnimationController), nameof(AnimationController.MapIKCalc))]
+        private static void MapIKInitPost(AnimationController __instance)
+        {
+            Log.LogInfo("MapIKInitPost id: " + __instance.GetInstanceID());
+        }
+
+
+
+
+        /*
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(AssetBundle), nameof(AssetBundle.LoadAsset), new[] {typeof(string) , typeof(Il2CppSystem.Type) } )]
+        private static void LoadAsset1(AssetBundle __instance, string name, Il2CppSystem.Type type)
+        {
+            Log.LogInfo("LoadAsset1 name:" + name + ", type: " + type.FullName + ", assetBundle: " + __instance.name);
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(AssetBundle), nameof(AssetBundle.LoadAsset), new[] { typeof(string) })]
+        private static void LoadAsset2(string name)
+        {
+            Log.LogInfo("LoadAsset2 name:" + name);
         }
         */
     }
 }
-;

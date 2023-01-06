@@ -86,5 +86,31 @@ namespace HSceneCrowdReaction
             Male1,
             Male2
         }
+
+        internal class PersonalityType
+        {
+            public const int OfficeLadyTypeA = 0;
+            public const int OfficeLadyTypeB = 1;
+            public const int NurseTypeA = 2;
+            public const int NurseTypeB = 3;
+
+            public const int StudentTypeA = 4;
+            public const int StudentTypeB = 5;
+            public const int IdolTypeA = 6;
+            public const int IdolTypeB = 7;
+            public const int DealerTypeA = 8;
+            public const int DealerTypeB = 9;
+            public const int NeetTypeA = 10;
+            public const int NeetTypeB = 11;
+        }
+
+        internal class HAnimationClipNameKind
+        {
+            //TODO: need double check
+            internal const char Normal = 'W';
+            internal const char Rapid = 'S';
+            internal const char NearOrgasm = 'O';
+        }
+
     }
 }

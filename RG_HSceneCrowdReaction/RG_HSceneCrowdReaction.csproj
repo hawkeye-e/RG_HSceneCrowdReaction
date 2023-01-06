@@ -39,6 +39,10 @@
       <HintPath>ref\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Assembly-CSharp-firstpass">
+      <HintPath>ref\Assembly-CSharp-firstpass.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="BepInEx.Core">
       <HintPath>ref\BepInEx.Core.dll</HintPath>
       <Private>False</Private>
@@ -108,19 +112,38 @@
   <ItemGroup>
     <Compile Include="Config.cs" />
     <Compile Include="Constant.cs" />
-    <Compile Include="CustomAnimation.cs" />
+    <Compile Include="InfoList\CustomAnimation.cs" />
     <Compile Include="CustomTimer.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Debug.cs" />
-    <Compile Include="HAnimation.cs" />
+    <Compile Include="InfoList\HAnimation.cs" />
     <Compile Include="HSceneCrowdReaction.cs" />
     <Compile Include="HSceneScreen\HSceneScreen.Hook.cs" />
-    <Compile Include="HSceneScreen\HSceneScreen.Patches.cs" />
+    <Compile Include="HSceneScreen\HSceneScreen.Patches.HAnim.cs" />
+    <Compile Include="HSceneScreen\HSceneScreen.Patches.General.cs" />
+    <Compile Include="InfoList\HVoice.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Resources\ListResources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>ListResources.resx</DependentUpon>
+    </Compile>
     <Compile Include="Settings.cs" />
     <Compile Include="StateManager.cs" />
     <Compile Include="Util.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\ListResources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <SubType>Designer</SubType>
+      <CustomToolNamespace>Resources</CustomToolNamespace>
+      <LastGenOutput>ListResources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Raw\HAnimation.csv" />
+    <None Include="Raw\HVoice.csv" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
