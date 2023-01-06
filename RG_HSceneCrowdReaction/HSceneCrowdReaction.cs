@@ -6,6 +6,7 @@ using BepInEx.IL2CPP;
 
 namespace HSceneCrowdReaction
 {
+    [BepInProcess("RoomGirl")]
     [BepInPlugin(GUID, PluginName, Version)]
     public class HSceneCrowdReactionPlugin : BasePlugin
     {
