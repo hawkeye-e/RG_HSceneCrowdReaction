@@ -1,6 +1,6 @@
 ﻿using RG.Scripts;
 
-namespace HSceneCrowdReaction
+namespace HSceneCrowdReaction.InfoList
 {
     internal class CustomAnimation
     {

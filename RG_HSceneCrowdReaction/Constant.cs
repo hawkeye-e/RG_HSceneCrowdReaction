@@ -4,6 +4,12 @@ namespace HSceneCrowdReaction
 {
     internal class Constant
     {
+        internal const int TotalPersonalityCount = 12;
+        internal const string AnimatorParamHeight = "height";
+        internal const string AnimatorParamSpeed = "speed";
+        internal const string AnimatorParamMotion = "motion";
+        internal const string AnimatorParamBreast = "breast";
+
         internal class AnimType
         {
             internal const int NotDetermined = -1;
@@ -60,5 +66,56 @@ namespace HSceneCrowdReaction
             internal const int Excited = 6;
             internal const int Hurray = 7;
         }
+
+        internal class HeightKind
+        {
+            internal const string Small = "S_";
+            internal const string Medium = "M_";
+            internal const string Large = "L_";
+        }
+
+        internal class HAnimSpeed
+        {
+            internal const float Max = 2;
+            internal const float Min = 1;
+        }
+
+        internal class HAnimClipKeyword
+        {
+            internal const string Loop = "Loop";
+        }
+
+        internal enum HCharacterType
+        {
+            Female1 = 0,
+            Female2 = 1,
+            Male1 = 2,
+            Male2 = 3
+        }
+
+        internal class PersonalityType
+        {
+            public const int OfficeLadyTypeA = 0;
+            public const int OfficeLadyTypeB = 1;
+            public const int NurseTypeA = 2;
+            public const int NurseTypeB = 3;
+
+            public const int StudentTypeA = 4;
+            public const int StudentTypeB = 5;
+            public const int IdolTypeA = 6;
+            public const int IdolTypeB = 7;
+            public const int DealerTypeA = 8;
+            public const int DealerTypeB = 9;
+            public const int NeetTypeA = 10;
+            public const int NeetTypeB = 11;
+        }
+
+        internal class HAnimationClipNameKind
+        {
+            internal const char Normal = 'W';
+            internal const char Rapid = 'S';
+            internal const char NearOrgasm = 'O';
+        }
+
     }
 }

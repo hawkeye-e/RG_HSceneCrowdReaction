@@ -1,6 +1,9 @@
 ﻿using BepInEx.Logging;
 using UnityEngine;
 using RG.Scene.Action.Core;
+using UnhollowerRuntimeLib;
+using System.IO;
+using HSceneCrowdReaction.InfoList;
 
 namespace HSceneCrowdReaction
 {
@@ -30,7 +33,7 @@ namespace HSceneCrowdReaction
         {
             int result = GetCurrentAnimationTypeCommon(sex, animID);
 
-            if(result == Constant.AnimType.NotDetermined)
+            if (result == Constant.AnimType.NotDetermined)
             {
                 switch (MapID)
                 {
@@ -61,8 +64,8 @@ namespace HSceneCrowdReaction
                         return GetCurrentAnimationTypeHomePrivate(sex, animID);
                 }
             }
-            
-            
+
+
             return result;
         }
 
@@ -264,11 +267,11 @@ namespace HSceneCrowdReaction
 
         internal static int GetCurrentAnimationTypeHomeWorkplace(byte sex, int animID)
         {
-            
+
             if (sex == 1)
             {
                 //No special action for female ?
-                
+
             }
             else
             {
@@ -319,5 +322,41 @@ namespace HSceneCrowdReaction
             }
             return Constant.AnimType.NotDetermined;
         }
+
+        internal static GameObject InstantiateFromBundle(AssetBundle bundle, string assetName)
+        {
+            var asset = bundle.LoadAsset(assetName, Il2CppType.From(typeof(GameObject)));
+            var obj = Object.Instantiate(asset);
+            foreach (var rootGameObject in UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects())
+            {
+                if (rootGameObject.GetInstanceID() == obj.GetInstanceID())
+                {
+                    rootGameObject.name = assetName;
+                    return rootGameObject;
+                }
+            }
+            throw new FileLoadException("Could not instantiate asset " + assetName);
+        }
+
+        internal static string GetAssetBundleBasePath()
+        {
+            //TODO: is there any place that storing the abdata path directly?
+            return Application.dataPath.Replace("RoomGirl_Data", "abdata") + "/";
+        }
+
+        internal static bool CheckHasEverSex(Actor actor1, Actor actor2)
+        {
+            foreach (var dict in actor1.Status.RelationshipParameter)
+            {
+                if (dict.ContainsKey(actor2.CharaFileName))
+                {
+                    return dict[actor2.CharaFileName].HasEverSex;
+                }
+            }
+
+            return false;
+        }
+
+        
     }
 }
