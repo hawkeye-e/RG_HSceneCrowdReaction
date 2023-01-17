@@ -1,13 +1,13 @@
 ﻿using BepInEx.Logging;
 using HarmonyLib;
-using RG.Scene;
-using UnityEngine;
-using RG.Scene.Action.Core;
-using System.Collections.Generic;
-using System.Linq;
-using System.Timers;
 using HSceneCrowdReaction.InfoList;
+using RG.Scene;
+using RG.Scene.Action.Core;
 using System;
+using System.Collections.Generic;
+using System.Timers;
+using UnhollowerBaseLib;
+using UnityEngine;
 
 namespace HSceneCrowdReaction.HSceneScreen
 {
@@ -24,262 +24,79 @@ namespace HSceneCrowdReaction.HSceneScreen
 
                 if (actor.Sex == 0 && actor.Partner.Sex == 0)       //block if both male
                     return false;
-                /*
+
                 if (!Util.CheckHasEverSex(actor, actor.Partner))    //block if the pair does not have sex before
                     return false;
-                */
+
                 return true;
             }
 
-
             //Only handle 2 person H at this time
-            internal static void StartHAnimation(Actor actor)
+            internal static void StartHAnimation(Actor actor, bool requireInit = true)
             {
                 Actor partnerActor = actor.Partner;
-                Log.LogInfo("pt1");
-                //actor.Chara.LoadHitObject();
-                //partnerActor.Chara.LoadHitObject();
-                Log.LogInfo("pt2");
-                //Get the HPoint
-                HPoint hPoint = GetHPoint(actor);
-                Log.LogInfo("pt3");
-                Log.LogInfo("actor: " + actor.Status.FullName + " and " + partnerActor.Status.FullName + ", hPoint: " + hPoint.name);
+                Constant.HCharacterType actorType, partnerType;
+                GetHCharacterType(actor, partnerActor, out actorType, out partnerType);
+                Actor[] arrActors = ConvertActorsToArray(actor, partnerActor);
+                var situationType = GetSituationType(actor, partnerActor);
 
-                //Get the chosen animation
-                //TODO: uncomment this
-                ////var animInfo = GetHAnimation(hPoint);
+                HPoint hPoint;
 
-                //TODO: for test only!!
-                //var animInfo = HPoint._animationLists[0][0];
-                var animInfo = Manager.HSceneManager.HResourceTables.LstAnimInfo[0][3];
-
-                //Setup HPoint
-                InitHPoint(hPoint, animInfo);
-                Log.LogInfo("pt4");
-                //Assign the actor to the HPoint
-                SetActorToHPoint(actor, hPoint);
-                SetActorToHPoint(partnerActor, hPoint);
-                Log.LogInfo("Name: " + actor.Status.FullName);
-
-                Log.LogInfo("partnerActor: " + actor.Status.FullName);
-
-                Log.LogInfo("pt5");
-                //Set the animation of the actor
-
-                /*
-                
-                if (actor.Sex == 0)
+                if (requireInit)
                 {
-                    actorType = Constant.HCharacterType.Male1;
-                    partnerType = Constant.HCharacterType.Female1;
-                }
-                else if (partnerActor.Sex == 0)
-                {
-                    actorType = Constant.HCharacterType.Female1;
-                    partnerType = Constant.HCharacterType.Male1;
+                    InitBodyBone(actor);
+                    InitBodyBone(partnerActor);
+
+                    InitHAnimationCtrl(actor, partnerActor, actorType, partnerType);
+                    InitHAnimationCtrl(partnerActor, actor, partnerType, actorType);
+                    InitHLayerCtrl(actor, partnerActor);
+                    InitHItemCtrl(arrActors);
+
+                    //Get the HPoint
+                    hPoint = GetHPoint(actor, situationType);
                 }
                 else
                 {
-                    actorType = Constant.HCharacterType.Female1;
-                    partnerType = Constant.HCharacterType.Female2;
-                }*/
-                Constant.HCharacterType actorType, partnerType;
-                GetHCharacterType(actor, partnerActor, out actorType, out partnerType);
-                Log.LogInfo("actor: " + actor.Status.FullName + " and " + partnerActor.Status.FullName + ", anim: " + animInfo.NameAnimation);
+                    hPoint = StateManager.Instance.CharacterHPointDictionary[actor.Chara.GetInstanceID()];
+                }
+
+
+                //Get the chosen animation
+                var animInfo = GetHAnimation(hPoint, situationType);
+
+                //Setup HPoint
+                InitHPoint(hPoint, animInfo, arrActors);
+
+                //Assign the actor to the HPoint
+                SetActorToHPoint(actor, hPoint, animInfo, actorType);
+                SetActorToHPoint(partnerActor, hPoint, animInfo, partnerType);
+
+                //Set the animation of the actors
                 SetActorAnimator(actor, animInfo, actorType);
                 SetActorAnimator(partnerActor, animInfo, partnerType);
-                Log.LogInfo("pt6");
 
-
-                var situationType = GetSituationType(actor, partnerActor);
-                AddActorHAnimationData(actor, animInfo, situationType);
-                AddActorHAnimationData(actor.Partner, animInfo, situationType);
-
-                //StateManager.Instance.ActorHAnimationList.Add(actor.GetInstanceID(), animInfo);
-                //StateManager.Instance.ActorHAnimationList.Add(actor.Partner.GetInstanceID(), animInfo);
-
-
+                //Add animation data to StateManager                
+                AddActorHAnimationData(actor, animInfo, situationType, actorType);
+                AddActorHAnimationData(actor.Partner, animInfo, situationType, partnerType);
 
                 //Play the animation
                 PlayAnimationForActors(actor, partnerActor);
-                /*
-                 * string clipName = GetRandomAnimationClipName(actor);
-                Log.LogInfo("ClipName: " + clipName);
-                SetCharacterPlayAnimation(actor.Chara, clipName);
-                SetCharacterPlayAnimation(partnerActor.Chara, clipName);
-                */
 
-                Log.LogInfo("pt7");
                 //Update the clothes state of the actor
-
                 SetActorClothesState(actor.Chara, animInfo, actorType);
                 SetActorClothesState(partnerActor.Chara, animInfo, partnerType);
-                Log.LogInfo("pt8");
-                //Show the penis if necessary
-                if (animInfo.MaleSon == 1)
-                {
-                    ForcePenisVisible(actor.Chara);
-                    ForcePenisVisible(partnerActor.Chara);
-                }
-                Log.LogInfo("pt9");
 
-
-                //Add only 1 actor to the next update list
-                //TODO: uncomment this
+                //Set timer for periodic update. Add only 1 actor to the next update list
                 AddOrUpdateHAnimNextUpdateTime(actor);
 
-
-
-
-
-
-                //Set timer to update the clip and speed at random interval
-
-                /*
-                System.Random rnd = new System.Random();
-                int rndResult = rnd.Next(Settings.HActionRandomMilliSecond);
-                long nextUpdateTime = DateTime.Now.ToFileTimeUtc() + (rndResult + Settings.HActionMinMilliSecond) * 100;
-                
-
-                StateManager.Instance.ActorHAnimNextUpdateTimeDictionary.Add(actor.GetInstanceID(), nextUpdateTime);
-                */
-
-                /*
-                CustomTimer timer = new CustomTimer(actor, partnerActor, Settings.HActionMinMilliSecond + rndResult);
-                timer.Elapsed += OnHActionUpdateEvent;
-                timer.Enabled = true;
-                timer.AutoReset = true;
-                StateManager.Instance.HActionUpdateTimerList.Add(timer);
-                */
-                Log.LogInfo("pt10");
-            }
-
-            private static void motionik(Actor actor1, Actor actor2, string clipname)
-            {
-                Actor __instance = actor1;
-                if (actor2.Sex == 1) __instance = actor2;
-
-                string path = Application.dataPath.Replace("RoomGirl_Data", "abdata") + Manager.HSceneManager.Instance.StrAssetIKListFolder + Settings.HMotionIKAssetBundleFileName;
-                AssetBundle ab = AssetBundle.LoadFromFile(path);
-                if (ab != null)
-                {
-
-
-                    var assetF = ab.LoadAsset("rga_f_03", UnhollowerRuntimeLib.Il2CppType.From(typeof(TextAsset))).Cast<TextAsset>();
-                    var assetM = ab.LoadAsset("rga_m_03", UnhollowerRuntimeLib.Il2CppType.From(typeof(TextAsset))).Cast<TextAsset>();
-
-                    MotionIK motionIKFemale = new MotionIK(__instance.Chara);
-                    MotionIK motionIKMale = new MotionIK(__instance.Partner.Chara);
-                    //MotionIK motionIKFemale = __instance.Animation.MapIK;
-                    //MotionIK motionIKMale = __instance.Animation.MapIK;
-
-                    motionIKFemale.IKBaseOverride(false);
-                    motionIKMale.IKBaseOverride(false);
-
-                    UnhollowerBaseLib.Il2CppReferenceArray<MotionIK> dummy = new UnhollowerBaseLib.Il2CppReferenceArray<MotionIK>(0);
-                    motionIKFemale.SetPartners(dummy);
-                    motionIKMale.SetPartners(dummy);
-
-                    motionIKFemale.InitFrameCalc(true);
-                    motionIKMale.InitFrameCalc(true);
-
-                    motionIKFemale.Reset();
-                    motionIKMale.Reset();
-                    motionIKFemale.Release();
-                    motionIKMale.Release();
-
-                    UnhollowerBaseLib.Il2CppReferenceArray<MotionIK> arr = new UnhollowerBaseLib.Il2CppReferenceArray<MotionIK>(2);
-                    arr[0] = motionIKMale;
-                    arr[1] = motionIKFemale;
-
-                    motionIKFemale.SetPartners(arr);
-                    motionIKMale.SetPartners(arr);
-
-                    motionIKFemale.IKBaseOverride(false);
-                    motionIKMale.IKBaseOverride(false);
-
-                    motionIKFemale.Reset();
-                    motionIKMale.Reset();
-                    motionIKFemale.Release();
-                    motionIKMale.Release();
-
-                    motionIKFemale.LoadData(assetF);
-                    motionIKMale.LoadData(assetM);
-
-                    //motionIKMale.SetItems();
-                    //motionIKFemale.SetItems();
-                    motionIKFemale.Reset();
-                    motionIKMale.Reset();
-
-                    Log.LogInfo("Animation id: " + __instance.Partner.Animation.GetInstanceID());
-
-                    Log.LogInfo("_animation id: " + __instance.Partner._animation.GetInstanceID());
-
-                    motionIKMale.InfoSex = 0;
-                    motionIKFemale.InfoSex = 1;
-
-                    motionIKFemale.Calc(clipname.Substring(0, 5));
-                    motionIKMale.Calc(clipname.Substring(0, 5));
-
-                    //__instance.Chara.transform.position = __instance.Partner.Chara.transform.position + new Vector3(3, 3, 3);
-
-                    Log.LogInfo("motionIKMale IK ID: " + motionIKMale.IK.GetInstanceID());
-                    Log.LogInfo("__instance.Partner.Animation.IK ID: " + __instance.Partner.Animation.IK.GetInstanceID());
-                    Log.LogInfo("clip name: " + clipname);
-
-                    if (!StateManager.Instance.animCtrlIDs.Contains(__instance.Partner.Animation.GetInstanceID()))
-                        StateManager.Instance.animCtrlIDs.Add(__instance.Partner.Animation.GetInstanceID());
-                    /*
-                    foreach(var s in motionIKFemale.StateNames)
-                    {
-                        Log.LogInfo("StateNames: " + s);
-                    }
-                    Log.LogInfo("====");
-                    foreach (var s in motionIKMale.StateNames)
-                    {
-                        Log.LogInfo("StateNames: " + s);
-                    }
-                    Log.LogInfo("====");
-
-                    foreach (var s in motionIKFemale._animatorNames)
-                    {
-                        Log.LogInfo("_animatorNames: " + s);
-                    }
-                    Log.LogInfo("====");
-                    foreach (var s in motionIKMale._animatorNames)
-                    {
-                        Log.LogInfo("_animatorNames: " + s);
-                    }
-                    Log.LogInfo("====");
-
-                    foreach (var s in motionIKFemale.Data.states)
-                    {
-                        Log.LogInfo("Data.states: name: " + s.name + ", nameid: " + s.nameID);
-                    }
-                    Log.LogInfo("====");
-                    foreach (var s in motionIKMale.Data.states)
-                    {
-                        Log.LogInfo("Data.states: name: " + s.name + ", nameid: " + s.nameID);
-                    }
-                    Log.LogInfo("====");
-                    */
-
-
-                    //Debug.PrintDetail(__instance.Animation.StateInfo);
-                    //Debug.PrintDetail(__instance.Partner.Animation);
-
-                }
-                else
-                {
-                    Log.LogInfo("ab null!!!");
-                }
-                ab.Unload(false);
             }
 
             internal static void CheckUpdateHAnim(Chara.ChaControl character)
             {
                 if (ActionScene.Instance != null && StateManager.Instance.ActorHAnimNextUpdateTimeDictionary != null)
                 {
+                    if (!StateManager.Instance.ActorHAnimNextUpdateProcessing.ContainsKey(character.GetInstanceID()))
+                        return;
                     if (StateManager.Instance.ActorHAnimNextUpdateProcessing[character.GetInstanceID()])
                         return;
 
@@ -301,51 +118,663 @@ namespace HSceneCrowdReaction.HSceneScreen
                         {
                             if ((DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond) > StateManager.Instance.ActorHAnimNextUpdateTimeDictionary[actor.GetInstanceID()])
                             {
-                                Log.LogInfo("DateTime.Now: " + (DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond) + ", StateManager: " + StateManager.Instance.ActorHAnimNextUpdateTimeDictionary[actor.GetInstanceID()]);
-
                                 AddOrUpdateHAnimNextUpdateTime(actor);
-                                PlayAnimationForActors(actor, actor.Partner);
+                                UpdateHAnimation(actor, actor.Partner);
                             }
                         }
                     }
 
-
                     StateManager.Instance.ActorHAnimNextUpdateProcessing[character.GetInstanceID()] = false;
                 }
+            }
 
+            internal static void UpdateHAnimation(Actor actor1, Actor actor2)
+            {
+                System.Random rnd = new System.Random();
+                int rndSexPositionResult = rnd.Next(StateManager.Instance.ActorHAnimationList[actor1.GetInstanceID()].changePositionFactor);
+                if (rndSexPositionResult > Settings.HChangePositionThreshold)
+                {
+                    StartHAnimation(actor1, false);
+                }
+                else
+                {
+                    PlayAnimationForActors(actor1, actor2);
+                }
+            }
+
+            internal static void RecoverActorBody(ActionScene actionScene)
+            {
+                if (actionScene != null)
+                    foreach (var actor in actionScene._actors)
+                    {
+                        actor.Chara.VisibleSon = false;
+                        actor.Chara.confSon = false;
+                    }
 
             }
 
+            internal static void RecoverAllClothesState(ActionScene actionScene)
+            {
+                if (actionScene != null)
+                    foreach (var actor in actionScene._actors)
+                        RecoverClothesState(actor.Chara);
+            }
 
-            private static void AddActorHAnimationData(Actor actor, HScene.AnimationListInfo animInfo, HAnimation.SituationType situationType)
+            internal static void RecoverClothesState(Chara.ChaControl character)
+            {
+                if (StateManager.Instance.ActorClothesState.ContainsKey(character.GetInstanceID()))
+                {
+                    byte[] originalClothesState = StateManager.Instance.ActorClothesState[character.GetInstanceID()];
+                    for (int i = 0; i < Math.Min(character.FileStatus.clothesState.Length, 8); i++)
+                    {
+                        character.FileStatus.clothesState[i] = originalClothesState[i];
+                    }
+                }
+            }
+
+            internal static void RemoveAllClothesState(HScene hScene)
+            {
+                if (ActionScene.Instance != null && !StateManager.Instance.HSceneSetup)
+                {
+                    var actorList = General.GetActorsNotInvolvedInH(ActionScene.Instance, hScene);
+
+                    foreach (var actor in actorList)
+                    {
+                        byte[] clothesState = new byte[8];
+                        for (int i = 0; i < Math.Min(actor.Chara.FileStatus.clothesState.Length, 8); i++)
+                        {
+                            clothesState[i] = actor.Chara.FileStatus.clothesState[i];
+                            actor.Chara.FileStatus.clothesState[i] = 2;
+                        }
+
+                        StateManager.Instance.ActorClothesState.Add(actor.Chara.GetInstanceID(), clothesState);
+
+                    }
+                }
+            }
+
+            internal static void ForceBlowJob(Chara.ChaControl character)
+            {
+                if (StateManager.Instance.ForceBlowJobTarget != null)
+                {
+                    if (StateManager.Instance.ForceBlowJobTarget.ContainsKey(character.GetInstanceID()))
+                    {
+                        var trfGlans = character.CmpBoneBody.targetEtc.trfRoot.Find(Settings.MaleGlansPath);
+                        trfGlans.transform.position = StateManager.Instance.ForceBlowJobTarget[character.GetInstanceID()].position;
+                    }
+                }
+            }
+
+            //This function is following how the functions in the original code is called
+            //This is supposed to be fixing the multiple layer animation problem but currently it is not working properly
+            internal static void HandleHAnimationCtrlsUpdate(Chara.ChaControl character)
+            {
+                if (ActionScene.Instance != null && StateManager.Instance.CurrentHSceneInstance != null)
+                {
+
+                    if (StateManager.Instance.ActorHAnimationList != null)
+                    {
+
+                        Actor actor = Patches.General.GetActorByChaControlID(character.GetInstanceID());
+                        if (actor == null) return;
+
+                        if (StateManager.Instance.ActorHAnimationList.ContainsKey(actor.GetInstanceID()))
+                        {
+                            var animInfo = StateManager.Instance.ActorHAnimationList[actor.GetInstanceID()];
+
+                            for (int i = 0; i < character.CmpBoneBody.dynamicBonesBustAndHip.Count; i++)
+                            {
+                                character.CmpBoneBody.EnableDynamicBonesBustAndHip(true, i);
+                            }
+
+
+                            if (StateManager.Instance.CharacterHLayerCtrlDictionary != null)
+                            {
+                                if (StateManager.Instance.CharacterHLayerCtrlDictionary.ContainsKey(character.GetInstanceID()))
+                                {
+                                    var layerCtrl = StateManager.Instance.CharacterHLayerCtrlDictionary[character.GetInstanceID()];
+                                    if (character.Sex == 1)
+                                        layerCtrl.setLayer(layerCtrl.chaFemales, 1);
+                                    else
+                                        layerCtrl.setLayer(layerCtrl.chaMales, 0);
+                                }
+                            }
+
+
+                            var extraLayer = GetExtraLayerID(character, animInfo.characterType, animInfo.clipType);
+                            if (extraLayer != 0)
+                            {
+                                for (int i = 1; i <= 8; i++)
+                                {
+                                    if (extraLayer != i)
+                                        character.SetLayerWeight(0, i);
+                                    else
+                                        character.SetLayerWeight(1, i);
+                                }
+                                character.PlaySync(character.GetAnimatorStateInfo(0), extraLayer);
+                            }
+
+                            if (StateManager.Instance.CharacterCollisionCtrlDictionary != null)
+                            {
+                                if (StateManager.Instance.CharacterCollisionCtrlDictionary.ContainsKey(character.GetInstanceID()))
+                                    StateManager.Instance.CharacterCollisionCtrlDictionary[character.GetInstanceID()].Proc(character.GetAnimatorStateInfo(0));
+                            }
+
+                            character.SetAnimatorParamFloat(Constant.AnimatorParamHeight, animInfo.height);
+                            character.SetAnimatorParamFloat(Constant.AnimatorParamSpeed, animInfo.speed);
+                            character.SetAnimatorParamFloat(Constant.AnimatorParamMotion, animInfo.motion);
+                            character.SetAnimatorParamFloat(Constant.AnimatorParamBreast, animInfo.breast);
+                            if (StateManager.Instance.CharacterDynamicBoneCtrlDictionary != null)
+                            {
+                                if (StateManager.Instance.CharacterDynamicBoneCtrlDictionary.ContainsKey(character.GetInstanceID()))
+                                    StateManager.Instance.CharacterDynamicBoneCtrlDictionary[character.GetInstanceID()].Proc();
+                            }
+                        }
+
+
+                    }
+
+                }
+            }
+
+            internal static int GetExtraLayerID(Chara.ChaControl character, Constant.HCharacterType characterType, string clipType)
+            {
+                if (StateManager.Instance.CharacterHLayerCtrlDictionary != null)
+                {
+                    if (StateManager.Instance.CharacterHLayerCtrlDictionary.ContainsKey(character.GetInstanceID()))
+                    {
+                        int index = (characterType == Constant.HCharacterType.Female1 || characterType == Constant.HCharacterType.Male1) ? 0 : 1;
+
+                        var layerCtrl = StateManager.Instance.CharacterHLayerCtrlDictionary[character.GetInstanceID()];
+
+                        if (layerCtrl.LayerInfos.ContainsKey(character.Sex))
+                            if (layerCtrl.LayerInfos[character.Sex][index].ContainsKey(clipType))
+                                return layerCtrl.LayerInfos[character.Sex][index][clipType].LayerID;
+                    }
+                }
+
+                return 0;
+            }
+
+
+
+            private static void InitHAnimationCtrl(Actor actor, Actor partnerActor, Constant.HCharacterType actorType, Constant.HCharacterType partnerType)
+            {
+                Actor femaleActor = actor;
+                if (actor.Sex == 0)
+                    femaleActor = partnerActor;
+                
+                CollisionCtrl collisionCtrl = new CollisionCtrl();
+                string hitHeadPath = string.Format(Settings.FemaleHitHeadPathFormat, femaleActor.Chara.FileFace.headId);
+
+                //Based on the head object it seems the path name may changed with different character customization. To play safe locate the object by checking the format of the name
+                var t = femaleActor.Chara.transform.Find(Settings.FemaleHitBodyTopPath);
+                
+                GameObject objFemaleHitBody = null;
+                for(int i=0; i< t.childCount; i++)
+                {
+                    var trfChild = t.GetChild(i);
+                    if (trfChild.name.StartsWith(Settings.FemaleHitBodyPathSearchStart) && trfChild.name.EndsWith(Settings.FemaleHitBodyPathSearchEnd))
+                    {
+                        objFemaleHitBody = trfChild.gameObject;
+                        break;
+                    }
+                }
+                
+                collisionCtrl.Init(femaleActor.Chara, femaleActor.Chara.transform.Find(hitHeadPath).gameObject, objFemaleHitBody);
+                
+                actor.Chara.ReSetupDynamicBone();
+                
+                HitObjectCtrl hitObjectCtrl = new HitObjectCtrl();
+                hitObjectCtrl.HitObjInit(actor.Sex, actor.Chara.ObjBodyBone, actor.Chara);
+                
+                hitObjectCtrl.SetActiveObject(false);
+                
+                var situationType = GetSituationType(actor, partnerActor);
+
+                YureCtrl yureCtrl = new YureCtrl();
+                yureCtrl.Init();
+                
+                yureCtrl.sex = actor.Sex;
+                if (situationType == HAnimation.SituationType.MF)
+                    yureCtrl.numID = 0;
+                else
+                    yureCtrl.numID = (int)actorType;
+                yureCtrl.SetChaControl(actor.Chara);
+
+
+                if (actor.Sex == 1)
+                {
+                    DynamicBoneReferenceCtrl boneCtrl = new DynamicBoneReferenceCtrl();
+                    boneCtrl.Init(actor.Chara);
+                    StateManager.Instance.CharacterDynamicBoneCtrlDictionary.Add(actor.Chara.GetInstanceID(), boneCtrl);
+                }
+                
+                StateManager.Instance.CharacterCollisionCtrlDictionary.Add(actor.Chara.GetInstanceID(), collisionCtrl);
+                StateManager.Instance.CharacterHitObjectCtrlDictionary.Add(actor.Chara.GetInstanceID(), hitObjectCtrl);
+                StateManager.Instance.CharacterYureCtrlDictionary.Add(actor.Chara.GetInstanceID(), yureCtrl);
+                
+            }
+
+            private static void InitHItemCtrl(Actor[] actor)
+            {
+                HItemCtrl itemCtrl = new HItemCtrl();
+                itemCtrl.HItemInit(Manager.HSceneManager.Instance.transform.Find(Settings.HItemPath));
+
+                StateManager.Instance.CharacterHItemCtrlDictionary.Add(actor[2].Chara.GetInstanceID(), itemCtrl);
+            }
+
+            private static void InitHLayerCtrl(Actor actor, Actor partnerActor)
+            {
+                Constant.HCharacterType actorType, partnerType;
+                GetHCharacterType(actor, partnerActor, out actorType, out partnerType);
+
+                Il2CppReferenceArray<Chara.ChaControl> maleList = new Il2CppReferenceArray<Chara.ChaControl>(2);
+                Il2CppReferenceArray<Chara.ChaControl> femaleList = new Il2CppReferenceArray<Chara.ChaControl>(2);
+                AddCharacterToArrayListByType(actor.Chara, maleList, femaleList, actorType);
+                AddCharacterToArrayListByType(partnerActor.Chara, maleList, femaleList, partnerType);
+
+                HLayerCtrl layerCtrl = new HLayerCtrl();
+                layerCtrl.Init(femaleList, maleList);
+                layerCtrl.ctrlFlag = new HSceneFlagCtrl();
+                layerCtrl.ctrlFlag.Motions = new Il2CppStructArray<float>(2);
+
+                StateManager.Instance.CharacterHLayerCtrlDictionary.Add(actor.Chara.GetInstanceID(), layerCtrl);
+                StateManager.Instance.CharacterHLayerCtrlDictionary.Add(partnerActor.Chara.GetInstanceID(), layerCtrl);
+            }
+
+            private static void AddCharacterToArrayListByType(Chara.ChaControl character, Il2CppReferenceArray<Chara.ChaControl> maleList, Il2CppReferenceArray<Chara.ChaControl> femaleList, Constant.HCharacterType characterType)
+            {
+                if (characterType == Constant.HCharacterType.Female1)
+                    femaleList[0] = character;
+                else if (characterType == Constant.HCharacterType.Female2)
+                    femaleList[1] = character;
+                else if (characterType == Constant.HCharacterType.Male1)
+                    maleList[0] = character;
+                else if (characterType == Constant.HCharacterType.Male2)
+                    maleList[1] = character;
+            }
+
+            private static void InitBodyBone(Actor actor)
+            {
+                actor.Chara.ReSetupDynamicBone();
+                StateManager.Instance.CurrentHSceneInstance.DynamicBoneChangePtnBustAndHip(actor.Chara, 2);
+                actor.Chara.LoadHitObject();
+            }
+
+
+            private static void ShowBodyParts(Actor actor, Actor partnerActor, HAnimation.ActorHAnimData animData)
+            {
+                var animInfo = animData.animationListInfo;
+                var characterType = animData.characterType;
+                var clipType = animData.clipType;
+
+                int animGroup = GetHAnimationGroup(animInfo);
+                var extraInfo = HAnimation.ExtraHAnimationDataDictionary[(animGroup, animInfo.ID)];
+
+                //Show the penis if necessary
+                ForcePenisVisible(actor.Chara, animInfo.MaleSon == 1);
+
+                //reset state
+                actor.Chara.ChangeTongueState(0);
+                actor.Chara.ChangeMouthFixed(false);
+                actor.Chara.ChangeMouthPtn((int)HAnimation.MouthType.Common);
+
+                //facial expression
+                HAnimation.MouthType mouthType = HAnimation.MouthType.Common;
+                if (characterType == Constant.HCharacterType.Female1)
+                {
+                    mouthType = extraInfo.mouthTypeFemale1[clipType];
+                    actor.Chara.ChangeEyebrowPtn(extraInfo.eyebrowPtnFemale1[clipType]);
+                    actor.Chara.ChangeEyesOpenMax(extraInfo.eyeOpenMaxFemale1[clipType]);
+                    actor.Chara.ChangeEyesPtn(extraInfo.eyePtnFemale1[clipType]);
+                }
+                else if (characterType == Constant.HCharacterType.Female2)
+                {
+                    mouthType = extraInfo.mouthTypeFemale2[clipType];
+                    actor.Chara.ChangeEyebrowPtn(extraInfo.eyebrowPtnFemale2[clipType]);
+                    actor.Chara.ChangeEyesOpenMax(extraInfo.eyeOpenMaxFemale2[clipType]);
+                    actor.Chara.ChangeEyesPtn(extraInfo.eyePtnFemale2[clipType]);
+                }
+                else if (characterType == Constant.HCharacterType.Male1)
+                {
+                    mouthType = extraInfo.mouthTypeMale1[clipType];
+                    actor.Chara.ChangeEyebrowPtn(extraInfo.eyebrowPtnMale1[clipType]);
+                    actor.Chara.ChangeEyesOpenMax(extraInfo.eyeOpenMaxMale1[clipType]);
+                    actor.Chara.ChangeEyesPtn(extraInfo.eyePtnMale1[clipType]);
+                }
+                else if (characterType == Constant.HCharacterType.Male2)
+                {
+                    mouthType = extraInfo.mouthTypeMale2[clipType];
+                    actor.Chara.ChangeEyebrowPtn(extraInfo.eyebrowPtnMale2[clipType]);
+                    actor.Chara.ChangeEyesOpenMax(extraInfo.eyeOpenMaxMale2[clipType]);
+                    actor.Chara.ChangeEyesPtn(extraInfo.eyePtnMale2[clipType]);
+                }
+
+                //mouth
+                if (mouthType == HAnimation.MouthType.BlowJob)
+                {
+                    actor.Chara.ChangeMouthPtn((int)HAnimation.MouthType.BlowJob);
+                    
+                    //need to force updating the dick head location
+                    if (!StateManager.Instance.ForceBlowJobTarget.ContainsKey(partnerActor.Chara.GetInstanceID()))
+                        StateManager.Instance.ForceBlowJobTarget.Add(partnerActor.Chara.GetInstanceID(), actor.Chara.CmpBoneHead.targetEtc.trfMouthAdjustWidth.Find("cf_J_MouthLow"));
+
+                }
+                else
+                {
+                    StateManager.Instance.ForceBlowJobTarget.Remove(partnerActor.Chara.GetInstanceID());
+                    actor.Chara.ChangeMouthPtn((int)mouthType);
+
+                    if (mouthType == HAnimation.MouthType.Lick)
+                    {
+                        actor.Chara.ChangeTongueState(1);
+                    }
+                    var bkInfo = StateManager.Instance.ActorBackUpData[actor.GetInstanceID()];
+                    actor.Chara.ChangeLookEyesTarget(bkInfo.lookEyePtn, partnerActor.Chara.ObjEyesLookTarget.transform);
+                    actor.Chara.ChangeLookNeckTarget(bkInfo.lookNeckPtn, partnerActor.Chara.ObjNeckLookTarget.transform);
+
+                    actor.Chara.ChangeLookEyesPtn(bkInfo.lookEyePtn);
+                    actor.Chara.ChangeLookNeckPtn(bkInfo.lookNeckPtn);
+                }
+
+            }
+
+            //// Not using, the variable faceInfo and HScene is required. Need further study 
+            //private static void SetEyeNeckCtrlMF(Actor maleActor, Actor femaleActor)
+            //{
+            //    HMotionEyeNeckFemale femaleNeckMotion = new HMotionEyeNeckFemale();
+            //    femaleNeckMotion.Init(femaleActor.Chara, 0, StateManager.Instance.CurrentHSceneInstance);
+            //    femaleNeckMotion.SetPartner(maleActor.Chara._objBodyBone, null, null);
+            //    femaleNeckMotion.Load("list/h/neckcontrol/", "neck_rgh_f_20");
+
+            //    HVoiceCtrl.FaceInfo faceInfo = new HVoiceCtrl.FaceInfo();
+            //    faceInfo.OpenEye = 0.9f;
+            //    faceInfo.OpenMouthMax = 1;
+            //    faceInfo.OpenMouthMin = 1;
+            //    faceInfo.EyeBlow = 5;
+            //    faceInfo.Eye = 0;
+            //    faceInfo.Mouth = 13;
+            //    faceInfo.Tear = 0;
+            //    faceInfo.Cheek = 0.2f;
+            //    faceInfo.Highlight = true;
+            //    faceInfo.Blink = true;
+            //    faceInfo.BehaviorEyeLine = 0;
+            //    faceInfo.BehaviorNeckLine = 0;
+            //    faceInfo.TargetNeckLine = 0;
+            //    faceInfo.TargetEyeLine = 0;
+            //    faceInfo.NeckRot = new UnhollowerBaseLib.Il2CppStructArray<Vector3>(2);
+            //    faceInfo.NeckRot[0] = Vector3.zero;
+            //    faceInfo.NeckRot[1] = Vector3.zero;
+            //    faceInfo.HeadRot = new UnhollowerBaseLib.Il2CppStructArray<Vector3>(2);
+            //    faceInfo.HeadRot[0] = Vector3.zero;
+            //    faceInfo.HeadRot[1] = Vector3.zero;
+            //    faceInfo.EyeRot = new UnhollowerBaseLib.Il2CppStructArray<Vector3>(2);
+            //    faceInfo.EyeRot[0] = Vector3.zero;
+            //    faceInfo.EyeRot[1] = Vector3.zero;
+
+            //    //femaleNeckMotion.
+
+            //    femaleNeckMotion.Proc(femaleActor.Chara.GetAnimatorStateInfo(0), faceInfo, 0);
+            //    //femaleNeckMotion.SetPartnerMaleObj(maleActor.Chara._objBodyBone, null);
+            //    //femaleNeckMotion.SetPartnerFemaleObj(null);
+
+            //}
+
+            private static void SetMotionIKs(Actor actor1, Actor actor2, string clipType)
+            {
+                var hAnimData1 = StateManager.Instance.ActorHAnimationList[actor1.GetInstanceID()];
+                var hAnimData2 = StateManager.Instance.ActorHAnimationList[actor2.GetInstanceID()];
+
+                var assetPathSplit = hAnimData1.animationListInfo.AssetpathFemale.Split('/');
+
+                string path = Util.GetAssetBundleBasePath() + Manager.HSceneManager.Instance.StrAssetIKListFolder + string.Format(Settings.HMotionIKAssetBundleFileName, assetPathSplit[assetPathSplit.Length-2]);
+                
+                AssetBundle ab = AssetBundle.LoadFromFile(path);
+                if (ab != null)
+                {
+                    string assetNameActor1 = GetMotionIKAssetName(hAnimData1.animationListInfo, hAnimData1.characterType);
+                    string assetNameActor2 = GetMotionIKAssetName(hAnimData2.animationListInfo, hAnimData2.characterType);
+
+                    var assetActor1 = ab.LoadAsset(assetNameActor1, UnhollowerRuntimeLib.Il2CppType.From(typeof(TextAsset))).Cast<TextAsset>();
+                    var assetActor2 = ab.LoadAsset(assetNameActor2, UnhollowerRuntimeLib.Il2CppType.From(typeof(TextAsset))).Cast<TextAsset>();
+
+                    MotionIK motionIKActor1 = new MotionIK(actor1.Chara);
+                    MotionIK motionIKActor2 = new MotionIK(actor2.Chara);
+                    
+                    motionIKActor1.IKBaseOverride(hAnimData1.animationListInfo.IKBaseOverride);
+                    motionIKActor2.IKBaseOverride(hAnimData2.animationListInfo.IKBaseOverride);
+
+                    Il2CppReferenceArray<MotionIK> dummy = new Il2CppReferenceArray<MotionIK>(0);
+                    motionIKActor1.SetPartners(dummy);
+                    motionIKActor2.SetPartners(dummy);
+
+                    motionIKActor1.InitFrameCalc(true);
+                    motionIKActor2.InitFrameCalc(true);
+
+                    motionIKActor1.Reset();
+                    motionIKActor2.Reset();
+                    motionIKActor1.Release();
+                    motionIKActor2.Release();
+
+                    Il2CppReferenceArray<MotionIK> arr = new Il2CppReferenceArray<MotionIK>(2);
+                    arr[0] = motionIKActor1;
+                    arr[1] = motionIKActor2;
+
+                    motionIKActor1.SetPartners(arr);
+                    motionIKActor2.SetPartners(arr);
+
+                    motionIKActor1.IKBaseOverride(hAnimData1.animationListInfo.IKBaseOverride);
+                    motionIKActor2.IKBaseOverride(hAnimData2.animationListInfo.IKBaseOverride);
+
+                    motionIKActor1.Reset();
+                    motionIKActor2.Reset();
+                    motionIKActor1.Release();
+                    motionIKActor2.Release();
+
+                    if(hAnimData1.situationType == HAnimation.SituationType.FF)
+                    {
+                        //I dont know why but this work...
+                        motionIKActor1.LoadData(assetActor2);
+                        motionIKActor2.LoadData(assetActor1);
+                    }
+                    else
+                    {
+                        motionIKActor1.LoadData(assetActor1);
+                        motionIKActor2.LoadData(assetActor2);
+                    }
+
+                    var itemObjs = GetItemObjectsArray(actor1, actor2);
+
+                    motionIKActor1.SetItems(itemObjs);
+                    motionIKActor2.SetItems(itemObjs);
+
+                    motionIKActor1.Reset();
+                    motionIKActor2.Reset();
+
+                    motionIKActor1.InfoSex = actor1.Status.BodySex;
+                    motionIKActor2.InfoSex = actor2.Status.BodySex;
+
+                    motionIKActor1.Calc(clipType);
+                    motionIKActor2.Calc(clipType);
+
+                    ab.Unload(false);
+                }
+            }
+
+            private static Il2CppReferenceArray<GameObject> GetItemObjectsArray(Actor actor1, Actor actor2)
+            {
+                Actor targetActor;
+                if (StateManager.Instance.CharacterHItemCtrlDictionary.ContainsKey(actor1.Chara.GetInstanceID()))
+                    targetActor = actor1;
+                else
+                    targetActor = actor2;
+
+                Il2CppReferenceArray<GameObject> result = new Il2CppReferenceArray<GameObject>(StateManager.Instance.CharacterHItemCtrlDictionary[targetActor.Chara.GetInstanceID()].itemObj.Count);
+                for (int i=0; i <  StateManager.Instance.CharacterHItemCtrlDictionary[targetActor.Chara.GetInstanceID()].itemObj.Count; i++)
+                {
+                    result[i] = StateManager.Instance.CharacterHItemCtrlDictionary[targetActor.Chara.GetInstanceID()].itemObj[i].Item1.gameObject;
+                }
+                return result;
+            }
+
+            //Not sure if required or not
+            private static AnimationCurve HardcodeAnimationCurve()
+            {
+                AnimationCurve result = new AnimationCurve();
+
+                Keyframe k1 = new Keyframe();
+                k1.time = 0;
+                k1.value = 0;
+                k1.inTangent = 0.3333333f;
+                k1.outTangent = 0.3333333f;
+                k1.inWeight = 0;
+                k1.outWeight = 0.5219253f;
+                k1.weightedMode = WeightedMode.None;
+                k1.tangentMode = 0;
+                k1.tangentModeInternal = 0;
+
+                Keyframe k2 = new Keyframe();
+                k2.time = 0.4310961f;
+                k2.value = 0.1676099f;
+                k2.inTangent = 1.062808f;
+                k2.outTangent = 1.062808f;
+                k2.inWeight = 0.3333333f;
+                k2.outWeight = 0.3333333f;
+                k2.weightedMode = WeightedMode.None;
+                k2.tangentMode = 0;
+                k2.tangentModeInternal = 0;
+
+                Keyframe k3 = new Keyframe();
+                k3.time = 0.6520407f;
+                k3.value = 0.7711853f;
+                k3.inTangent = 1.965922f;
+                k3.outTangent = 1.965922f;
+                k3.inWeight = 0.3333333f;
+                k3.outWeight = 0.3333333f;
+                k3.weightedMode = WeightedMode.None;
+                k3.tangentMode = 0;
+                k3.tangentModeInternal = 0;
+
+                Keyframe k4 = new Keyframe();
+                k4.time = 1f;
+                k4.value = 1f;
+                k4.inTangent = 0f;
+                k4.outTangent = 0f;
+                k4.inWeight = 0f;
+                k4.outWeight = 0f;
+                k4.weightedMode = WeightedMode.None;
+                k4.tangentMode = 0;
+                k4.tangentModeInternal = 0;
+
+                result.keys.AddItem(k1);
+                result.keys.AddItem(k2);
+                result.keys.AddItem(k3);
+                result.keys.AddItem(k4);
+
+                result.preWrapMode = WrapMode.ClampForever;
+                result.postWrapMode = WrapMode.ClampForever;
+                return result;
+            }
+
+            private static void SetupCtrl(Actor actor, Constant.HCharacterType characterType, string clipType)
+            {
+
+
+                var hAnimData = StateManager.Instance.ActorHAnimationList[actor.GetInstanceID()];
+                int animGroup = GetHAnimationGroup(hAnimData.animationListInfo);
+
+                var collisionCtrl = StateManager.Instance.CharacterCollisionCtrlDictionary[actor.Chara.GetInstanceID()];
+                var hitObjCtrl = StateManager.Instance.CharacterHitObjectCtrlDictionary[actor.Chara.GetInstanceID()];
+                var yureCtrl = StateManager.Instance.CharacterYureCtrlDictionary[actor.Chara.GetInstanceID()];
+                DynamicBoneReferenceCtrl boneCtrl = null;
+                if (actor.Sex == 1)
+                    boneCtrl = StateManager.Instance.CharacterDynamicBoneCtrlDictionary[actor.Chara.GetInstanceID()];
+                var layerCtrl = StateManager.Instance.CharacterHLayerCtrlDictionary[actor.Chara.GetInstanceID()];
+
+                string fileName = "";
+                if (characterType == Constant.HCharacterType.Female1)
+                    fileName = hAnimData.animationListInfo.FileFemale;
+                else if (characterType == Constant.HCharacterType.Female2)
+                    fileName = hAnimData.animationListInfo.FileFemale2;
+                else if (characterType == Constant.HCharacterType.Male1)
+                    fileName = hAnimData.animationListInfo.FileMale;
+                else if (characterType == Constant.HCharacterType.Male2)
+                    fileName = hAnimData.animationListInfo.FileMale2;
+
+                layerCtrl.LoadExcel(fileName, actor.Sex, (characterType == Constant.HCharacterType.Female1 || characterType == Constant.HCharacterType.Male1) ? 0 : 1);
+                layerCtrl.ctrlFlag.NowAnimationInfo = hAnimData.animationListInfo;
+                layerCtrl.ctrlFlag.ChangeMotionCurve = HardcodeAnimationCurve();
+                layerCtrl.ctrlFlag.NowHPoint = StateManager.Instance.CharacterHPointDictionary[actor.Chara.GetInstanceID()];
+                layerCtrl.ctrlFlag.Start();
+
+                yureCtrl.Load(hAnimData.animationListInfo.ID, animGroup);
+                collisionCtrl.LoadExcel(fileName);
+                hitObjCtrl.HitObjLoadExcel(fileName);
+
+                hitObjCtrl.Proc(clipType);
+                yureCtrl.Proc(clipType);
+
+                if (boneCtrl != null)
+                {
+                    boneCtrl.Load(Manager.HSceneManager.Instance.StrAssetDynamicBoneListFolder, fileName);
+                }
+
+                actor.Chara.CmpBoneBody.ResetDynamicBonesBustAndHip();
+                actor.Chara.ResetDynamicBoneALL();
+                actor.Chara.ReSetupDynamicBone();
+
+                StateManager.Instance.CharacterCtrlInitFinishedDictionary.Add(actor.Chara.GetInstanceID(), true);
+            }
+
+            private static void SetHLayer(Actor actor1, Actor actor2, Constant.HCharacterType actor1Type, Constant.HCharacterType actor2Type)
+            {
+                Il2CppReferenceArray<Chara.ChaControl> maleList = new Il2CppReferenceArray<Chara.ChaControl>(2);
+                Il2CppReferenceArray<Chara.ChaControl> femaleList = new Il2CppReferenceArray<Chara.ChaControl>(2);
+                AddCharacterToArrayListByType(actor1.Chara, maleList, femaleList, actor1Type);
+                AddCharacterToArrayListByType(actor2.Chara, maleList, femaleList, actor2Type);
+
+                var layerCtrl = StateManager.Instance.CharacterHLayerCtrlDictionary[actor1.Chara.GetInstanceID()];
+                layerCtrl.setLayer(maleList, 0);
+                layerCtrl.setLayer(femaleList, 1);
+            }
+
+            private static string GetMotionIKAssetName(HScene.AnimationListInfo animInfo, Constant.HCharacterType characterType)
+            {
+                string assetName = "";
+                switch (characterType)
+                {
+                    case Constant.HCharacterType.Female1:
+                        assetName = animInfo.FileFemale;
+                        break;
+                    case Constant.HCharacterType.Female2:
+                        assetName = animInfo.FileFemale2;
+                        break;
+                    case Constant.HCharacterType.Male1:
+                        assetName = animInfo.FileMale;
+                        break;
+                    case Constant.HCharacterType.Male2:
+                        assetName = animInfo.FileMale2;
+                        break;
+                }
+                return assetName;
+            }
+
+
+            private static void AddActorHAnimationData(Actor actor, HScene.AnimationListInfo animInfo, HAnimation.SituationType situationType, Constant.HCharacterType characterType)
             {
                 HAnimation.ActorHAnimData data = new HAnimation.ActorHAnimData();
                 data.animationListInfo = animInfo;
                 data.situationType = situationType;
-                StateManager.Instance.ActorHAnimationList.Add(actor.GetInstanceID(), data);
+                data.characterType = characterType;
+                data.changePositionFactor = 0;
+
+                if (!StateManager.Instance.ActorHAnimationList.ContainsKey(actor.GetInstanceID()))
+                    StateManager.Instance.ActorHAnimationList.Add(actor.GetInstanceID(), data);
+                else
+                    StateManager.Instance.ActorHAnimationList[actor.GetInstanceID()] = data;
             }
 
-
-
-
-            private static void OnHActionUpdateEvent(object sender, ElapsedEventArgs e)
-            //private static void OnHActionUpdateEvent(Actor actor1, Actor actor2)
-            {
-                Log.LogInfo("OnHActionUpdateEvent start!");
-                Actor actor1 = ((CustomTimer)sender).Actor1;
-                Actor actor2 = ((CustomTimer)sender).Actor2;
-
-                PlayAnimationForActors(actor1, actor2);
-
-                System.Random rnd = new System.Random();
-                int rndResult = rnd.Next(Settings.HActionRandomMilliSecond);
-                long nextUpdateTime = DateTime.Now.ToFileTimeUtc() + rndResult;
-                //Add only 1 actor to the next update list
-                //StateManager.Instance.ActorHAnimNextUpdateTimeDictionary[actor1.GetInstanceID()] = nextUpdateTime;
-                ((CustomTimer)sender).Interval = Settings.HActionMinMilliSecond + rndResult;
-
-                Log.LogInfo("OnHActionUpdateEvent end!");
-            }
 
             private static void AddOrUpdateHAnimNextUpdateTime(Actor actor)
             {
@@ -361,208 +790,142 @@ namespace HSceneCrowdReaction.HSceneScreen
 
             private static void PlayAnimationForActors(Actor actor1, Actor actor2)
             {
-                //TODO: allow change animation
+                StateManager.Instance.CharacterCtrlInitFinishedDictionary.Remove(actor1.Chara.GetInstanceID());
+                StateManager.Instance.CharacterCtrlInitFinishedDictionary.Remove(actor2.Chara.GetInstanceID());
 
                 //Update the animation clip
-                string clipName = GetRandomAnimationClipName(actor1);
+                string clipName = GetRandomAnimationClipName();
+                string clipNameType = HAnimation.GetClipTypeByName(clipName);
 
+                var animInfo1 = StateManager.Instance.ActorHAnimationList[actor1.GetInstanceID()];
+                var animInfo2 = StateManager.Instance.ActorHAnimationList[actor2.GetInstanceID()];
+                var actor1Type = animInfo1.characterType;
+                var actor2Type = animInfo2.characterType;
+                animInfo1.changePositionFactor++;
+                animInfo2.changePositionFactor++;
 
+                SetupCtrl(actor1, actor1Type, clipNameType);
+                SetupCtrl(actor2, actor2Type, clipNameType);
+                SetHLayer(actor1, actor2, actor1Type, actor2Type);
 
-                SetCharacterPlayAnimation(actor1.Chara, clipName);
-                SetCharacterPlayAnimation(actor2.Chara, clipName);
-
-                motionik(actor1, actor2, clipName);
+                SetCharacterPlayAnimation(actor1.Chara, clipNameType);
+                SetCharacterPlayAnimation(actor2.Chara, clipNameType);
 
                 //Update the animation speed
-                /*
                 System.Random rnd = new System.Random();
                 float speed = 1 + rnd.Next(1000) / 1000f;
-                actor1.Chara.AnimBody.speed = speed;
-                actor2.Chara.AnimBody.speed = speed;
-                */
+                
+                if(animInfo1.situationType == HAnimation.SituationType.MF)
+                {
+                    Actor femaleActor = (actor1Type == Constant.HCharacterType.Female1) ? actor1 : actor2;
+                    SetAnimInfoParam(animInfo1, femaleActor, speed, clipNameType);
+                    SetAnimInfoParam(animInfo2, femaleActor, speed, clipNameType);
+                }else if (animInfo1.situationType == HAnimation.SituationType.FF)
+                {
+                    SetAnimInfoParam(animInfo1, actor1, speed, clipNameType);
+                    SetAnimInfoParam(animInfo2, actor2, speed, clipNameType);
+                }
 
-                //Fix the body parts to fit the animation
+                ShowBodyParts(actor1, actor2, animInfo1);
+                ShowBodyParts(actor2, actor1, animInfo2);
 
-                /*
-                Constant.HCharacterType actorType, partnerType;
-                GetHCharacterType(actor1, actor2, out actorType, out partnerType);
-                FixBodyParts(actor1, actor2, actorType);
-                FixBodyParts(actor2, actor1, partnerType);
-                */
+                //Set the items
+                SetItemCtrl(ConvertActorsToArray(actor1, actor2), clipNameType);
+                //Motion IK
+                SetMotionIKs(actor1, actor2, clipNameType);
 
-                //TODO: uncomment this
-                ////Set the voice
-                //SetVoiceToActor(actor1, clipName);
-                //SetVoiceToActor(actor2, clipName);
-                ////SetVoiceToActor(actor1, StateManager.Instance.ActorHAnimationList[actor1.GetInstanceID()]);
-                ////SetVoiceToActor(actor2, StateManager.Instance.ActorHAnimationList[actor2.GetInstanceID()]);
+                //Set the voice
+                SetVoiceToActor(actor1, clipNameType);
+                SetVoiceToActor(actor2, clipNameType);
             }
 
-            private static void FixBodyParts(Actor actor, Actor partnerActor, Constant.HCharacterType hCharacterType)
+            private static void SetAnimInfoParam(HAnimation.ActorHAnimData animInfo, Actor actor, float speed, string clipType)
             {
-                Log.LogInfo("FixBodyParts " + actor.Status.FullName + ", " + partnerActor.Status.FullName + ", " + hCharacterType);
-                var extraInfo = GetExtraHAnimationDataForActor(actor);
-                if (hCharacterType == Constant.HCharacterType.Female1)
-                {
-                    FixActorMouth(actor, partnerActor, extraInfo.female1.mouth);
-                    FixActorHead(actor, partnerActor, extraInfo.female1.headMovement);
-
-                    FixActorHand(actor, partnerActor, extraInfo.female1);
-                }
-                else if (hCharacterType == Constant.HCharacterType.Male1)
-                {
-                    FixActorMouth(actor, partnerActor, extraInfo.male1.mouth);
-                    FixActorHead(actor, partnerActor, extraInfo.male1.headMovement);
-
-                    FixActorHand(actor, partnerActor, extraInfo.male1);
-                }
+                animInfo.height = actor.Chara.GetShapeBodyValue((int)Chara.ChaFileDefine.BodyShapeIdx.Height);
+                animInfo.breast = actor.Chara.GetShapeBodyValue((int)Chara.ChaFileDefine.BodyShapeIdx.BustSize);
+                animInfo.motion = 1;
+                animInfo.speed = speed;
+                animInfo.clipType = clipType;
             }
 
-            private static void FixActorHand(Actor actor, Actor partnerActor, HAnimation.ExtraHAnimationData.BodyConfig bodyConfig)
+            private static void SetItemCtrl(Actor[] actors, string clipNameType)
             {
-                var dict = GetTargetLocationTransform(partnerActor);
-                if (bodyConfig.leftHand != HAnimation.TargetLocationType.NoChange)
+                HItemCtrl itemCtrl = StateManager.Instance.CharacterHItemCtrlDictionary[actors[2].Chara.GetInstanceID()];
+                HPoint hPoint = StateManager.Instance.CharacterHPointDictionary[actors[2].Chara.GetInstanceID()];
+
+                var hAnimData = StateManager.Instance.ActorHAnimationList[actors[2].GetInstanceID()];
+                var animInfo = hAnimData.animationListInfo;
+
+                itemCtrl.SetTransform(hPoint.transform.position, hPoint.transform.rotation.eulerAngles);
+                itemCtrl.ReleaseItem();
+                itemCtrl._hFlag = StateManager.Instance.CharacterHLayerCtrlDictionary[actors[2].Chara.GetInstanceID()].ctrlFlag;
+
+                if (hAnimData.animationListInfo.IsNeedItem)
                 {
-                    if (dict.ContainsKey(bodyConfig.leftHand))
-                        actor.Chara.CmpBoneBody.targetEtc.trf_k_handL_00.transform.position = dict[bodyConfig.leftHand].position;
-                }
-
-                if (bodyConfig.rightHand != HAnimation.TargetLocationType.NoChange)
-                {
-                    if (dict.ContainsKey(bodyConfig.rightHand))
-                        actor.Chara.CmpBoneBody.targetEtc.trf_k_handR_00.transform.position = dict[bodyConfig.rightHand].position;
-                }
-            }
-
-            private static Dictionary<HAnimation.TargetLocationType, Transform> GetTargetLocationTransform(Actor targetActor)
-            {
-                Dictionary<HAnimation.TargetLocationType, Transform> result = new Dictionary<HAnimation.TargetLocationType, Transform>();
-
-                result.Add(HAnimation.TargetLocationType.ShoulderL, targetActor.Chara.CmpBoneBody.targetEtc.trf_k_shoulderL_00);
-                result.Add(HAnimation.TargetLocationType.ShoulderR, targetActor.Chara.CmpBoneBody.targetEtc.trf_k_shoulderR_00);
-
-                return result;
-            }
-
-            private static void FixActorMouth(Actor actor, Actor partnerActor, HAnimation.MouthType mouthType)
-            {
-                Log.LogInfo("FixActorMouth " + actor.Status.FullName + ", " + partnerActor.Status.FullName + ", " + mouthType);
-                if (mouthType == HAnimation.MouthType.Common) return;
-
-                if (mouthType == HAnimation.MouthType.Kiss)
-                {
-                    //actor.Chara.CmpFace.targetCustom.
-                    actor.Chara.ChangeMouthPtn((int)mouthType);
-                }
-                else if (mouthType == HAnimation.MouthType.BlowJob)
-                {
-                    actor.Chara.ChangeMouthFixed(true);
-                    actor.Chara.ChangeMouthPtn((int)mouthType);
-                }
-            }
-
-            private static void FixActorHead(Actor actor, Actor partnerActor, HAnimation.TargetLocationType headMovement)
-            {
-                /*
-                Log.LogInfo("FixActorHead " + actor.Status.FullName + ", " + partnerActor.Status.FullName + ", " + headMovement);
-                Log.LogInfo("ObjEyesLookTarget : " + partnerActor.Chara.ObjEyesLookTarget.transform.name + ", " + partnerActor.Chara.ObjEyesLookTarget.transform.position + "\n"
-                    + "ObjEyesLookTargetP : " + partnerActor.Chara.ObjEyesLookTargetP.transform.name + ", " + partnerActor.Chara.ObjEyesLookTargetP.transform.position + "\n"
-                    + "ObjNeckLookTarget : " + partnerActor.Chara.ObjNeckLookTarget.transform.name + ", " + partnerActor.Chara.ObjNeckLookTarget.transform.position + "\n"
-                    + "ObjNeckLookTargetP : " + partnerActor.Chara.ObjNeckLookTargetP.transform.name + ", " + partnerActor.Chara.ObjNeckLookTargetP.transform.position + "\n"
-                    );
-
-                if (actor.Sex == 0)
-                {
-                    actor.Chara.ChangeLookNeckTarget(1, partnerActor.Chara.ObjEyesLookTarget.transform);
-                    actor.Chara.ChangeLookNeckPtn(1);
-                }
-                */
-                if (headMovement == HAnimation.TargetLocationType.NoChange) return;
-
-                if (headMovement == HAnimation.TargetLocationType.Kiss)
-                {
-
-
-                    //speedVector3 minorDisplacement = HAnimation.HAnimationMinorDisplacement;
-                    //Vector3 mouthPosition = actor.Chara.CmpBoneHead.targetEtc.trfMouthAdjustWidth.transform.position;
-                    //if (mouthPosition.x < 0) minorDisplacement.x *= -1;
-                    //if (mouthPosition.y < 0) minorDisplacement.y *= -1;
-                    //if (mouthPosition.z < 0) minorDisplacement.z *= -1;
-
-                    //                male: (-0.2f, 0, 0.2f, 0.1f)
-                    //female: (-0.2f, -0.3f, -0.1f, 0.1f)
-                    if (actor.Sex == 0)
-                    {
-                        /*
-                        actor.Chara.CmpBoneBody.targetEtc.trfHeadParent.rotation = new Quaternion(
-                            actor.Chara.CmpBoneBody.targetEtc.trfHeadParent.rotation.x + -0.2f,
-                            actor.Chara.CmpBoneBody.targetEtc.trfHeadParent.rotation.y + 0,
-                            actor.Chara.CmpBoneBody.targetEtc.trfHeadParent.rotation.z + 0.2f,
-                            actor.Chara.CmpBoneBody.targetEtc.trfHeadParent.rotation.w + 0.1f);
-                        */
-                        Log.LogInfo("male head rotation: " + actor.Status.FullName + " " + actor.Chara.CmpBoneBody.targetEtc.trfHeadParent.rotation);
-
-                        if (!StateManager.Instance.isrotated.Contains(actor.GetInstanceID()))
-                        {
-                            actor.Chara.CmpBoneBody.targetEtc.trfHeadParent.transform.RotateAround(actor.Chara.NeckLookCtrl.neckLookScript.boneCalcAngle.position, Vector3.forward, 15f);
-                            //actor.Chara.CmpBoneBody.targetEtc.trfHeadParent.transform.RotateAround(actor.Chara.CmpBoneBody.targetEtc.trfHeadParent.transform.position, Vector3.left, 45f);
-                            Log.LogInfo("female head rotation: " + actor.Status.FullName + " " + actor.Chara.CmpBoneBody.targetEtc.trfHeadParent.rotation);
-                            partnerActor.Chara.CmpBoneBody.targetEtc.trfHeadParent.transform.RotateAround(partnerActor.Chara.NeckLookCtrl.neckLookScript.boneCalcAngle.position, Vector3.forward, -12f);
-                            StateManager.Instance.isrotated.Add(actor.GetInstanceID());
-
-                            //actor.Chara.CmpBoneHead.targetEtc.trfMouthAdjustWidth.gameObject.active = false;
-                            //partnerActor.Chara.CmpBoneHead.targetEtc.trfMouthAdjustWidth.gameObject.active = false;
-                        }
-                    }
-                    else
-                    {
-
-                        /*
-                        actor.Chara.CmpBoneBody.targetEtc.trfHeadParent.rotation = new Quaternion(
-                            actor.Chara.CmpBoneBody.targetEtc.trfHeadParent.rotation.x + -0.2f,
-                            actor.Chara.CmpBoneBody.targetEtc.trfHeadParent.rotation.y + -0.3f,
-                            actor.Chara.CmpBoneBody.targetEtc.trfHeadParent.rotation.z + -0.1f,
-                            actor.Chara.CmpBoneBody.targetEtc.trfHeadParent.rotation.w + 0.1f);
-                        */
-
-                    }
-                    /*
-                    Vector3 displacement = partnerActor.Chara.CmpBoneHead.targetEtc.trfMouthAdjustWidth.transform.position - actor.Chara.CmpBoneHead.targetEtc.trfMouthAdjustWidth.transform.position;
-                    Log.LogInfo("mouth transform name: " + actor.Chara.CmpBoneHead.targetEtc.trfMouthAdjustWidth.transform.name);
-                    Log.LogInfo(
-                        "mouthPosition: " + actor.Chara.CmpBoneHead.targetEtc.trfMouthAdjustWidth.transform.position
-                        + ", partner mouth: " + partnerActor.Chara.CmpBoneHead.targetEtc.trfMouthAdjustWidth.transform.position
-                        + ", displayment: " + displacement
-                        + ", original neck: " + actor.Chara.CmpBoneBody.targetEtc.trfHeadParent.transform.position
-                        );
-                    actor.Chara.CmpBoneBody.targetEtc.trfHeadParent.transform.position += displacement;
-                    Log.LogInfo(
-                        "final neck: " + actor.Chara.CmpBoneBody.targetEtc.trfHeadParent.transform.position
+                    int animGroup = GetHAnimationGroup(animInfo);
+                    itemCtrl.LoadItem(animGroup, animInfo.ID,
+                        actors[0]?.Chara.ObjBodyBone,
+                        actors[2].Chara.ObjBodyBone,
+                        actors[1]?.Chara.ObjBodyBone,
+                        actors[3]?.Chara.ObjBodyBone,
+                        GetBashoKind(hPoint)
                         );
 
-                    Debug.PrintTransformTreeUpward(actor.Chara.CmpBoneHead.targetEtc.trfMouthAdjustWidth, "", "cf_J_MouthBase_tr");
-                    Debug.PrintTransformTreeUpward(partnerActor.Chara.CmpBoneHead.targetEtc.trfMouthAdjustWidth, "", "cf_J_MouthBase_tr");
-                    */
+                    itemCtrl.SetAnimatorParamFloat(Constant.AnimatorParamHeight, hAnimData.height);
+                    itemCtrl.SetAnimatorParamFloat(Constant.AnimatorParamSpeed, hAnimData.speed);
                 }
 
+                itemCtrl.SetPlay(clipNameType);
+
+                
             }
 
 
-            private static HPoint GetHPoint(Actor actor)
+            private static HPoint GetHPoint(Actor actor, HAnimation.SituationType situationType)
             {
                 ActionPoint targetAP = actor.OccupiedActionPoint == null ? actor.Partner.OccupiedActionPoint : actor.OccupiedActionPoint;
                 System.Random rnd = new System.Random();
-                int rndResult = rnd.Next(targetAP.HPointLink.Count);
 
-                //TODO: uncomment
-                //return targetAP.HPointLink[rndResult];
-                return targetAP.HPointLink[0];
+                List<HPoint> availablePoint = new List<HPoint>();
+                foreach(var hpoint in targetAP.HPointLink)
+                {
+                    if(!hpoint.NowUsing && !StateManager.Instance.HSceneOccupiedHPointIDList.Contains(hpoint.GetInstanceID()))
+                        availablePoint.Add(hpoint);
+                }
+                if(availablePoint.Count == 0)
+                {
+                    int[] validHPointTypes = null;
+                    if (situationType == HAnimation.SituationType.MF)
+                        validHPointTypes = HAnimation.ValidHPointTypeMF;
+                    else if (situationType == HAnimation.SituationType.FF)
+                        validHPointTypes = HAnimation.ValidHPointTypeFF;
+                    else if (situationType == HAnimation.SituationType.FFM)
+                        validHPointTypes = HAnimation.ValidHPointTypeFFM;
+                    else if (situationType == HAnimation.SituationType.MMF)
+                        validHPointTypes = HAnimation.ValidHPointTypeMMF;
+
+                    //the current linked hpoint is occupied, randomly choose a unused one
+                    foreach (var kvp in StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst)
+                    {
+                        if(Array.IndexOf(validHPointTypes, kvp.Key) > -1)
+                        {
+                            foreach(var hpoint in kvp.Value.HPoints)
+                            {
+                                if (!hpoint.NowUsing && !StateManager.Instance.HSceneOccupiedHPointIDList.Contains(hpoint.GetInstanceID()))
+                                    availablePoint.Add(hpoint);
+                            }
+                        }
+                    }
+                }
+
+                int rndResult = rnd.Next(availablePoint.Count);
+                StateManager.Instance.HSceneOccupiedHPointIDList.Add(availablePoint[rndResult].GetInstanceID());
+                return availablePoint[rndResult];
             }
 
-            private static void InitHPoint(HPoint hPoint, HScene.AnimationListInfo animInfo)
+            private static void InitHPoint(HPoint hPoint, HScene.AnimationListInfo animInfo, Actor[] actor)
             {
                 hPoint.ChangeHideProcBefore();
-                //hPoint.ChangeHideProc(1);
                 hPoint.ChangeHideProcAll();
                 hPoint.HpointObjVisibleChange(true);
 
@@ -575,43 +938,29 @@ namespace HSceneCrowdReaction.HSceneScreen
                             moveObj.SetOffset(i);
                     }
                 }
-
-                //TODO: uncomment this
-                ////populate the moved chair for the pose
-                //if (animInfo.IsNeedItem)
-                //{
-                //    foreach (var item in hPoint.MotionChairIDs)
-                //    {
-                //        if (item != 0)
-                //        {
-                //            var abinfo = Manager.HSceneManager.HResourceTables.DicDicMapDependItemInfo[item];
-                //            var fullpath = Util.GetAssetBundlePath(abinfo.assetbundle);
-
-                //            var ab = AssetBundle.LoadFromFile(fullpath);
-
-                //            if (ab != null)
-                //            {
-                //                GameObject obj = Util.InstantiateFromBundle(ab, abinfo.asset);
-
-                //                obj.transform.position = hPoint.transform.position;
-                //                obj.transform.localPosition = hPoint.transform.localPosition;
-                //                obj.transform.rotation = hPoint.transform.rotation;
-                //                obj.transform.localRotation = hPoint.transform.localRotation;
-
-                //                obj.transform.parent = StateManager.Instance.CurrentHSceneInstance.gameObject.transform;
-                //            }
-
-                //            ab.Unload(false);
-                //        }
-                //    }
-                //}
             }
 
-            private static HScene.AnimationListInfo GetHAnimation(HPoint hPoint)
+            private static int GetBashoKind(HPoint hPoint)
             {
-                //HPoint._animationLists
+                int result = -1;
+                foreach (var kvp in StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst)
+                {
+                    foreach (var point in kvp.Value.HPoints)
+                    {
+                        if (point.GetInstanceID() == hPoint.GetInstanceID())
+                        {
+                            result = kvp.Key;
+                            break;
+                        }
+                    }
+                }
+                return result;
+            }
+
+            private static HScene.AnimationListInfo GetHAnimation(HPoint hPoint, HAnimation.SituationType situationType)
+            {
                 int hPointType = GetHPointType(hPoint);
-                var possibleAnimList = GetAvailableHAnimationList(hPointType);
+                var possibleAnimList = GetAvailableHAnimationList(hPointType, situationType);
 
                 System.Random rnd = new System.Random();
                 int rndResult = rnd.Next(possibleAnimList.Count);
@@ -632,7 +981,7 @@ namespace HSceneCrowdReaction.HSceneScreen
                 return -1;
             }
 
-            private static List<HScene.AnimationListInfo> GetAvailableHAnimationList(int type)
+            private static List<HScene.AnimationListInfo> GetAvailableHAnimationList(int type, HAnimation.SituationType situationType)
             {
                 List<HScene.AnimationListInfo> result = new List<HScene.AnimationListInfo>();
 
@@ -640,7 +989,10 @@ namespace HSceneCrowdReaction.HSceneScreen
                 {
                     foreach (var info in HPoint._animationLists[i])
                     {
-                        if (info.LstPositons.Contains(type) && !HAnimation.IsInExcludeList(i, info.ID))
+                        if (info.LstPositons.Contains(type)
+                            && (info.LimitMap[0] == -1 || info.LimitMap.Contains(ActionScene.Instance.MapID))
+                            && !HAnimation.IsInExcludeList(i, info.ID) 
+                            && HAnimation.ExtraHAnimationDataDictionary[(i, info.ID)].situationType == situationType)
                         {
                             result.Add(info);
                         }
@@ -652,22 +1004,7 @@ namespace HSceneCrowdReaction.HSceneScreen
 
             private static int GetHAnimationGroup(HScene.AnimationListInfo animInfo)
             {
-
                 int i = 0;
-
-                ////TODO: uncomment
-                //while(i < HPoint._animationLists.Count)
-                //{
-                //    foreach (var info in HPoint._animationLists[i])
-                //    {
-                //        if(info.ID == animInfo.ID && info.NameAnimation == animInfo.NameAnimation)
-                //        {
-                //            return i;
-                //        }AddOrUpdateHAnimNextUpdateTime
-                //    }
-                //    i++;
-                //}
-
 
                 while (i < Manager.HSceneManager.HResourceTables.LstAnimInfo.Count)
                 {
@@ -685,21 +1022,29 @@ namespace HSceneCrowdReaction.HSceneScreen
             }
 
 
-            internal static void SetActorToHPoint(Actor actor, HPoint hPoint)
-            //private static void AttachCharacterToHPoint(Chara.ChaControl character, HPoint hPoint)
+            private static void SetActorToHPoint(Actor actor, HPoint hPoint, HScene.AnimationListInfo animInfo, Constant.HCharacterType characterType)
             {
-                actor.transform.position = hPoint.transform.position;
-                actor.transform.localPosition = hPoint.transform.localPosition;
+                int animGroup = GetHAnimationGroup(animInfo);
+                var extraInfo = HAnimation.ExtraHAnimationDataDictionary[(animGroup, animInfo.ID)];
+
+                actor.transform.position = hPoint.transform.position + extraInfo.offsetVector;
+                actor.transform.localPosition = hPoint.transform.localPosition + extraInfo.offsetVector;
                 actor.transform.rotation = hPoint.transform.rotation;
                 actor.transform.localRotation = hPoint.transform.localRotation;
 
-                if (hPoint.MotionChairIDs.Count > 0)
+                if ((characterType == Constant.HCharacterType.Female1 && extraInfo.isFemale1Inverse)
+                    || (characterType == Constant.HCharacterType.Female2 && extraInfo.isFemale2Inverse)
+                    || (characterType == Constant.HCharacterType.Male1 && extraInfo.isMale1Inverse)
+                    || (characterType == Constant.HCharacterType.Male2 && extraInfo.isMale2Inverse)
+                    )
                 {
-                    if (hPoint.MotionChairIDs[0] != 0)
-                    {
-                        actor.transform.rotation = Quaternion.Inverse(actor.transform.rotation);
-                    }
+                    actor.transform.rotation = actor.transform.rotation * Quaternion.AngleAxis(180, Vector3.up);
                 }
+
+                if(!StateManager.Instance.CharacterHPointDictionary.ContainsKey(actor.Chara.GetInstanceID()))
+                    StateManager.Instance.CharacterHPointDictionary.Add(actor.Chara.GetInstanceID(), hPoint);
+                else
+                    StateManager.Instance.CharacterHPointDictionary[actor.Chara.GetInstanceID()] =  hPoint;
             }
 
             private static void SetActorAnimator(Actor actor, HScene.AnimationListInfo animInfo, Constant.HCharacterType characterType)
@@ -707,86 +1052,78 @@ namespace HSceneCrowdReaction.HSceneScreen
                 Chara.ChaControl character = actor.Chara;
                 string abName = "";
                 string assetName = "";
-
+                string baseABName = "";
+                string baseAssetName = "";
 
                 if (characterType == Constant.HCharacterType.Female1)
                 {
                     abName = animInfo.AssetpathFemale;
                     assetName = animInfo.FileFemale;
+                    baseABName = animInfo.AssetpathBaseF;
+                    baseAssetName = animInfo.AssetBaseF;
                 }
                 else if (characterType == Constant.HCharacterType.Female2)
                 {
                     abName = animInfo.AssetpathFemale2;
                     assetName = animInfo.FileFemale2;
+                    baseABName = animInfo.AssetpathBaseF2;
+                    baseAssetName = animInfo.AssetBaseF2;
                 }
                 else if (characterType == Constant.HCharacterType.Male1)
                 {
                     abName = animInfo.AssetpathMale;
                     assetName = animInfo.FileMale;
+                    baseABName = animInfo.AssetpathBaseM;
+                    baseAssetName = animInfo.AssetBaseM;
                 }
                 else if (characterType == Constant.HCharacterType.Male2)
                 {
                     abName = animInfo.AssetpathMale2;
                     assetName = animInfo.FileMale2;
+                    baseABName = animInfo.AssetpathBaseM2;
+                    baseAssetName = animInfo.AssetBaseM2;
+                }
+
+                //the path of base animator is always in "00" if not mentioned
+                if (baseABName == "")
+                {
+                    string[] abNameSplit = abName.Split('/');
+                    baseABName = abNameSplit[0];
+                    for (int i = 1; i < abNameSplit.Length; i++)
+                    {
+                        if (i != abNameSplit.Length - 2)
+                            baseABName += "/" + abNameSplit[i];
+                        else
+                            baseABName += "/00";
+                    }
+                }
+
+                if (baseAssetName == "")
+                {
+                    baseAssetName = assetName.Substring(0, assetName.Length - 2) + "base";
                 }
 
                 var rac = character.LoadAnimation(abName, assetName);
-                actor.Animation.SetRegularAnimator(rac);
+                
+                var racBase = character.LoadAnimation(baseABName, baseAssetName);
+                var racResult = Illusion.Unity.Utils.Animator.SetupAnimatorOverrideController(racBase, rac);
+                actor.Animation.SetAnimatorController(racResult);
             }
 
             private static void SetCharacterPlayAnimation(Chara.ChaControl character, string clipName)
             {
-                string prefix = Util.GetHeightKindAnimationPrefix(character.GetHeightKind());
-                string fullClipName = prefix + clipName;
-                //Log.LogInfo("Name: " + character.FileParam.fullname + ", clipname: " + fullClipName);
-                character.PlaySync(fullClipName, -1, 0);
+                character.PlaySync(clipName, 0, 0);
             }
 
-            private static string GetRandomAnimationClipName(Actor actor)
+            private static string GetRandomAnimationClipName()
             {
-                List<string> list = new List<string>();
-
-                foreach (var clip in actor.Chara.AnimBody.runtimeAnimatorController.animationClips)
-                {
-                    if (clip.name.Contains(Constant.HAnimClipKeyword.Loop))
-                    {
-                        //Remove the height kind
-                        string clipname = clip.name.Substring(2);
-                        //Log.LogInfo("GetRandomAnimationClipName clipname: " + clip.name + ", substring: " + clipname);
-                        if (!list.Contains(clipname) && HAnimation.IsValidClipType(clipname))
-                            list.Add(clipname);
-                    }
-                }
-
                 System.Random rnd = new System.Random();
-                int rndResult = rnd.Next(list.Count);
-                return list[rndResult];
-            }
-
-            internal static void RecoverAllClothesState(ActionScene actionScene)
-            {
-                if(actionScene != null)
-                    foreach(var actor in actionScene._actors)
-                        RecoverClothesState(actor.Chara);
-            }
-
-            private static void RecoverClothesState(Chara.ChaControl character)
-            {
-                if (StateManager.Instance.ActorClothesState.ContainsKey(character.GetInstanceID()))
-                {
-                    byte[] originalClothesState = StateManager.Instance.ActorClothesState[character.GetInstanceID()];
-                    for (int i = 0; i < Math.Min(character.FileStatus.clothesState.Length, 8); i++)
-                    {
-                        character.FileStatus.clothesState[i] = originalClothesState[i];
-                    }
-                }
+                int rndResult = rnd.Next(Settings.ValidPlayableHClipType.Length);
+                return Settings.ValidPlayableHClipType[rndResult];
             }
 
             private static void SetActorClothesState(Chara.ChaControl character, HScene.AnimationListInfo animInfo, Constant.HCharacterType characterType)
             {
-                //recover the clothes state
-                RecoverClothesState(character);
-
                 //apply the clothes state per animation info
                 int index = -1;
                 if (characterType == Constant.HCharacterType.Female1)
@@ -804,10 +1141,13 @@ namespace HSceneCrowdReaction.HSceneScreen
             }
 
 
-            private static void ForcePenisVisible(Chara.ChaControl character)
+            private static void ForcePenisVisible(Chara.ChaControl character, bool isShowPenis)
             {
-                if (character.Sex == 0)
+
+                if (character.Sex == 0 || character.FileParam.futanari)
                 {
+                    if (isShowPenis) { 
+
                     character.confSon = true;
                     character.VisibleSon = true;
 
@@ -815,86 +1155,64 @@ namespace HSceneCrowdReaction.HSceneScreen
                     character.CmpBody.targetEtc.objDanTama.active = true;
                     character.CmpBody.targetEtc.objDanTop.active = true;
 
-                    StateManager.Instance.ForceActiveInstanceID.Add(character.CmpBody.targetEtc.objDanSao.GetInstanceID());
-                    StateManager.Instance.ForceActiveInstanceID.Add(character.CmpBody.targetEtc.objDanTama.GetInstanceID());
-                    StateManager.Instance.ForceActiveInstanceID.Add(character.CmpBody.targetEtc.objDanTop.GetInstanceID());
+                    if (!StateManager.Instance.ForceActiveInstanceID.Contains(character.CmpBody.targetEtc.objDanSao.GetInstanceID()))
+                        StateManager.Instance.ForceActiveInstanceID.Add(character.CmpBody.targetEtc.objDanSao.GetInstanceID());
+                    if (!StateManager.Instance.ForceActiveInstanceID.Contains(character.CmpBody.targetEtc.objDanTama.GetInstanceID()))
+                        StateManager.Instance.ForceActiveInstanceID.Add(character.CmpBody.targetEtc.objDanTama.GetInstanceID());
+                    if (!StateManager.Instance.ForceActiveInstanceID.Contains(character.CmpBody.targetEtc.objDanTop.GetInstanceID()))
+                        StateManager.Instance.ForceActiveInstanceID.Add(character.CmpBody.targetEtc.objDanTop.GetInstanceID());
+                    }
+                    else
+                    {
+                        StateManager.Instance.ForceActiveInstanceID.Remove(character.CmpBody.targetEtc.objDanSao.GetInstanceID());
+                        StateManager.Instance.ForceActiveInstanceID.Remove(character.CmpBody.targetEtc.objDanTama.GetInstanceID());
+                        StateManager.Instance.ForceActiveInstanceID.Remove(character.CmpBody.targetEtc.objDanTop.GetInstanceID());
+                    }
                 }
             }
 
             private static void SetVoiceToActor(Actor actor, string clipName)
             {
-
                 if (actor.Sex != 1)
                     return;
 
-                Log.LogInfo("SetVoiceToActor " + actor.Status.FullName);
                 var extraInfo = GetExtraHAnimationDataForActor(actor);
-                /*
-                var hAnimData = StateManager.Instance.ActorHAnimationList[actor.GetInstanceID()];
-
-                var animInfo = hAnimData.animationListInfo;
-                int animInfoGroup = GetHAnimationGroup(animInfo);
-                var extraInfo = HAnimation.ExtraHAnimationDataDictionary[(animInfoGroup, animInfo.ID)];
-                */
-                //Log.LogInfo("SetVoiceToActor currentAnimInfo.NameAnimation.Substring(2): " + clipName);
-                var clipType = (HAnimation.HAnimationClipType)Enum.Parse(typeof(HAnimation.HAnimationClipType), clipName);
-                //Log.LogInfo("SetVoiceToActor pt1, " + actor.Chara.FileParam.personality + ", " + extraInfo.hPosition + ", " + clipType);
-                var voiceDataList = HVoice.HVoiceDictionary[(actor.Chara.FileParam.personality, extraInfo.hPosition, clipType)];
-                //Log.LogInfo("SetVoiceToActor pt2");
-                //if (voiceDataList == null)
-                //Log.LogInfo("voiceDataList null");
+                var characterType = StateManager.Instance.ActorHAnimationList[actor.GetInstanceID()].characterType;
+                HVoice.HVoiceType targetType;
+                if (characterType == Constant.HCharacterType.Female1)
+                    targetType = extraInfo.female1VoiceType;
+                else
+                    targetType = extraInfo.female2VoiceType;
+                
+                var voiceDataList = HVoice.HVoiceDictionary[(actor.Chara.FileParam.personality, targetType, clipName)];
 
                 System.Random rnd = new System.Random();
                 int rndResult = rnd.Next(voiceDataList.Count);
-                //Log.LogInfo("SetVoiceToActor pt3");
-
-
+                
                 Manager.Voice.Loader loader = new Manager.Voice.Loader();
                 loader.Bundle = voiceDataList[rndResult].assetBundle;
                 loader.Asset = voiceDataList[rndResult].asset;
-                //Log.LogInfo("SetVoiceToActor pt4");
+
                 loader.No = actor.Chara.FileParam.personality;
                 loader.Pitch = actor.Chara.FileParam.voicePitch;
                 loader.SettingNo = -1;
                 loader.VoiceTrans = actor.Chara.CmpBoneBody.targetEtc.trfHeadParent;
-                //Log.LogInfo("SetVoiceToActor pt5");
-                //var audioSource = Manager.Voice.OncePlay(loader);
+
                 var audioSource = Manager.Voice.Play(loader);
                 audioSource.maxDistance = Settings.HVoiceMaxDistance;
                 audioSource.rolloffMode = AudioRolloffMode.Linear;
                 audioSource.loop = true;
                 if (actor.Chara.ASVoice != null)
                     actor.Chara.ASVoice.Stop();
-                //Log.LogInfo("SetVoiceToActor pt6");
+
                 actor.Chara.SetVoiceTransform(audioSource);
-                //Log.LogInfo("SetVoiceToActor pt7");
-                /*
-                Manager.Voice.Create(Manager.Voice._transTable[actor.Chara.FileParam.personality]);
-
-                
-                //if(actor.Chara.ASVoice != null)
-                //    actor.Chara.ASVoice.Stop();
-                
-
-                Log.LogInfo("SetVoiceToActor pt5");
-
-                
-                var audioSource = Manager.Voice.OncePlay(loader);
-                audioSource.maxDistance = Settings.HVoiceMaxDistance;
-                audioSource.rolloffMode = AudioRolloffMode.Linear;
-                audioSource.loop = true;
-                Log.LogInfo("SetVoiceToActor pt6");
-                
-                actor.Chara.SetVoiceTransform(audioSource);
-                */
             }
 
             private static HAnimation.ExtraHAnimationData GetExtraHAnimationDataForActor(Actor actor)
             {
                 var animInfo = StateManager.Instance.ActorHAnimationList[actor.GetInstanceID()].animationListInfo;
-                var situationType = StateManager.Instance.ActorHAnimationList[actor.GetInstanceID()].situationType;
                 int animInfoGroup = GetHAnimationGroup(animInfo);
-                return HAnimation.ExtraHAnimationDataDictionary[(animInfoGroup, animInfo.ID, situationType)];
+                return HAnimation.ExtraHAnimationDataDictionary[(animInfoGroup, animInfo.ID)];
             }
 
             private static void GetHCharacterType(Actor actor1, Actor actor2, out Constant.HCharacterType actor1Type, out Constant.HCharacterType actor2Type)
@@ -916,6 +1234,38 @@ namespace HSceneCrowdReaction.HSceneScreen
                 }
             }
 
+            //index 0: male1, 1: male2, 2: female1, 3, female2
+            private static Actor[] ConvertActorsToArray(Actor actor1, Actor actor2, Actor actor3 = null, Actor actor4 = null)
+            {
+                Actor[] arrActors = new Actor[4];
+                AddActorToActorArray(arrActors, actor1);
+                AddActorToActorArray(arrActors, actor2);
+                AddActorToActorArray(arrActors, actor3);
+                AddActorToActorArray(arrActors, actor4);
+
+                return arrActors;
+            }
+
+            private static void AddActorToActorArray(Actor[] arr, Actor actor)
+            {
+                if (actor == null) return;
+
+                if (actor.Sex == 0)
+                {
+                    if (arr[0] == null)
+                        arr[0] = actor;
+                    else
+                        arr[1] = actor;
+                }
+                else
+                {
+                    if (arr[2] == null)
+                        arr[2] = actor;
+                    else
+                        arr[3] = actor;
+                }
+            }
+
             private static HAnimation.SituationType GetSituationType(Actor actor1, Actor actor2)
             {
                 if (actor1.Sex != actor2.Sex)
@@ -923,6 +1273,8 @@ namespace HSceneCrowdReaction.HSceneScreen
                 else
                     return HAnimation.SituationType.FF;
             }
+
+            
         }
     }
 }

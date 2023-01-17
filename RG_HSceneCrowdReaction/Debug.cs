@@ -12,6 +12,8 @@ namespace HSceneCrowdReaction
 
         public static void PrintDetail(object a)
         {
+            if (a == null) return;
+
             foreach (var prop in a.GetType().GetProperties())
             {
                 try
@@ -29,7 +31,7 @@ namespace HSceneCrowdReaction
                     }
                     else
                         Log.Log(LogLevel.Info, prop.Name + " is null!!");
-                    
+
                 }
                 catch { }
             }
@@ -216,7 +218,8 @@ namespace HSceneCrowdReaction
                         Log.LogInfo("LstOffset[" + k + "]: " + item.LstOffset[k]);
                     for (int k = 0; k < item.VisiblePointMapObj.Count; k++)
                         Log.LogInfo("VisiblePointMapObj[" + k + "]: " + item.VisiblePointMapObj[k]);
-
+                    for (int k = 0; k < item.LimitMap.Count; k++)
+                        Log.LogInfo("LimitMap[" + k + "]: " + item.LimitMap[k]);
                     Log.LogInfo("%%%%%%%%%%%%%%%%%%%");
                 }
 
@@ -285,17 +288,30 @@ namespace HSceneCrowdReaction
             }
         }
 
-        internal static void PrintTransformTreeUpward(Transform t, string currentPath, string stopAt=null)
+        internal static void PrintTransformTreeUpward(Transform t, string currentPath, string stopAt = null)
+        {
+            GetComponentTypes(t);
+
+            Log.LogInfo("Visiting the parent of [" + t.name + "]" + ", position: " + t.position);
+            if (t.parent != null && (stopAt == null || t.name != stopAt))
+                PrintTransformTreeUpward(t.parent, "[" + t.name + "]." + currentPath);
+        }
+
+        internal static string GetChaControl(Transform t)
         {
 
-            Log.LogInfo("Active: " + t.gameObject.active + ", activeInHierarchy: " + t.gameObject.activeInHierarchy + ", activeSelf: " + t.gameObject.activeSelf);
+            var ctrl = t.GetComponent<Chara.ChaControl>();
+            if (ctrl != null)
+            {
+                return ctrl.FileParam.fullname;
+            }
 
-            //if (!t.gameObject.active)
-            //{
-                Log.LogInfo("Visiting the parent of [" + t.name + "]" + ", position: " + t.position);
-                if(t.parent != null && ( stopAt == null || t.name != stopAt))
-                PrintTransformTreeUpward(t.parent, "[" + t.name + "]." + currentPath);
-            //}
+            if (t.parent != null)
+                return GetChaControl(t.parent);
+            else
+                return "";
+
+
         }
 
         internal static void PrintTransformTreeNameOnly(Transform t)
@@ -306,8 +322,6 @@ namespace HSceneCrowdReaction
 
                 for (int i = 0; i < t.GetChildCount(); i++)
                 {
-
-                    //Log.LogInfo("Visiting the parent of [" + t.name + "]");
                     PrintTransformTreeNameOnly(t.GetChild(i));
                 }
             }
@@ -390,6 +404,152 @@ namespace HSceneCrowdReaction
 
             }
         }
+
+        internal static void PrintAllHPoint()
+        {
+            var list = StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst;
+            foreach (var kvp in list)
+            {
+                Log.LogInfo("HPoint kvp.Key: " + kvp.Key);
+                foreach (var item in kvp.Value.HPoints)
+                {
+                    Log.LogInfo("HPoint ID: " + item.ID + ", name: " + item.name + ", position: " + item.transform.position + ", rotation: " + item.transform.rotation.eulerAngles + ", now using? " + item.NowUsing + ", instanceID: " + item.GetInstanceID());
+                    
+                }
+
+            }
+            
+        }
+
+        internal static HScene.AnimationListInfo GetAnimFromTable(int cat, int id)
+        {
+            foreach (var item in Manager.HSceneManager.HResourceTables.LstAnimInfo[cat])
+            {
+                if (item.ID == id)
+                    return item;
+            }
+            return null;
+        }
+
+        internal enum HPointType
+        {
+            OfficeConferenceTable,
+            OfficeConferenceSeat,
+            OfficeWall,
+            OfficeFloor,
+            OfficeToilet,
+            OfficeCounter,
+            OfficeSeatNoBack,
+            OfficeDesk,
+
+            ClinicsPatientSeat,
+            ClinicsSeatBack,
+            ClinicsSeat,
+            ClinicsBed,
+            ClinicsDeliveryTable,
+            ClinicsHospitalBed,
+
+            SeminarCounter,
+            SeminarStudentSeat,
+            SeminarInstructorSeat,
+
+            LivehouseMirror,
+            LivehouseRoundSeat,
+            LivehouseSeatBack,
+
+            CasinoPole,
+            CasinoTable,
+            CasinoSeat,
+
+            LivingRoomSofa,
+            LivingRoomCounter,
+            LivingRoomBathTub,
+            LivingRoomSeat,
+            ParkLongChair
+        }
+
+        internal static HPoint GetHPoint(HPointType type)
+        {
+            switch (type)
+            {
+                case HPointType.OfficeConferenceTable:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[5].HPoints[7];       //conference table
+                case HPointType.OfficeConferenceSeat:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[3].HPoints[5];       //conference seat
+                case HPointType.OfficeSeatNoBack:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[3].HPoints[7];       //seat no back
+                case HPointType.OfficeWall:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[2].HPoints[1];       //wall
+                case HPointType.OfficeFloor:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[0].HPoints[2];       //floor
+                case HPointType.OfficeToilet:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[9].HPoints[0];       //toilet
+                case HPointType.OfficeCounter:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[7].HPoints[0];       //counter
+                case HPointType.OfficeDesk:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[5].HPoints[0];       //desk
+                case HPointType.SeminarCounter:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[7].HPoints[0];       //counter
+                case HPointType.SeminarStudentSeat:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[3].HPoints[0];       //student seat
+                case HPointType.SeminarInstructorSeat:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[3].HPoints[3];       //instructor seat
+                case HPointType.ClinicsPatientSeat:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[3].HPoints[0];       //patient seat
+                case HPointType.ClinicsSeat:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[3].HPoints[2];       //seat no back
+                case HPointType.ClinicsSeatBack:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[3].HPoints[1];       //seat with back
+                case HPointType.ClinicsBed:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[9].HPoints[3];       //patient bed 
+                case HPointType.ClinicsDeliveryTable:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[9].HPoints[1];       //delivery table 
+                case HPointType.ClinicsHospitalBed:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[9].HPoints[2];       //hospital bed
+                case HPointType.LivehouseMirror:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[9].HPoints[2];       //in front of mirror
+                case HPointType.LivehouseRoundSeat:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[3].HPoints[2];       //round seat in front of mirror
+                case HPointType.LivehouseSeatBack:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[3].HPoints[0];       //seat with back
+                case HPointType.CasinoPole:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[9].HPoints[1];       //pole
+                case HPointType.CasinoTable:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[5].HPoints[0];       //gamble table
+                case HPointType.CasinoSeat:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[3].HPoints[12];       //seat
+                case HPointType.LivingRoomSofa:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[6].HPoints[0];       //sofa
+                case HPointType.LivingRoomCounter:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[7].HPoints[0];       //Counter
+                case HPointType.LivingRoomBathTub:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[9].HPoints[1];       //bath tub
+                case HPointType.LivingRoomSeat:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[3].HPoints[0];       //Seat
+                case HPointType.ParkLongChair:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[4].HPoints[0];       //Long Chair
+                default:
+                    return null;
+            }
+
+        }
+
+        internal static void PrintAllABAssetName(string abPath)
+        {
+            string path = Util.GetAssetBundleBasePath() + abPath;
+            AssetBundle ab = AssetBundle.LoadFromFile(path);
+
+            if (ab != null)
+            {
+
+                foreach (var s in ab.AllAssetNames())
+                {
+                    Log.LogInfo(abPath + ": " + s);
+                }
+            }
+            ab.Unload(false);
+        }
+
         private static void GetComponentTypes(Transform t)
         {
             var c1 = t.GetComponent<Renderer>(); if (c1 != null) Log.LogInfo("has Renderer");

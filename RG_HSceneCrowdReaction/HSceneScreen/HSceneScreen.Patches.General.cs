@@ -26,17 +26,33 @@ namespace HSceneCrowdReaction.HSceneScreen
 
                     StateManager.Instance.ForceActiveInstanceID = new List<int>();
                     StateManager.Instance.HActionUpdateTimerList = new List<Timer>();
-                    //StateManager.Instance.HActionActorList = new List<int>();
                     StateManager.Instance.ActorHAnimationList = new Dictionary<int, HAnimation.ActorHAnimData>();
-                    
+
                     StateManager.Instance.ActorHAnimNextUpdateProcessing = new Dictionary<int, bool>();
-                    foreach(var actor in ActionScene.Instance._actors)
+                    foreach (var actor in ActionScene.Instance._actors)
                     {
                         StateManager.Instance.ActorHAnimNextUpdateProcessing.Add(actor.Chara.GetInstanceID(), false);
                     }
                     StateManager.Instance.ActorHAnimNextUpdateTimeDictionary = new Dictionary<int, long>();
 
+                    StateManager.Instance.CharacterCollisionCtrlDictionary = new Dictionary<int, CollisionCtrl>();
+                    StateManager.Instance.CharacterHitObjectCtrlDictionary = new Dictionary<int, HitObjectCtrl>();
+                    StateManager.Instance.CharacterYureCtrlDictionary = new Dictionary<int, YureCtrl>();
+                    StateManager.Instance.CharacterDynamicBoneCtrlDictionary = new Dictionary<int, DynamicBoneReferenceCtrl>();
+                    StateManager.Instance.CharacterHLayerCtrlDictionary = new Dictionary<int, HLayerCtrl>();
+                    StateManager.Instance.CharacterHItemCtrlDictionary = new Dictionary<int, HItemCtrl>();
+                    StateManager.Instance.CharacterHPointDictionary = new Dictionary<int, HPoint>();
                     
+
+                    StateManager.Instance.ForceBlowJobTarget = new Dictionary<int, Transform>();
+
+                    StateManager.Instance.CharacterCtrlInitFinishedDictionary = new Dictionary<int, bool>();
+
+                    StateManager.Instance.ActorBackUpData = new Dictionary<int, StateManager.BackUpInformation>();
+
+                    StateManager.Instance.HSceneOccupiedHPointIDList = new List<int>();
+
+
                 }
             }
 
@@ -47,8 +63,16 @@ namespace HSceneCrowdReaction.HSceneScreen
                     var actorList = GetActorsNotInvolvedInH(ActionScene.Instance, hScene);
                     foreach (var actor in actorList)
                     {
-                        actor.Chara.ChangeLookEyesPtn(0);
-                        actor.Chara.ChangeLookNeckPtn(0);
+                        if (StateManager.Instance.ActorBackUpData.ContainsKey(actor.GetInstanceID()))
+                        {
+                            var bkInfo = StateManager.Instance.ActorBackUpData[actor.GetInstanceID()];
+                            actor.Chara.ChangeLookEyesTarget(bkInfo.lookEyePtn, bkInfo.lookEyeTarget);
+                            actor.Chara.ChangeLookNeckTarget(bkInfo.lookNeckPtn, bkInfo.lookNeckTarget);
+
+                            actor.Chara.ChangeLookEyesPtn(bkInfo.lookEyePtn);
+                            actor.Chara.ChangeLookNeckPtn(bkInfo.lookNeckPtn);
+                        }
+
                     }
                 }
             }
@@ -80,7 +104,7 @@ namespace HSceneCrowdReaction.HSceneScreen
 
             internal static void DestroyStateManagerList()
             {
-                
+
                 if (StateManager.Instance.HActionUpdateTimerList != null)
                 {
                     foreach (var timer in StateManager.Instance.HActionUpdateTimerList)
@@ -94,7 +118,7 @@ namespace HSceneCrowdReaction.HSceneScreen
                     StateManager.Instance.HActionUpdateTimerList.Clear();
                     StateManager.Instance.HActionUpdateTimerList = null;
                 }
-                
+
                 if (StateManager.Instance.ActorHAnimationList != null)
                 {
                     StateManager.Instance.ActorHAnimationList.Clear();
@@ -105,7 +129,7 @@ namespace HSceneCrowdReaction.HSceneScreen
                     StateManager.Instance.ForceActiveInstanceID.Clear();
                     StateManager.Instance.ForceActiveInstanceID = null;
                 }
-                
+
 
 
                 if (StateManager.Instance.ActorHAnimNextUpdateTimeDictionary != null)
@@ -113,7 +137,7 @@ namespace HSceneCrowdReaction.HSceneScreen
                     StateManager.Instance.ActorHAnimNextUpdateTimeDictionary.Clear();
                     StateManager.Instance.ActorHAnimNextUpdateTimeDictionary = null;
                 }
-                if(StateManager.Instance.ActorHAnimNextUpdateProcessing != null)
+                if (StateManager.Instance.ActorHAnimNextUpdateProcessing != null)
                 {
                     StateManager.Instance.ActorHAnimNextUpdateProcessing.Clear();
                     StateManager.Instance.ActorHAnimNextUpdateProcessing = null;
@@ -122,9 +146,79 @@ namespace HSceneCrowdReaction.HSceneScreen
                 {
                     StateManager.Instance.ActorClothesState.Clear();
                 }
+
+                if (StateManager.Instance.ForceBlowJobTarget != null)
+                {
+                    StateManager.Instance.ForceBlowJobTarget.Clear();
+                    StateManager.Instance.ForceBlowJobTarget = null;
+                }
+
+                if (StateManager.Instance.CharacterCollisionCtrlDictionary != null)
+                {
+                    StateManager.Instance.CharacterCollisionCtrlDictionary.Clear();
+                    StateManager.Instance.CharacterCollisionCtrlDictionary = null;
+                }
+
+                if (StateManager.Instance.CharacterHitObjectCtrlDictionary != null)
+                {
+                    StateManager.Instance.CharacterHitObjectCtrlDictionary.Clear();
+                    StateManager.Instance.CharacterHitObjectCtrlDictionary = null;
+                }
+
+                if (StateManager.Instance.CharacterYureCtrlDictionary != null)
+                {
+                    StateManager.Instance.CharacterYureCtrlDictionary.Clear();
+                    StateManager.Instance.CharacterYureCtrlDictionary = null;
+                }
+
+                if (StateManager.Instance.CharacterDynamicBoneCtrlDictionary != null)
+                {
+                    StateManager.Instance.CharacterDynamicBoneCtrlDictionary.Clear();
+                    StateManager.Instance.CharacterDynamicBoneCtrlDictionary = null;
+                }
+
+                if (StateManager.Instance.CharacterCtrlInitFinishedDictionary != null)
+                {
+                    StateManager.Instance.CharacterCtrlInitFinishedDictionary.Clear();
+                    StateManager.Instance.CharacterCtrlInitFinishedDictionary = null;
+                }
+
+                if (StateManager.Instance.CharacterHLayerCtrlDictionary != null)
+                {
+                    StateManager.Instance.CharacterHLayerCtrlDictionary.Clear();
+                    StateManager.Instance.CharacterHLayerCtrlDictionary = null;
+                }
+
+                if (StateManager.Instance.CharacterHItemCtrlDictionary != null)
+                {
+                    foreach(var kvp in StateManager.Instance.CharacterHItemCtrlDictionary)
+                    {
+                        kvp.Value.MapReleaseItem();
+                    }
+                    StateManager.Instance.CharacterHItemCtrlDictionary.Clear();
+                    StateManager.Instance.CharacterHItemCtrlDictionary = null;
+                }
+
+                if (StateManager.Instance.CharacterHPointDictionary != null)
+                {
+                    StateManager.Instance.CharacterHPointDictionary.Clear();
+                    StateManager.Instance.CharacterHPointDictionary = null;
+                }
+
+                if (StateManager.Instance.HSceneOccupiedHPointIDList != null)
+                {
+                    StateManager.Instance.HSceneOccupiedHPointIDList.Clear();
+                    StateManager.Instance.HSceneOccupiedHPointIDList = null;
+                }
+
+                if (StateManager.Instance.ActorBackUpData != null)
+                {
+                    StateManager.Instance.ActorBackUpData.Clear();
+                    StateManager.Instance.ActorBackUpData = null;
+                }
             }
 
-            
+
 
             internal static void ChangeActorsAnimation(HScene hScene)
             {
@@ -140,16 +234,21 @@ namespace HSceneCrowdReaction.HSceneScreen
                         List<Actor> hCharList = GetActorsInvolvedInH(ActionScene.Instance, hScene);
                         foreach (Actor actor in charList)
                         {
+                            //Recover the clothes state as all actors are forced to take off the clothes before enter H scene in order to fix a rendering issue
+                            HAnim.RecoverClothesState(actor.Chara);
+
                             if (StateManager.Instance.ActorHAnimationList.ContainsKey(actor.GetInstanceID()))
                                 continue;
 
+                            
                             if (HAnim.IsHActionPossible(actor))
                             {
-                                Log.LogInfo("Start H Animation: " + actor.Status.FullName + " and " + actor.Partner.Status.FullName);
+                                //If H action is possible, trigger this first
                                 HAnim.StartHAnimation(actor);
                             }
                             else
                             {
+                                //Otherwise set other single reaction
 
                                 int animType = Util.GetCurrentAnimationType(ActionScene.Instance.MapID, actor.Sex, actor.Animation._param.ID);
 
@@ -185,31 +284,6 @@ namespace HSceneCrowdReaction.HSceneScreen
                                         actor.Animation.SetAnimatorController(rac);
                                     }
                                     actor.PlayAnimOnce(reactionParam.animationParameter);
-
-                                    //Log.LogInfo("=============");
-                                    //Debug.PrintDetail(reactionParam.animationParameter);
-                                    //if(reactionParam.animationParameter.States != null)
-                                    //    for(int i=0; i< reactionParam.animationParameter.States.Count; i++)
-                                    //    {
-                                    //        for (int j = 0; j < reactionParam.animationParameter.States[i].Count; j++)
-                                    //            Log.LogInfo("States[" + i + "][" + j +  "]: " + reactionParam.animationParameter.States[i][j]);
-                                    //    }
-                                    //if (reactionParam.animationParameter.StateHashes != null)
-                                    //    for (int i = 0; i < reactionParam.animationParameter.StateHashes.Count; i++)
-                                    //    {
-                                    //        for (int j = 0; j < reactionParam.animationParameter.StateHashes[i].Count; j++)
-                                    //        {
-                                    //            Log.LogInfo("StateHashes[" + i + "][" + j + "]: " + reactionParam.animationParameter.StateHashes[i][j]);
-                                    //        }
-                                    //    }
-                                    //if (reactionParam.animationParameter.SpecifiedLayers != null)
-                                    //    for (int i = 0; i < reactionParam.animationParameter.SpecifiedLayers.Count; i++)
-                                    //    {
-                                    //        Log.LogInfo("SpecifiedLayers[" + i + "]: " + reactionParam.animationParameter.SpecifiedLayers[i]);
-
-                                    //    }
-
-                                    //Log.LogInfo("=============");
                                 }
 
                                 StateManager.Instance.CustomAnimationParameter.Add(actor.GetInstanceID(), reactionParam);
@@ -298,8 +372,6 @@ namespace HSceneCrowdReaction.HSceneScreen
             {
                 if (StateManager.Instance.CustomAnimationParameter.ContainsKey(actor.GetInstanceID()))
                 {
-                    Log.LogInfo("ChangeActorLookingAtHScene: " + actor.Status.FullName);
-
                     var reactionParam = StateManager.Instance.CustomAnimationParameter[actor.GetInstanceID()];
                     var hSceneFirstFemaleChar = StateManager.Instance.CurrentHSceneInstance._chaFemales[0];
 
@@ -400,7 +472,6 @@ namespace HSceneCrowdReaction.HSceneScreen
 
             internal static List<Actor> GetActorsNotInvolvedInH(ActionScene actionScene, HScene hScene)
             {
-                Log.LogInfo("GetActorsNotInvolvedInH");
                 List<Actor> result = new List<Actor>();
                 List<int> hCharList = new List<int>();
                 if (hScene._chaFemales != null)
@@ -411,7 +482,6 @@ namespace HSceneCrowdReaction.HSceneScreen
                             hCharList.Add(hScene._chaFemales[i].GetInstanceID());
                     }
                 }
-                Log.LogInfo("GetActorsNotInvolvedInH pt1");
 
                 if (hScene._chaMales != null)
                 {
@@ -421,20 +491,17 @@ namespace HSceneCrowdReaction.HSceneScreen
                             hCharList.Add(hScene._chaMales[i].GetInstanceID());
                     }
                 }
-                Log.LogInfo("GetActorsNotInvolvedInH pt2");
                 foreach (var actor in actionScene._actors)
                 {
                     if (!hCharList.Contains(actor.Chara.GetInstanceID()))
                         result.Add(actor);
                 }
-                Log.LogInfo("GetActorsNotInvolvedInH pt3, result Count: " + result);
 
                 return result;
             }
 
             internal static List<Actor> GetActorsInvolvedInH(ActionScene actionScene, HScene hScene)
             {
-                Log.LogInfo("GetActorsInvolvedInH");
                 List<Actor> result = new List<Actor>();
                 List<int> hCharList = new List<int>();
                 if (hScene._chaFemales != null)
@@ -472,7 +539,35 @@ namespace HSceneCrowdReaction.HSceneScreen
             ////}
 
 
+            internal static Actor GetActorByChaControlID(int id)
+            {
+                if(ActionScene.Instance != null)
+                {
+                    foreach(var actor in ActionScene.Instance._actors)
+                        if(actor.Chara.GetInstanceID() == id)
+                            return actor;
+                }
+                return null;
+            }
 
+            internal static void BackupCharacterLookInfo(HScene hScene)
+            {
+                if(ActionScene.Instance != null)
+                {
+                    var actorList = GetActorsNotInvolvedInH(ActionScene.Instance, hScene);
+                    foreach(var actor in actorList)
+                    {
+                        StateManager.BackUpInformation info = new StateManager.BackUpInformation();
+                        info.lookEyePtn = actor.Chara.GetLookEyesPtn();
+                        info.lookNeckPtn = actor.Chara.GetLookNeckPtn();
+                        info.lookEyeTarget = actor.Chara.EyeLookCtrl.target;
+                        info.lookNeckTarget = actor.Chara.NeckLookCtrl.target;
+
+                        StateManager.Instance.ActorBackUpData.Add(actor.GetInstanceID(), info);
+                    }
+                }
+                
+            }
 
         }
     }

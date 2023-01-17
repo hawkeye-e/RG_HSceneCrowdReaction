@@ -26,13 +26,33 @@ namespace HSceneCrowdReaction
         internal Dictionary<int, bool> ActorHAnimNextUpdateProcessing = null;
 
         internal Dictionary<int, byte[]> ActorClothesState = null;
+        
+
+        internal Dictionary<int, CollisionCtrl> CharacterCollisionCtrlDictionary = null;
+        internal Dictionary<int, HitObjectCtrl> CharacterHitObjectCtrlDictionary = null;
+        internal Dictionary<int, YureCtrl> CharacterYureCtrlDictionary = null;
+        internal Dictionary<int, DynamicBoneReferenceCtrl> CharacterDynamicBoneCtrlDictionary = null;
+        internal Dictionary<int, HLayerCtrl> CharacterHLayerCtrlDictionary = null;
+        internal Dictionary<int, HItemCtrl> CharacterHItemCtrlDictionary = null;
+        internal Dictionary<int, HPoint> CharacterHPointDictionary = null;
+
+        internal Dictionary<int, bool> CharacterCtrlInitFinishedDictionary = null;
+
+        internal Dictionary<int, Transform> ForceBlowJobTarget = null;
+
+        internal List<int> HSceneParticipantActorIDList = null;
+
+        internal List<int> HSceneOccupiedHPointIDList = null;
+
+        internal Dictionary<int, BackUpInformation> ActorBackUpData = null;
 
 
-        internal bool isprint = false;
-        internal List<int> isrotated= new List<int>();
-        internal Transform left = null;
-        internal Transform right = null;
-
-        internal List<int> animCtrlIDs = new List<int>();
+        internal class BackUpInformation
+        {
+            internal int lookEyePtn;
+            internal int lookNeckPtn;
+            internal Transform lookEyeTarget;
+            internal Transform lookNeckTarget;
+        }
     }
 }

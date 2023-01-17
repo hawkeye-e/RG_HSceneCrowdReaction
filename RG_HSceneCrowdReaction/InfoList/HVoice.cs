@@ -9,47 +9,14 @@ namespace HSceneCrowdReaction.InfoList
         private static ManualLogSource Log = HSceneCrowdReactionPlugin.Log;
 
         //Key: (personality, HPositionType, VoicePaceType)
-        internal static Dictionary<(int, HAnimation.HPositionType, HAnimation.HAnimationClipType), List<HVoiceAssetData>> HVoiceDictionary;
+        internal static Dictionary<(int, HVoiceType, string), List<HVoiceAssetData>> HVoiceDictionary;
 
         internal static void Init()
         {
             if(HVoiceDictionary == null)
             {
-                HVoiceDictionary = new Dictionary<(int, HAnimation.HPositionType, HAnimation.HAnimationClipType), List<HVoiceAssetData>>();
-
+                HVoiceDictionary = new Dictionary<(int, HVoiceType, string), List<HVoiceAssetData>>();                
                 ReadCSVFile();
-                /*
-                HVoiceDictionary.Add((Constant.PersonalityType.OfficeLadyTypeA, HAnimation.HPositionType.AibuKiss, VoicePaceType.Idle), 
-                    new List<HVoiceAssetData> { 
-                        new HVoiceAssetData(Constant.PersonalityType.OfficeLadyTypeA, "rg_hk_00_015") 
-                    });
-                HVoiceDictionary.Add((Constant.PersonalityType.OfficeLadyTypeA, HAnimation.HPositionType.AibuKiss, VoicePaceType.Normal),
-                    new List<HVoiceAssetData> {
-                        new HVoiceAssetData(Constant.PersonalityType.OfficeLadyTypeA, "rg_hk_00_040"),
-                        new HVoiceAssetData(Constant.PersonalityType.OfficeLadyTypeA, "rg_hk_00_041"),
-                        new HVoiceAssetData(Constant.PersonalityType.OfficeLadyTypeA, "rg_hk_00_042"),
-                        new HVoiceAssetData(Constant.PersonalityType.OfficeLadyTypeA, "rg_hk_00_043"),  
-                        new HVoiceAssetData(Constant.PersonalityType.OfficeLadyTypeA, "rg_hk_00_044"),
-                        new HVoiceAssetData(Constant.PersonalityType.OfficeLadyTypeA, "rg_hk_00_045")
-                    });
-                HVoiceDictionary.Add((Constant.PersonalityType.OfficeLadyTypeA, HAnimation.HPositionType.AibuKiss, VoicePaceType.Rapid),
-                    new List<HVoiceAssetData> {
-                        new HVoiceAssetData(Constant.PersonalityType.OfficeLadyTypeA, "rg_hk_00_076"),
-                        new HVoiceAssetData(Constant.PersonalityType.OfficeLadyTypeA, "rg_hk_00_077"),
-                        new HVoiceAssetData(Constant.PersonalityType.OfficeLadyTypeA, "rg_hk_00_078"),
-
-                        new HVoiceAssetData(Constant.PersonalityType.OfficeLadyTypeA, "rg_hk_00_079"),
-                        new HVoiceAssetData(Constant.PersonalityType.OfficeLadyTypeA, "rg_hk_00_080"),
-                        new HVoiceAssetData(Constant.PersonalityType.OfficeLadyTypeA, "rg_hk_00_081")
-                    });
-
-                HVoiceDictionary.Add((Constant.PersonalityType.OfficeLadyTypeA, HAnimation.HPositionType.AibuKiss, VoicePaceType.NearOrgasm),
-                    new List<HVoiceAssetData> {
-                        new HVoiceAssetData(Constant.PersonalityType.OfficeLadyTypeA, "rg_hk_00_107"),
-                        new HVoiceAssetData(Constant.PersonalityType.OfficeLadyTypeA, "rg_hk_00_108"),
-                        
-                    });
-                */
             }
         }
 
@@ -65,24 +32,31 @@ namespace HSceneCrowdReaction.InfoList
                 
 #pragma warning disable CS8605
 #pragma warning disable CS8602
-                int personalityType = (int)typeof(Constant.PersonalityType).GetField(rowData[0]).GetValue(null);
-                HAnimation.HPositionType hPositionType = (HAnimation.HPositionType)Enum.Parse(typeof(HAnimation.HPositionType), rowData[1]);
-                HAnimation.HAnimationClipType clipType = (HAnimation.HAnimationClipType)Enum.Parse(typeof(HAnimation.HAnimationClipType), rowData[2]);
+                HVoiceType voiceType = (HVoiceType)Enum.Parse(typeof(HVoiceType), rowData[0]);
 #pragma warning restore CS8602
 #pragma warning restore CS8605
-                string asset = rowData[3];
-                List<HVoiceAssetData> dataList;
-                if (HVoiceDictionary.ContainsKey((personalityType, hPositionType, clipType)))
+                string clipType = rowData[1];
+                int assetNumber = int.Parse(rowData[2]);
+
+                for(int personalityType = 0; personalityType < Constant.TotalPersonalityCount; personalityType++)
                 {
-                    dataList = HVoiceDictionary[(personalityType, hPositionType, clipType)];
-                }
-                else
-                {
-                    dataList = new List<HVoiceAssetData>();
-                    HVoiceDictionary.Add((personalityType, hPositionType, clipType), dataList);
+                    string assetName = string.Format(Settings.HVoiceAssetNameFormat, personalityType, assetNumber);
+
+                    List<HVoiceAssetData> dataList;
+                    if (HVoiceDictionary.ContainsKey((personalityType, voiceType, clipType)))
+                    {
+                        dataList = HVoiceDictionary[(personalityType, voiceType, clipType)];
+                    }
+                    else
+                    {
+                        dataList = new List<HVoiceAssetData>();
+                        HVoiceDictionary.Add((personalityType, voiceType, clipType), dataList);
+                    }
+
+                    dataList.Add(new HVoiceAssetData(personalityType, assetName));
                 }
 
-                dataList.Add(new HVoiceAssetData(personalityType, asset));
+                
             }
         }
 
@@ -93,7 +67,6 @@ namespace HSceneCrowdReaction.InfoList
 
             public HVoiceAssetData(int personalityType, string asset)
             {
-                //this.assetBundle = assetBundle;
                 this.assetBundle = string.Format(Settings.HVoiceAssetBundleFormat, personalityType);
                 this.asset = asset;
             }
@@ -101,14 +74,24 @@ namespace HSceneCrowdReaction.InfoList
 
         }
 
-        internal enum VoicePaceType
+        internal enum HVoiceType
         {
-            Idle,
-            Normal,
-            Rapid,
-            NearOrgasm
+            BlowJob,
+            BlowJobIntercourse,
+            ForceBlowJob,
+            HandAndLick,
+            Kiss,
+            Leading,
+            LickAndBlow,
+            LickLeading,
+            LickJob,
+            NA,
+            OnPhone,
+            Pain,
+            Receiving,
+            Service,
+            SixNine,
+            SixNineLeading,
         }
-
-
     }
 }

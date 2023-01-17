@@ -4,6 +4,12 @@ namespace HSceneCrowdReaction
 {
     internal class Constant
     {
+        internal const int TotalPersonalityCount = 12;
+        internal const string AnimatorParamHeight = "height";
+        internal const string AnimatorParamSpeed = "speed";
+        internal const string AnimatorParamMotion = "motion";
+        internal const string AnimatorParamBreast = "breast";
+
         internal class AnimType
         {
             internal const int NotDetermined = -1;
@@ -81,10 +87,10 @@ namespace HSceneCrowdReaction
 
         internal enum HCharacterType
         {
-            Female1,
-            Female2,
-            Male1,
-            Male2
+            Female1 = 0,
+            Female2 = 1,
+            Male1 = 2,
+            Male2 = 3
         }
 
         internal class PersonalityType
@@ -106,7 +112,6 @@ namespace HSceneCrowdReaction
 
         internal class HAnimationClipNameKind
         {
-            //TODO: need double check
             internal const char Normal = 'W';
             internal const char Rapid = 'S';
             internal const char NearOrgasm = 'O';

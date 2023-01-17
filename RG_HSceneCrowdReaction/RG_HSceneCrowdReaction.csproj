@@ -39,10 +39,6 @@
       <HintPath>ref\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Assembly-CSharp-firstpass">
-      <HintPath>ref\Assembly-CSharp-firstpass.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="BepInEx.Core">
       <HintPath>ref\BepInEx.Core.dll</HintPath>
       <Private>False</Private>
@@ -116,7 +112,6 @@
     <Compile Include="CustomTimer.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="Debug.cs" />
     <Compile Include="InfoList\HAnimation.cs" />
     <Compile Include="HSceneCrowdReaction.cs" />
     <Compile Include="HSceneScreen\HSceneScreen.Hook.cs" />
@@ -144,6 +139,9 @@
   <ItemGroup>
     <None Include="Raw\HAnimation.csv" />
     <None Include="Raw\HVoice.csv" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="ExcludeAnimationInfo.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
