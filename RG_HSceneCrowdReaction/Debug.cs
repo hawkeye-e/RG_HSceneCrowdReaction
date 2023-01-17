@@ -220,6 +220,11 @@ namespace HSceneCrowdReaction
                         Log.LogInfo("VisiblePointMapObj[" + k + "]: " + item.VisiblePointMapObj[k]);
                     for (int k = 0; k < item.LimitMap.Count; k++)
                         Log.LogInfo("LimitMap[" + k + "]: " + item.LimitMap[k]);
+                    for (int k = 0; k < item.LimitStart.Count; k++)
+                        Log.LogInfo("LimitStart[" + k + "]: " + item.LimitStart[k]);
+                    for (int k = 0; k < item.LstSystem.Count; k++)
+                        Log.LogInfo("LstSystem[" + k + "]: " + item.LstSystem[k]);
+                    Log.LogInfo("ActionCtrl.Item1: " + item.ActionCtrl.Item1 + ", ActionCtrl.Item2: " + item.ActionCtrl.Item2);
                     Log.LogInfo("%%%%%%%%%%%%%%%%%%%");
                 }
 
@@ -413,7 +418,12 @@ namespace HSceneCrowdReaction
                 Log.LogInfo("HPoint kvp.Key: " + kvp.Key);
                 foreach (var item in kvp.Value.HPoints)
                 {
-                    Log.LogInfo("HPoint ID: " + item.ID + ", name: " + item.name + ", position: " + item.transform.position + ", rotation: " + item.transform.rotation.eulerAngles + ", now using? " + item.NowUsing + ", instanceID: " + item.GetInstanceID());
+                    Log.LogInfo("HPoint ID: " + item.ID + ", name: " + item.name
+                        + ", position: " + item.transform.position
+                        + ", localPosition: " + item.transform.localPosition
+                        + ", rotation: " + item.transform.rotation.eulerAngles
+                        + ", localRotation: " + item.transform.localRotation.eulerAngles
+                        + ", now using? " + item.NowUsing + ", instanceID: " + item.GetInstanceID());
                     
                 }
 

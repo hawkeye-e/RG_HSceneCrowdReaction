@@ -63,7 +63,7 @@ namespace HSceneCrowdReaction.HSceneScreen
 
                 //Get the chosen animation
                 var animInfo = GetHAnimation(hPoint, situationType);
-
+                
                 //Setup HPoint
                 InitHPoint(hPoint, animInfo, arrActors);
 
@@ -403,7 +403,7 @@ namespace HSceneCrowdReaction.HSceneScreen
             }
 
 
-            private static void ShowBodyParts(Actor actor, Actor partnerActor, HAnimation.ActorHAnimData animData)
+            private static void SetBodyParts(Actor actor, Actor partnerActor, HAnimation.ActorHAnimData animData)
             {
                 var animInfo = animData.animationListInfo;
                 var characterType = animData.characterType;
@@ -459,7 +459,6 @@ namespace HSceneCrowdReaction.HSceneScreen
                     //need to force updating the dick head location
                     if (!StateManager.Instance.ForceBlowJobTarget.ContainsKey(partnerActor.Chara.GetInstanceID()))
                         StateManager.Instance.ForceBlowJobTarget.Add(partnerActor.Chara.GetInstanceID(), actor.Chara.CmpBoneHead.targetEtc.trfMouthAdjustWidth.Find("cf_J_MouthLow"));
-
                 }
                 else
                 {
@@ -470,14 +469,17 @@ namespace HSceneCrowdReaction.HSceneScreen
                     {
                         actor.Chara.ChangeTongueState(1);
                     }
-                    var bkInfo = StateManager.Instance.ActorBackUpData[actor.GetInstanceID()];
-                    actor.Chara.ChangeLookEyesTarget(bkInfo.lookEyePtn, partnerActor.Chara.ObjEyesLookTarget.transform);
-                    actor.Chara.ChangeLookNeckTarget(bkInfo.lookNeckPtn, partnerActor.Chara.ObjNeckLookTarget.transform);
-
-                    actor.Chara.ChangeLookEyesPtn(bkInfo.lookEyePtn);
-                    actor.Chara.ChangeLookNeckPtn(bkInfo.lookNeckPtn);
+                    
                 }
 
+
+                //neck and eye direction
+                var bkInfo = StateManager.Instance.ActorBackUpData[actor.GetInstanceID()];
+                actor.Chara.ChangeLookEyesTarget(bkInfo.lookEyePtn, partnerActor.Chara.ObjEyesLookTarget.transform);
+                actor.Chara.ChangeLookNeckTarget(bkInfo.lookNeckPtn, partnerActor.Chara.ObjNeckLookTarget.transform);
+
+                actor.Chara.ChangeLookEyesPtn(bkInfo.lookEyePtn);
+                actor.Chara.ChangeLookNeckPtn(bkInfo.lookNeckPtn);
             }
 
             //// Not using, the variable faceInfo and HScene is required. Need further study 
@@ -826,8 +828,8 @@ namespace HSceneCrowdReaction.HSceneScreen
                     SetAnimInfoParam(animInfo2, actor2, speed, clipNameType);
                 }
 
-                ShowBodyParts(actor1, actor2, animInfo1);
-                ShowBodyParts(actor2, actor1, animInfo2);
+                SetBodyParts(actor1, actor2, animInfo1);
+                SetBodyParts(actor2, actor1, animInfo2);
 
                 //Set the items
                 SetItemCtrl(ConvertActorsToArray(actor1, actor2), clipNameType);
@@ -961,7 +963,7 @@ namespace HSceneCrowdReaction.HSceneScreen
             {
                 int hPointType = GetHPointType(hPoint);
                 var possibleAnimList = GetAvailableHAnimationList(hPointType, situationType);
-
+                
                 System.Random rnd = new System.Random();
                 int rndResult = rnd.Next(possibleAnimList.Count);
                 return possibleAnimList[rndResult];
@@ -1031,6 +1033,9 @@ namespace HSceneCrowdReaction.HSceneScreen
                 actor.transform.localPosition = hPoint.transform.localPosition + extraInfo.offsetVector;
                 actor.transform.rotation = hPoint.transform.rotation;
                 actor.transform.localRotation = hPoint.transform.localRotation;
+
+                actor.Chara.transform.localRotation = Quaternion.identity;
+                actor.Chara.transform.localPosition = Vector3.zero;
 
                 if ((characterType == Constant.HCharacterType.Female1 && extraInfo.isFemale1Inverse)
                     || (characterType == Constant.HCharacterType.Female2 && extraInfo.isFemale2Inverse)
