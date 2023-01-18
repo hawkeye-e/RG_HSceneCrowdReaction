@@ -232,6 +232,19 @@ namespace HSceneCrowdReaction.HSceneScreen
                         //Find out all the characters that are not involved in H
                         List<Actor> charList = GetActorsNotInvolvedInH(ActionScene.Instance, hScene);
                         List<Actor> hCharList = GetActorsInvolvedInH(ActionScene.Instance, hScene);
+
+                        ////TODO: under development
+                        var groups = BackgroundHAnimation.HAnimationGroup.GetHAnimationGroups(charList);
+                        foreach (var group in groups) {
+                            Log.LogInfo("groupig info "
+                                + ", male1: " + group.male1?.Status.FullName
+                                + ", male2: " + group.male2?.Status.FullName
+                                + ", female1: " + group.female1?.Status.FullName
+                                + ", female2: " + group.female2?.Status.FullName
+                                + ", situation type: " + group.situationType
+                                );
+                        }
+
                         foreach (Actor actor in charList)
                         {
                             //Recover the clothes state as all actors are forced to take off the clothes before enter H scene in order to fix a rendering issue

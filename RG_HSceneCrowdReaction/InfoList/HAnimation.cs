@@ -236,7 +236,8 @@ namespace HSceneCrowdReaction.InfoList
             MF,
             FF,
             MMF,
-            FFM
+            FFM,
+            Unknown
         }
 
         internal class HAnimationClipType
