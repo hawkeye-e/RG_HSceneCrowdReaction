@@ -42,13 +42,14 @@ namespace HSceneCrowdReaction.HSceneScreen
                     StateManager.Instance.CharacterHLayerCtrlDictionary = new Dictionary<int, HLayerCtrl>();
                     StateManager.Instance.CharacterHItemCtrlDictionary = new Dictionary<int, HItemCtrl>();
                     StateManager.Instance.CharacterHPointDictionary = new Dictionary<int, HPoint>();
-                    
+
 
                     StateManager.Instance.ForceBlowJobTarget = new Dictionary<int, Transform>();
 
                     StateManager.Instance.CharacterCtrlInitFinishedDictionary = new Dictionary<int, bool>();
 
                     StateManager.Instance.ActorBackUpData = new Dictionary<int, StateManager.BackUpInformation>();
+                    StateManager.Instance.ActorHGroupDictionary = new Dictionary<int, BackgroundHAnimation.HAnimationGroup>();
 
                     StateManager.Instance.HSceneOccupiedHPointIDList = new List<int>();
 
@@ -191,7 +192,7 @@ namespace HSceneCrowdReaction.HSceneScreen
 
                 if (StateManager.Instance.CharacterHItemCtrlDictionary != null)
                 {
-                    foreach(var kvp in StateManager.Instance.CharacterHItemCtrlDictionary)
+                    foreach (var kvp in StateManager.Instance.CharacterHItemCtrlDictionary)
                     {
                         kvp.Value.MapReleaseItem();
                     }
@@ -216,6 +217,13 @@ namespace HSceneCrowdReaction.HSceneScreen
                     StateManager.Instance.ActorBackUpData.Clear();
                     StateManager.Instance.ActorBackUpData = null;
                 }
+
+                if (StateManager.Instance.ActorHGroupDictionary != null)
+                {
+                    StateManager.Instance.ActorHGroupDictionary.Clear();
+                    StateManager.Instance.ActorHGroupDictionary = null;
+                }
+
             }
 
 
@@ -235,7 +243,9 @@ namespace HSceneCrowdReaction.HSceneScreen
 
                         ////TODO: under development
                         var groups = BackgroundHAnimation.HAnimationGroup.GetHAnimationGroups(charList);
-                        foreach (var group in groups) {
+                        foreach (var group in groups)
+                        {
+                            
                             Log.LogInfo("groupig info "
                                 + ", male1: " + group.male1?.Status.FullName
                                 + ", male2: " + group.male2?.Status.FullName
@@ -243,6 +253,19 @@ namespace HSceneCrowdReaction.HSceneScreen
                                 + ", female2: " + group.female2?.Status.FullName
                                 + ", situation type: " + group.situationType
                                 );
+
+                            //Recover the clothes state as all actors are forced to take off the clothes before enter H scene in order to fix a rendering issue
+                            HAnim.RecoverClothesState(group);
+
+                            HAnim.StartHAnimation(group);
+                            if (group.male1 != null)
+                                charList.Remove(group.male1);
+                            if (group.male2 != null)
+                                charList.Remove(group.male2); 
+                            if (group.female1 != null)
+                                charList.Remove(group.female1);
+                            if (group.female2 != null)
+                                charList.Remove(group.female2);
                         }
 
                         foreach (Actor actor in charList)
@@ -253,13 +276,13 @@ namespace HSceneCrowdReaction.HSceneScreen
                             if (StateManager.Instance.ActorHAnimationList.ContainsKey(actor.GetInstanceID()))
                                 continue;
 
-                            
-                            if (HAnim.IsHActionPossible(actor))
-                            {
-                                //If H action is possible, trigger this first
-                                HAnim.StartHAnimation(actor);
-                            }
-                            else
+
+                            //if (HAnim.IsHActionPossible(actor))
+                            //{
+                            //    //If H action is possible, trigger this first
+                            //    HAnim.StartHAnimation(actor);
+                            //}
+                            //else
                             {
                                 //Otherwise set other single reaction
 
@@ -554,10 +577,10 @@ namespace HSceneCrowdReaction.HSceneScreen
 
             internal static Actor GetActorByChaControlID(int id)
             {
-                if(ActionScene.Instance != null)
+                if (ActionScene.Instance != null)
                 {
-                    foreach(var actor in ActionScene.Instance._actors)
-                        if(actor.Chara.GetInstanceID() == id)
+                    foreach (var actor in ActionScene.Instance._actors)
+                        if (actor.Chara.GetInstanceID() == id)
                             return actor;
                 }
                 return null;
@@ -565,10 +588,10 @@ namespace HSceneCrowdReaction.HSceneScreen
 
             internal static void BackupCharacterLookInfo(HScene hScene)
             {
-                if(ActionScene.Instance != null)
+                if (ActionScene.Instance != null)
                 {
                     var actorList = GetActorsNotInvolvedInH(ActionScene.Instance, hScene);
-                    foreach(var actor in actorList)
+                    foreach (var actor in actorList)
                     {
                         StateManager.BackUpInformation info = new StateManager.BackUpInformation();
                         info.lookEyePtn = actor.Chara.GetLookEyesPtn();
@@ -579,7 +602,7 @@ namespace HSceneCrowdReaction.HSceneScreen
                         StateManager.Instance.ActorBackUpData.Add(actor.GetInstanceID(), info);
                     }
                 }
-                
+
             }
 
         }

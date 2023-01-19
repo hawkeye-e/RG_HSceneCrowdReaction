@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Timers;
 using HSceneCrowdReaction.InfoList;
+using HSceneCrowdReaction.BackgroundHAnimation;
+using RG.Scene.Action.Core;
 
 namespace HSceneCrowdReaction
 {
@@ -45,6 +47,7 @@ namespace HSceneCrowdReaction
         internal List<int> HSceneOccupiedHPointIDList = null;
 
         internal Dictionary<int, BackUpInformation> ActorBackUpData = null;
+        internal Dictionary<int, HAnimationGroup> ActorHGroupDictionary = null;
 
 
         internal class BackUpInformation
@@ -53,6 +56,24 @@ namespace HSceneCrowdReaction
             internal int lookNeckPtn;
             internal Transform lookEyeTarget;
             internal Transform lookNeckTarget;
+        }
+
+        internal static void UpdateHGroupDictionary(HAnimationGroup group)
+        {
+            UpdateHGroupDictionary(group.male1, group);
+            UpdateHGroupDictionary(group.male2, group);
+            UpdateHGroupDictionary(group.female1, group);
+            UpdateHGroupDictionary(group.female2, group);
+        }
+
+        internal static void UpdateHGroupDictionary(Actor actor, HAnimationGroup group)
+        {
+            if (actor == null) return;
+
+            if (Instance.ActorHGroupDictionary.ContainsKey(actor.GetInstanceID()))
+                Instance.ActorHGroupDictionary[actor.GetInstanceID()] = group;
+            else
+                Instance.ActorHGroupDictionary.Add(actor.GetInstanceID(), group);
         }
     }
 }

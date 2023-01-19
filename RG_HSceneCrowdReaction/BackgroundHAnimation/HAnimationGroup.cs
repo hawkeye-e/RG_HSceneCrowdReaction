@@ -15,6 +15,15 @@ namespace HSceneCrowdReaction.BackgroundHAnimation
         internal Actor female2;
         internal InfoList.HAnimation.SituationType situationType;
 
+        public HAnimationGroup()
+        {
+            male1 = null;
+            male2 = null;
+            female1 = null;
+            female2 = null;
+            situationType = InfoList.HAnimation.SituationType.Unknown;
+        }
+
         internal static List<HAnimationGroup> GetHAnimationGroups(List<Actor> actorList)
         {
             List<HAnimationGroup> result = new List<HAnimationGroup>();
@@ -152,30 +161,30 @@ namespace HSceneCrowdReaction.BackgroundHAnimation
                 }
             }
 
-            //try to assign the remaining actor to threesome
-            List<Actor> notAssignedActors = actorList.Where(a => !processedActorID.Contains(a.GetInstanceID())).ToList();
-            foreach(var actor in notAssignedActors)
-            {
-                var twoActorGroup = result.Where(r => r.situationType == InfoList.HAnimation.SituationType.MF || r.situationType == InfoList.HAnimation.SituationType.FF);
-                foreach (var group in twoActorGroup)
-                {
-                    if(group.situationType == InfoList.HAnimation.SituationType.MF)
-                    {
-                        if(IsHActionPossible(actor, group.male1, group.female1))
-                        {
-                            group.AssignActor(actor);
-                            group.UpdateSituationType();
-                        }   
-                    }else if(group.situationType == InfoList.HAnimation.SituationType.FF)
-                    {
-                        if (IsHActionPossible(actor, group.female1, group.female2))
-                        {
-                            group.AssignActor(actor);
-                            group.UpdateSituationType();
-                        }
-                    }
-                }
-            }
+            ////try to assign the remaining actor to threesome
+            //List<Actor> notAssignedActors = actorList.Where(a => !processedActorID.Contains(a.GetInstanceID())).ToList();
+            //foreach(var actor in notAssignedActors)
+            //{
+            //    var twoActorGroup = result.Where(r => r.situationType == InfoList.HAnimation.SituationType.MF || r.situationType == InfoList.HAnimation.SituationType.FF);
+            //    foreach (var group in twoActorGroup)
+            //    {
+            //        if(group.situationType == InfoList.HAnimation.SituationType.MF)
+            //        {
+            //            if(IsHActionPossible(actor, group.male1, group.female1))
+            //            {
+            //                group.AssignActor(actor);
+            //                group.UpdateSituationType();
+            //            }   
+            //        }else if(group.situationType == InfoList.HAnimation.SituationType.FF)
+            //        {
+            //            if (IsHActionPossible(actor, group.female1, group.female2))
+            //            {
+            //                group.AssignActor(actor);
+            //                group.UpdateSituationType();
+            //            }
+            //        }
+            //    }
+            //}
 
 
             return result;
