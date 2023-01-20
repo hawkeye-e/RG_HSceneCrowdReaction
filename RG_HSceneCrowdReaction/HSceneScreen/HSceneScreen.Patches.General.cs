@@ -280,9 +280,13 @@ namespace HSceneCrowdReaction.HSceneScreen
                             List<int> possibleReaction = DecidePossibleReaction(actor, hCharList);
 
                             //Decide the reaction by random number
-                            System.Random rnd = new System.Random();
-                            int rndResult = rnd.Next(possibleReaction.Count);
-                            var chosenReaction = possibleReaction[rndResult];
+                            int chosenReaction = -1;
+                            if (possibleReaction.Count > 0)
+                            {
+                                System.Random rnd = new System.Random();
+                                int rndResult = rnd.Next(possibleReaction.Count);
+                                chosenReaction = possibleReaction[rndResult];
+                            }
 
                             //set the animation to the character
                             var reactionParam = GetCustomAnimationData(chosenReaction, animType, actor.Sex);
@@ -328,31 +332,39 @@ namespace HSceneCrowdReaction.HSceneScreen
                 switch (Util.GetCharacterType(actor))
                 {
                     case Constant.CharacterType.Honesty:
-                        possibleReaction.Add(Constant.PossibleReactionType.Awkward);
-                        possibleReaction.Add(Constant.PossibleReactionType.Angry);
+                        if(Config.EnableSeriousAwkward)
+                            possibleReaction.Add(Constant.PossibleReactionType.Awkward);
+                        if(Config.EnableSeriousAngry)
+                            possibleReaction.Add(Constant.PossibleReactionType.Angry);
                         break;
                     case Constant.CharacterType.Naughty:
-                        possibleReaction.Add(Constant.PossibleReactionType.Hurray);
-                        possibleReaction.Add(Constant.PossibleReactionType.Excited);
+                        if(Config.EnablePlayfulHurray)
+                            possibleReaction.Add(Constant.PossibleReactionType.Hurray);
+                        if(Config.EnablePlayfulExcited)
+                            possibleReaction.Add(Constant.PossibleReactionType.Excited);
                         break;
                     case Constant.CharacterType.Unique:
-                        possibleReaction.Add(Constant.PossibleReactionType.Worry);
-                        possibleReaction.Add(Constant.PossibleReactionType.Happy);
+                        if(Config.EnableUniqueWorry)
+                            possibleReaction.Add(Constant.PossibleReactionType.Worry);
+                        if(Config.EnableUniqueHappy)
+                            possibleReaction.Add(Constant.PossibleReactionType.Happy);
                         break;
                 }
 
                 //Allow masturbation if female and sex desire is high enough
-                if (actor.Sex == 1 && actor._status.Parameters[(int)RG.Define.Action.StatusCategory.Libido] > Settings.LibidoThreshold)
+                if (actor.Sex == 1 && actor._status.Parameters[(int)RG.Define.Action.StatusCategory.Libido] >= Config.MasturbationLibidoThreshold)
                 {
-                    possibleReaction.Add(Constant.PossibleReactionType.Libido);
+                    if(Config.EnableStandardMasturbation)
+                        possibleReaction.Add(Constant.PossibleReactionType.Libido);
                 }
 
                 //Check if any partner involved in H
                 foreach (var target in hCharList)
                 {
-                    if (ActionScene.IsGTERelationState(actor, target, RG.Define.Action.RelationType.Partner))
+                    if (ActionScene.IsGTERelationState(actor, target, RG.Define.Action.RelationType.Partner) || !Config.StandardCryPrerequisite)
                     {
-                        possibleReaction.Add(Constant.PossibleReactionType.Cry);
+                        if(Config.EnableStandardCry)
+                            possibleReaction.Add(Constant.PossibleReactionType.Cry);
                     }
                 }
 

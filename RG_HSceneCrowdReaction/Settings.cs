@@ -5,7 +5,7 @@ namespace HSceneCrowdReaction
 {
     internal class Settings
     {
-        internal const int LibidoThreshold = 50;
+        internal const int DefaultLibidoThreshold = 50;
 
         internal const int HActionMinMilliSecond = 10000;
         internal const int HActionRandomMilliSecond = 10000;
