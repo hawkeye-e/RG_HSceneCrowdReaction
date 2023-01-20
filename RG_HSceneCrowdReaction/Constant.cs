@@ -67,30 +67,13 @@ namespace HSceneCrowdReaction
             internal const int Hurray = 7;
         }
 
-        internal class HeightKind
-        {
-            internal const string Small = "S_";
-            internal const string Medium = "M_";
-            internal const string Large = "L_";
-        }
-
-        internal class HAnimSpeed
-        {
-            internal const float Max = 2;
-            internal const float Min = 1;
-        }
-
-        internal class HAnimClipKeyword
-        {
-            internal const string Loop = "Loop";
-        }
-
         internal enum HCharacterType
         {
+            NA = -1,
             Female1 = 0,
             Female2 = 1,
             Male1 = 2,
-            Male2 = 3
+            Male2 = 3,
         }
 
         internal class PersonalityType

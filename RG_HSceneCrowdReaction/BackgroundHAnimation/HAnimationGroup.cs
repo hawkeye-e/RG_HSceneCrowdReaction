@@ -14,6 +14,7 @@ namespace HSceneCrowdReaction.BackgroundHAnimation
         internal Actor female1;
         internal Actor female2;
         internal InfoList.HAnimation.SituationType situationType;
+        internal HPoint hPoint;
 
         public HAnimationGroup()
         {
@@ -161,30 +162,31 @@ namespace HSceneCrowdReaction.BackgroundHAnimation
                 }
             }
 
-            ////try to assign the remaining actor to threesome
-            //List<Actor> notAssignedActors = actorList.Where(a => !processedActorID.Contains(a.GetInstanceID())).ToList();
-            //foreach(var actor in notAssignedActors)
-            //{
-            //    var twoActorGroup = result.Where(r => r.situationType == InfoList.HAnimation.SituationType.MF || r.situationType == InfoList.HAnimation.SituationType.FF);
-            //    foreach (var group in twoActorGroup)
-            //    {
-            //        if(group.situationType == InfoList.HAnimation.SituationType.MF)
-            //        {
-            //            if(IsHActionPossible(actor, group.male1, group.female1))
-            //            {
-            //                group.AssignActor(actor);
-            //                group.UpdateSituationType();
-            //            }   
-            //        }else if(group.situationType == InfoList.HAnimation.SituationType.FF)
-            //        {
-            //            if (IsHActionPossible(actor, group.female1, group.female2))
-            //            {
-            //                group.AssignActor(actor);
-            //                group.UpdateSituationType();
-            //            }
-            //        }
-            //    }
-            //}
+            //try to assign the remaining actor to threesome
+            List<Actor> notAssignedActors = actorList.Where(a => !processedActorID.Contains(a.GetInstanceID())).ToList();
+            foreach (var actor in notAssignedActors)
+            {
+                var twoActorGroup = result.Where(r => r.situationType == InfoList.HAnimation.SituationType.MF || r.situationType == InfoList.HAnimation.SituationType.FF);
+                foreach (var group in twoActorGroup)
+                {
+                    if (group.situationType == InfoList.HAnimation.SituationType.MF)
+                    {
+                        if (IsHActionPossible(actor, group.male1, group.female1))
+                        {
+                            group.AssignActor(actor);
+                            group.UpdateSituationType();
+                        }
+                    }
+                    else if (group.situationType == InfoList.HAnimation.SituationType.FF)
+                    {
+                        if (IsHActionPossible(actor, group.female1, group.female2))
+                        {
+                            group.AssignActor(actor);
+                            group.UpdateSituationType();
+                        }
+                    }
+                }
+            }
 
 
             return result;
@@ -222,6 +224,16 @@ namespace HSceneCrowdReaction.BackgroundHAnimation
                 situationType = InfoList.HAnimation.SituationType.F;
             else
                 situationType = InfoList.HAnimation.SituationType.Unknown;
+        }
+
+        public List<Actor> GetActorList()
+        {
+            List<Actor> list = new List<Actor>();
+            if (male1 != null) list.Add(male1);
+            if (male2 != null) list.Add(male2);
+            if (female1 != null) list.Add(female1);
+            if (female2 != null) list.Add(female2);
+            return list;
         }
 
 

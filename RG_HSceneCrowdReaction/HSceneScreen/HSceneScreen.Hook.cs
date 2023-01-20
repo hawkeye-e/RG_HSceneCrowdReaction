@@ -6,8 +6,8 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using UnhollowerBaseLib;
 
-using RG.Scene.Action.UI;
 
 namespace HSceneCrowdReaction.HSceneScreen
 {
@@ -21,6 +21,7 @@ namespace HSceneCrowdReaction.HSceneScreen
         [HarmonyPatch(typeof(HScene), nameof(HScene.CharaInit))]
         private static void CharaInitPost(HScene __instance)
         {
+            StateManager.Instance.CurrentHSceneInstance = __instance;
             Patches.General.InitHScene(__instance);
             Patches.General.BackupCharacterLookInfo(__instance);
         }
@@ -65,7 +66,7 @@ namespace HSceneCrowdReaction.HSceneScreen
         ////Remove the clothes of the actors not involved in H in order to fix a body rendering issue
         [HarmonyPrefix]
         [HarmonyPatch(typeof(HScene), nameof(HScene.StartPointSelect))]
-        private static void StartPointSelectPre(HScene __instance, int hpointLen, UnhollowerBaseLib.Il2CppReferenceArray<HPoint> hPoints, int checkCategory, HScene.AnimationListInfo info)
+        private static void StartPointSelectPre(HScene __instance, int hpointLen, Il2CppReferenceArray<HPoint> hPoints, int checkCategory, HScene.AnimationListInfo info)
         {
             Patches.HAnim.RemoveAllClothesState(__instance);
         }
@@ -73,7 +74,7 @@ namespace HSceneCrowdReaction.HSceneScreen
         //Change the animation of actors not involved in H
         [HarmonyPostfix]
         [HarmonyPatch(typeof(HScene), nameof(HScene.StartPointSelect))]
-        private static void StartPointSelectPost(HScene __instance, int hpointLen, UnhollowerBaseLib.Il2CppReferenceArray<HPoint> hPoints, int checkCategory, HScene.AnimationListInfo info)
+        private static void StartPointSelectPost(HScene __instance, int hpointLen, Il2CppReferenceArray<HPoint> hPoints, int checkCategory, HScene.AnimationListInfo info)
         {
             Patches.General.ChangeActorsAnimation(__instance);
         }
@@ -99,6 +100,14 @@ namespace HSceneCrowdReaction.HSceneScreen
                 if (StateManager.Instance.ForceActiveInstanceID.Contains(__instance.GetInstanceID()))
                     __instance.active = true;
             }
+        }
+
+        //Remove the HPoint occupied by groups
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HPointCtrl), nameof(HPointCtrl.SetMarker), new[] { typeof(Il2CppSystem.Collections.Generic.List<HPoint>), typeof(int), typeof(Il2CppSystem.Collections.Generic.List<HScene.AnimationListInfo>), typeof(bool) })]
+        private static void SetMarkerPre(Il2CppSystem.Collections.Generic.List<HPoint> points)
+        {
+            Patches.HAnim.RemoveOccupiedHPoints(points);
         }
 
     }

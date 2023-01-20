@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Timers;
 using HSceneCrowdReaction.InfoList;
+using HSceneCrowdReaction.BackgroundHAnimation;
 
 namespace HSceneCrowdReaction.HSceneScreen
 {
@@ -241,19 +242,13 @@ namespace HSceneCrowdReaction.HSceneScreen
                         List<Actor> charList = GetActorsNotInvolvedInH(ActionScene.Instance, hScene);
                         List<Actor> hCharList = GetActorsInvolvedInH(ActionScene.Instance, hScene);
 
-                        ////TODO: under development
-                        var groups = BackgroundHAnimation.HAnimationGroup.GetHAnimationGroups(charList);
+                        //Get the H groups and stored the state
+                        var groups = HAnimationGroup.GetHAnimationGroups(charList);
+                        foreach (var group in groups)
+                            StateManager.UpdateHGroupDictionary(group);
+
                         foreach (var group in groups)
                         {
-                            
-                            Log.LogInfo("groupig info "
-                                + ", male1: " + group.male1?.Status.FullName
-                                + ", male2: " + group.male2?.Status.FullName
-                                + ", female1: " + group.female1?.Status.FullName
-                                + ", female2: " + group.female2?.Status.FullName
-                                + ", situation type: " + group.situationType
-                                );
-
                             //Recover the clothes state as all actors are forced to take off the clothes before enter H scene in order to fix a rendering issue
                             HAnim.RecoverClothesState(group);
 
@@ -261,7 +256,7 @@ namespace HSceneCrowdReaction.HSceneScreen
                             if (group.male1 != null)
                                 charList.Remove(group.male1);
                             if (group.male2 != null)
-                                charList.Remove(group.male2); 
+                                charList.Remove(group.male2);
                             if (group.female1 != null)
                                 charList.Remove(group.female1);
                             if (group.female2 != null)
@@ -277,55 +272,47 @@ namespace HSceneCrowdReaction.HSceneScreen
                                 continue;
 
 
-                            //if (HAnim.IsHActionPossible(actor))
-                            //{
-                            //    //If H action is possible, trigger this first
-                            //    HAnim.StartHAnimation(actor);
-                            //}
-                            //else
+                            //Otherwise set other single reaction
+
+                            int animType = Util.GetCurrentAnimationType(ActionScene.Instance.MapID, actor.Sex, actor.Animation._param.ID);
+
+                            //Get possible reactions list
+                            List<int> possibleReaction = DecidePossibleReaction(actor, hCharList);
+
+                            //Decide the reaction by random number
+                            System.Random rnd = new System.Random();
+                            int rndResult = rnd.Next(possibleReaction.Count);
+                            var chosenReaction = possibleReaction[rndResult];
+
+                            //set the animation to the character
+                            var reactionParam = GetCustomAnimationData(chosenReaction, animType, actor.Sex);
+
+
+                            //Move to a standing position if the animation is a standing one and the actor is sitting
+                            if (reactionParam.requireStanding && animType != Constant.AnimType.Standing)
                             {
-                                //Otherwise set other single reaction
-
-                                int animType = Util.GetCurrentAnimationType(ActionScene.Instance.MapID, actor.Sex, actor.Animation._param.ID);
-
-                                //Get possible reactions list
-                                List<int> possibleReaction = DecidePossibleReaction(actor, hCharList);
-
-                                //Decide the reaction by random number
-                                System.Random rnd = new System.Random();
-                                int rndResult = rnd.Next(possibleReaction.Count);
-                                var chosenReaction = possibleReaction[rndResult];
-
-                                //set the animation to the character
-                                var reactionParam = GetCustomAnimationData(chosenReaction, animType, actor.Sex);
-
-
-                                //Move to a standing position if the animation is a standing one and the actor is sitting
-                                if (reactionParam.requireStanding && animType != Constant.AnimType.Standing)
+                                if (!RelocateActor(actor))
                                 {
-                                    if (!RelocateActor(actor))
-                                    {
-                                        //Force the character to use default anim(awkward) if no such position is found
-                                        reactionParam = CustomAnimation.Common.NoChange;
-                                    }
+                                    //Force the character to use default anim(awkward) if no such position is found
+                                    reactionParam = CustomAnimation.Common.NoChange;
                                 }
-
-
-                                //Assign the animation to the actor
-                                if (reactionParam.animationParameter != null)
-                                {
-                                    if (reactionParam.assetBundle != null && reactionParam.assetName != null)
-                                    {
-                                        var rac = actor.Chara.LoadAnimation(reactionParam.assetBundle, reactionParam.assetName);
-                                        actor.Animation.SetAnimatorController(rac);
-                                    }
-                                    actor.PlayAnimOnce(reactionParam.animationParameter);
-                                }
-
-                                StateManager.Instance.CustomAnimationParameter.Add(actor.GetInstanceID(), reactionParam);
-
-                                ChangeActorLookingAtHScene(actor);
                             }
+
+
+                            //Assign the animation to the actor
+                            if (reactionParam.animationParameter != null)
+                            {
+                                if (reactionParam.assetBundle != null && reactionParam.assetName != null)
+                                {
+                                    var rac = actor.Chara.LoadAnimation(reactionParam.assetBundle, reactionParam.assetName);
+                                    actor.Animation.SetAnimatorController(rac);
+                                }
+                                actor.PlayAnimOnce(reactionParam.animationParameter);
+                            }
+
+                            StateManager.Instance.CustomAnimationParameter.Add(actor.GetInstanceID(), reactionParam);
+
+                            ChangeActorLookingAtHScene(actor);
                         }
 
 
@@ -556,6 +543,11 @@ namespace HSceneCrowdReaction.HSceneScreen
                         if (hScene._chaMales[i] != null)
                             hCharList.Add(hScene._chaMales[i].GetInstanceID());
                     }
+                }
+                foreach (var actor in actionScene._actors)
+                {
+                    if (hCharList.Contains(actor.Chara.GetInstanceID()))
+                        result.Add(actor);
                 }
 
                 return result;

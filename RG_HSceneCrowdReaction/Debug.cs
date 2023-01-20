@@ -451,6 +451,7 @@ namespace HSceneCrowdReaction
             OfficeCounter,
             OfficeSeatNoBack,
             OfficeDesk,
+            Office3PFloor,
 
             ClinicsPatientSeat,
             ClinicsSeatBack,
@@ -498,6 +499,8 @@ namespace HSceneCrowdReaction
                     return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[7].HPoints[0];       //counter
                 case HPointType.OfficeDesk:
                     return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[5].HPoints[0];       //desk
+                case HPointType.Office3PFloor:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[8].HPoints[2];       //3P
                 case HPointType.SeminarCounter:
                     return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[7].HPoints[0];       //counter
                 case HPointType.SeminarStudentSeat:

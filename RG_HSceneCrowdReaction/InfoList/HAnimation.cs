@@ -19,6 +19,14 @@ namespace HSceneCrowdReaction.InfoList
         internal static int[] ValidHPointTypeFFM = { 8 };
         internal static int[] ValidHPointTypeMMF = { 8 };
 
+        internal const int CategoryCaress = 0;
+        internal const int CategoryService = 1;
+        internal const int CategoryInsert = 2;
+        internal const int CategorySpecial = 3;
+        internal const int CategoryLesbian = 4;
+        internal const int CategoryFFM = 5;
+        internal const int CategoryMMF = 6;
+
         //H animation excluded due to technical issue (eg. unable to control the mouth)
         internal static List<(int, int)> ExcludeList;
         internal static Dictionary<(int, int), ExtraHAnimationData> ExtraHAnimationDataDictionary;
@@ -55,26 +63,22 @@ namespace HSceneCrowdReaction.InfoList
                 int categoryID = int.Parse(rowData[2]);
                 int animID = int.Parse(rowData[3]);
 
-                if (rowData[27] == "1")
+                if (rowData[28] == "1")
                 {
                     //Include in game
                     Vector3 offsetVector = Vector3.zeroVector;
-                    if (rowData[26] != "")
+                    if (rowData[27] != "")
                     {
-                        string[] strOffset = rowData[26].Split(';');
+                        string[] strOffset = rowData[27].Split(';');
                         offsetVector.x = float.Parse(strOffset[0]);
                         offsetVector.y = float.Parse(strOffset[1]);
                         offsetVector.z = float.Parse(strOffset[2]);
                     }
 
-#pragma warning disable CS8605
-#pragma warning disable CS8602
+
                     SituationType situationType = (SituationType)Enum.Parse(typeof(SituationType), rowData[1]);
                     HVoice.HVoiceType female1VoiceType = (HVoice.HVoiceType)Enum.Parse(typeof(HVoice.HVoiceType), rowData[4]);
                     HVoice.HVoiceType female2VoiceType = (HVoice.HVoiceType)Enum.Parse(typeof(HVoice.HVoiceType), rowData[5]);
-                    
-#pragma warning restore CS8602
-#pragma warning restore CS8605
 
                     ExtraHAnimationData dataInfo;
                     if (ExtraHAnimationDataDictionary.ContainsKey((categoryID, animID)))
@@ -116,6 +120,9 @@ namespace HSceneCrowdReaction.InfoList
                     dataInfo.eyebrowPtnMale2 = ParseEyebrowPtn(rowData[23], true);
                     dataInfo.eyebrowPtnFemale1 = ParseEyebrowPtn(rowData[24], false);
                     dataInfo.eyebrowPtnFemale2 = ParseEyebrowPtn(rowData[25], false);
+
+                    if (rowData[26] != null)
+                        dataInfo.mmfFemale1Target = ParseMMFTargetType(rowData[26]);
 
                     dataInfo.offsetVector = offsetVector;
                 }
@@ -210,6 +217,24 @@ namespace HSceneCrowdReaction.InfoList
             return result;
         }
 
+        private static Dictionary<string, Constant.HCharacterType> ParseMMFTargetType(string rowData)
+        {
+            Dictionary<string, Constant.HCharacterType> result = new Dictionary<string, Constant.HCharacterType>();
+            result.Add(HAnimationClipType.WLoop, Constant.HCharacterType.NA);
+            result.Add(HAnimationClipType.SLoop, Constant.HCharacterType.NA);
+            result.Add(HAnimationClipType.OLoop, Constant.HCharacterType.NA);
+
+            if (rowData != "")
+            {
+                var rowDataSplit = rowData.Split(';');
+                result[HAnimationClipType.WLoop] = (Constant.HCharacterType)Enum.Parse(typeof(Constant.HCharacterType), rowDataSplit[0]);
+                result[HAnimationClipType.SLoop] = (Constant.HCharacterType)Enum.Parse(typeof(Constant.HCharacterType), rowDataSplit[1]);
+                result[HAnimationClipType.OLoop] = (Constant.HCharacterType)Enum.Parse(typeof(Constant.HCharacterType), rowDataSplit[2]);
+            }
+
+            return result;
+        }
+
         public static bool IsInExcludeList(int category, int id)
         {
             if (ExcludeList.Contains((category, id)))
@@ -299,6 +324,8 @@ namespace HSceneCrowdReaction.InfoList
             internal Dictionary<string, int> eyebrowPtnMale2;
             internal Dictionary<string, int> eyebrowPtnFemale1;
             internal Dictionary<string, int> eyebrowPtnFemale2;
+
+            internal Dictionary<string, Constant.HCharacterType> mmfFemale1Target;
 
             internal HVoice.HVoiceType female1VoiceType;
             internal HVoice.HVoiceType female2VoiceType;
