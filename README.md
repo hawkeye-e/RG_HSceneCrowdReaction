@@ -7,7 +7,8 @@ This mod is to change the reaction of the surrounding characters who see a H sce
 - Allow the characters in pair to start H-animation even they are not involved in H scene. The position, speed of H-animation is randomly selected and will update periodically.
 
 ## How to trigger H-animation:
-Before starting a H scene, get the other characters in pair and make sure they have already had sex with each other.
+Before starting a H scene, get the other characters in pair and make sure they have already had sex with each other (Configurable).
+
 
 
 ---
@@ -57,12 +58,6 @@ Excluded H position list
       机スパンキング, 椅子スパンキング
     </td>
     <td>motion require player control</td>
-  </tr>
-  <tr>
-    <td>
-      All Threesome type positions
-    </td>
-    <td>Not implemented</td>
   </tr>
 </table>
 
