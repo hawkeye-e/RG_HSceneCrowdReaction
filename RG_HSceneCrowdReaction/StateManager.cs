@@ -17,6 +17,7 @@ namespace HSceneCrowdReaction
         internal static StateManager Instance;
 
         internal bool HSceneSetup = false;
+        internal bool HasRemoveClothes = false;
         internal Dictionary<int, CustomAnimation.CustomAnimationData> CustomAnimationParameter = null;
         internal HScene CurrentHSceneInstance = null;
         internal GameObject HeadDownLookTarget = null;

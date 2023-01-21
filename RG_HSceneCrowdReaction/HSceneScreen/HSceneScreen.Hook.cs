@@ -55,11 +55,14 @@ namespace HSceneCrowdReaction.HSceneScreen
             Patches.General.UpdateNonHActorsLookAt(__instance);
         }
 
-        //Reset the looking direction when H point moved
+        
         [HarmonyPostfix]
         [HarmonyPatch(typeof(HScene), nameof(HScene.SetPosition), new[] { typeof(Vector3), typeof(Quaternion), typeof(Vector3), typeof(Vector3), typeof(bool), typeof(bool) })]
         private static void SetPosition2Post(HScene __instance, Vector3 pos, Quaternion rot, Vector3 offsetpos, Vector3 offsetrot, bool _FadeStart, bool isWorld)
         {
+            //Change the animation of actors not involved in H
+            Patches.General.ChangeActorsAnimation(__instance);
+            //Reset the looking direction when H point moved
             Patches.General.UpdateNonHActorsLookAt(__instance);
         }
 
@@ -69,14 +72,6 @@ namespace HSceneCrowdReaction.HSceneScreen
         private static void StartPointSelectPre(HScene __instance, int hpointLen, Il2CppReferenceArray<HPoint> hPoints, int checkCategory, HScene.AnimationListInfo info)
         {
             Patches.HAnim.RemoveAllClothesState(__instance);
-        }
-
-        //Change the animation of actors not involved in H
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(HScene), nameof(HScene.StartPointSelect))]
-        private static void StartPointSelectPost(HScene __instance, int hpointLen, Il2CppReferenceArray<HPoint> hPoints, int checkCategory, HScene.AnimationListInfo info)
-        {
-            Patches.General.ChangeActorsAnimation(__instance);
         }
 
         //Change the animation of actors not involved in HHScene.StartPointSelectPre

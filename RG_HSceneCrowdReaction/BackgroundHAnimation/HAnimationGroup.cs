@@ -1,7 +1,12 @@
 ﻿using BepInEx.Logging;
+using RG.Scene;
 using RG.Scene.Action.Core;
+using HSceneCrowdReaction.InfoList;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnhollowerBaseLib;
+using UnityEngine;
 
 namespace HSceneCrowdReaction.BackgroundHAnimation
 {
@@ -13,7 +18,7 @@ namespace HSceneCrowdReaction.BackgroundHAnimation
         internal Actor male2;
         internal Actor female1;
         internal Actor female2;
-        internal InfoList.HAnimation.SituationType situationType;
+        internal HAnimation.SituationType situationType;
         internal HPoint hPoint;
 
         public HAnimationGroup()
@@ -22,7 +27,7 @@ namespace HSceneCrowdReaction.BackgroundHAnimation
             male2 = null;
             female1 = null;
             female2 = null;
-            situationType = InfoList.HAnimation.SituationType.Unknown;
+            situationType = HAnimation.SituationType.Unknown;
         }
 
         internal static List<HAnimationGroup> GetHAnimationGroups(List<Actor> actorList)
@@ -45,11 +50,16 @@ namespace HSceneCrowdReaction.BackgroundHAnimation
         {
             List<HAnimationGroup> result = new List<HAnimationGroup>();
 
-            List<int> processedActorID = new List<int>();
+            List<int> processedActorIDs = new List<int>();
+            List<HPoint> threesomePoints = GetAvailableThreesomeHPointList();
+            int current3PCount = 0;
             var threesomeActors = actorList.Where(a => a.ThreesomeTarget != null && a.ThreesomeTarget.Partner != null);
             foreach (var actor in threesomeActors)
             {
-                if (!processedActorID.Contains(actor.GetInstanceID()))
+                if (current3PCount >= threesomePoints.Count)
+                    break;
+
+                if (!processedActorIDs.Contains(actor.GetInstanceID()))
                 {
                     if (IsHActionPossible(actor, actor.ThreesomeTarget, actor.ThreesomeTarget.Partner))
                     {
@@ -60,19 +70,21 @@ namespace HSceneCrowdReaction.BackgroundHAnimation
 
                         newGroup.UpdateSituationType();
 
-                        processedActorID.Add(actor.GetInstanceID());
-                        processedActorID.Add(actor.ThreesomeTarget.GetInstanceID());
-                        processedActorID.Add(actor.ThreesomeTarget.Partner.GetInstanceID());
+                        processedActorIDs.Add(actor.GetInstanceID());
+                        processedActorIDs.Add(actor.ThreesomeTarget.GetInstanceID());
+                        processedActorIDs.Add(actor.ThreesomeTarget.Partner.GetInstanceID());
 
                         result.Add(newGroup);
+
+                        current3PCount++;
                     }
                 }
             }
 
-            var pairedActors = actorList.Where(a => a.Partner != null && !processedActorID.Contains(a.GetInstanceID()));
+            var pairedActors = actorList.Where(a => a.Partner != null && !processedActorIDs.Contains(a.GetInstanceID()));
             foreach (var actor in pairedActors)
             {
-                if (!processedActorID.Contains(actor.GetInstanceID()))
+                if (!processedActorIDs.Contains(actor.GetInstanceID()))
                 {
                     if (IsHActionPossible(actor, actor.Partner))
                     {
@@ -82,8 +94,8 @@ namespace HSceneCrowdReaction.BackgroundHAnimation
 
                         newGroup.UpdateSituationType();
 
-                        processedActorID.Add(actor.GetInstanceID());
-                        processedActorID.Add(actor.Partner.GetInstanceID());
+                        processedActorIDs.Add(actor.GetInstanceID());
+                        processedActorIDs.Add(actor.Partner.GetInstanceID());
 
                         result.Add(newGroup);
                     }
@@ -163,26 +175,35 @@ namespace HSceneCrowdReaction.BackgroundHAnimation
             }
 
             //try to assign the remaining actor to threesome
+            List<HPoint> threesomePoints = GetAvailableThreesomeHPointList();
+            int current3PCount = 0;
             List<Actor> notAssignedActors = actorList.Where(a => !processedActorID.Contains(a.GetInstanceID())).ToList();
             foreach (var actor in notAssignedActors)
             {
-                var twoActorGroup = result.Where(r => r.situationType == InfoList.HAnimation.SituationType.MF || r.situationType == InfoList.HAnimation.SituationType.FF);
+                if (current3PCount >= threesomePoints.Count)
+                    break;
+
+                var twoActorGroup = result.Where(r => r.situationType == HAnimation.SituationType.MF || r.situationType == HAnimation.SituationType.FF);
                 foreach (var group in twoActorGroup)
                 {
-                    if (group.situationType == InfoList.HAnimation.SituationType.MF)
+                    if (group.situationType == HAnimation.SituationType.MF)
                     {
                         if (IsHActionPossible(actor, group.male1, group.female1))
                         {
                             group.AssignActor(actor);
                             group.UpdateSituationType();
+
+                            current3PCount++;
                         }
                     }
-                    else if (group.situationType == InfoList.HAnimation.SituationType.FF)
+                    else if (group.situationType == HAnimation.SituationType.FF)
                     {
                         if (IsHActionPossible(actor, group.female1, group.female2))
                         {
                             group.AssignActor(actor);
                             group.UpdateSituationType();
+
+                            current3PCount++;
                         }
                     }
                 }
@@ -213,17 +234,17 @@ namespace HSceneCrowdReaction.BackgroundHAnimation
         public void UpdateSituationType()
         {
             if (female2 != null && male1 == null && male2 == null)
-                situationType = InfoList.HAnimation.SituationType.FF;
+                situationType = HAnimation.SituationType.FF;
             else if (female2 != null && male1 != null && male2 == null)
-                situationType = InfoList.HAnimation.SituationType.FFM;
+                situationType = HAnimation.SituationType.FFM;
             else if (female2 == null && male1 != null && male2 != null)
-                situationType = InfoList.HAnimation.SituationType.MMF;
+                situationType = HAnimation.SituationType.MMF;
             else if (female2 == null && male1 != null && male2 == null)
-                situationType = InfoList.HAnimation.SituationType.MF;
+                situationType = HAnimation.SituationType.MF;
             else if (female2 == null && male1 == null && male2 == null)
-                situationType = InfoList.HAnimation.SituationType.F;
+                situationType = HAnimation.SituationType.F;
             else
-                situationType = InfoList.HAnimation.SituationType.Unknown;
+                situationType = HAnimation.SituationType.Unknown;
         }
 
         public List<Actor> GetActorList()
@@ -275,5 +296,150 @@ namespace HSceneCrowdReaction.BackgroundHAnimation
             return true;
         }
 
+
+        internal static HPoint GetHPointForGroup(HAnimationGroup group)
+        {
+            return GetHPoint(group.female1, group.situationType);
+        }
+
+        private static HPoint GetHPoint(Actor actor, HAnimation.SituationType situationType)
+        {
+
+
+            ActionPoint targetAP = actor.OccupiedActionPoint == null ? actor.Partner.OccupiedActionPoint : actor.OccupiedActionPoint;
+            System.Random rnd = new System.Random();
+
+            List<HPoint> availablePoint = new List<HPoint>();
+            List<HPoint> occupyiedPoints = GetOccupiedHPointList();
+
+            Il2CppReferenceArray<HPoint> pointArray = targetAP.HPointLink;
+            if (situationType == HAnimation.SituationType.MMF || situationType == HAnimation.SituationType.FFM)
+                pointArray = targetAP.HPoint3PLink;
+            foreach (var hpoint in pointArray)
+            {
+                if (!hpoint.NowUsing && occupyiedPoints.FindAll(p => p.GetInstanceID() == hpoint.GetInstanceID()).Count == 0)
+                    availablePoint.Add(hpoint);
+            }
+
+            if (availablePoint.Count == 0)
+            {
+                int[] validHPointTypes = null;
+                if (situationType == HAnimation.SituationType.MF)
+                    validHPointTypes = HAnimation.ValidHPointTypeMF;
+                else if (situationType == HAnimation.SituationType.FF)
+                    validHPointTypes = HAnimation.ValidHPointTypeFF;
+                else if (situationType == HAnimation.SituationType.FFM)
+                    validHPointTypes = HAnimation.ValidHPointTypeFFM;
+                else if (situationType == HAnimation.SituationType.MMF)
+                    validHPointTypes = HAnimation.ValidHPointTypeMMF;
+
+                //the current linked hpoint is occupied, randomly choose a unused one
+                foreach (var kvp in StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst)
+                {
+                    if (Array.IndexOf(validHPointTypes, kvp.Key) > -1)
+                    {
+                        foreach (var hpoint in kvp.Value.HPoints)
+                        {
+                            if (!hpoint.NowUsing && occupyiedPoints.FindAll(p => p.GetInstanceID() == hpoint.GetInstanceID()).Count == 0)
+                                availablePoint.Add(hpoint);
+                        }
+                    }
+                }
+            }
+
+            int rndResult = rnd.Next(availablePoint.Count);
+            return availablePoint[rndResult];
+        }
+
+        internal static List<HPoint> GetOccupiedHPointList(bool includeMainHScenePoint = true)
+        {
+            List<HPoint> lstOccupiedPoint = new List<HPoint>();
+
+            if (ActionScene.Instance == null) return lstOccupiedPoint;
+
+            List<Actor> charList = Util.GetActorsNotInvolvedInH(ActionScene.Instance, StateManager.Instance.CurrentHSceneInstance);
+
+            //single actor
+            foreach (var group in StateManager.Instance.ActorHGroupDictionary)
+            {
+                foreach (var bgHChar in group.Value.GetActorList())
+                {
+                    charList.RemoveAll(a => a.GetInstanceID() == bgHChar.GetInstanceID());
+                }
+            }
+
+            foreach (var actor in charList)
+            {
+                ActionPoint targetAP = actor.OccupiedActionPoint == null ? actor.Partner?.OccupiedActionPoint : actor.OccupiedActionPoint;
+
+                foreach (var point in targetAP.HPointLink)
+                    if (lstOccupiedPoint.FindAll(p => p.GetInstanceID() == point.GetInstanceID()).Count == 0)
+                        lstOccupiedPoint.Add(point);
+                //foreach (var point in targetAP.HPoint3PLink)
+                //    if (lstOccupiedPoint.FindAll(p => p.GetInstanceID() == point.GetInstanceID()).Count == 0)
+                //        lstOccupiedPoint.Add(point);
+            }
+
+            //assigned background group
+            foreach (var group in StateManager.Instance.ActorHGroupDictionary)
+            {
+                if (group.Value.hPoint != null)
+                {
+                    var toAdd = GetHPointsByPosition(group.Value.hPoint.transform.position);
+                    foreach (var point in toAdd)
+                        if (lstOccupiedPoint.FindAll(p => p.GetInstanceID() == point.GetInstanceID()).Count == 0)
+                            lstOccupiedPoint.Add(point);
+                }
+            }
+
+            //main h scene actors
+            if (includeMainHScenePoint)
+            {
+                foreach (var lst in StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst)
+                {
+                    foreach (var point in lst.Value.HPoints)
+                        if (point.NowUsing)
+                            lstOccupiedPoint.Add(point);
+                }
+            }
+
+            //include the HPoint with same position in the list to avoid overlap due to pair and 3P difference
+            foreach (var lst in StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst)
+                foreach (var point in lst.Value.HPoints)
+                {
+                    var toAdd = lstOccupiedPoint.FindAll(p => p.GetInstanceID() != point.GetInstanceID() && p.transform.position == point.transform.position).ToList();
+                    lstOccupiedPoint.AddRange(toAdd);
+                }
+
+                   
+
+            return lstOccupiedPoint;
+        }
+
+        internal static List<HPoint> GetAvailableThreesomeHPointList()
+        {
+            List<HPoint> list = new List<HPoint>();
+
+            var lstOccupiedPoint = GetOccupiedHPointList();
+            foreach (var point in StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[Constant.ThreesomeHPointIndex].HPoints)
+            {
+                if (!lstOccupiedPoint.Any(p => p.GetInstanceID() == point.GetInstanceID()))
+                {
+                    list.Add(point);
+                }
+            }
+
+            return list;
+        }
+
+        internal static List<HPoint> GetHPointsByPosition(Vector3 pos)
+        {
+            List<HPoint> hPoints = new List<HPoint>();
+            foreach (var lst in StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst)
+                foreach (var point in lst.value.HPoints)
+                    if (point.transform.position == pos)
+                        hPoints.Add(point);
+            return hPoints;
+        }
     }
 }

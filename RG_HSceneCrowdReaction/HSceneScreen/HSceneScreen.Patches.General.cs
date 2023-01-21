@@ -22,6 +22,7 @@ namespace HSceneCrowdReaction.HSceneScreen
                 if (ActionScene.Instance != null)
                 {
                     StateManager.Instance.HSceneSetup = false;
+                    StateManager.Instance.HasRemoveClothes = false;
                     StateManager.Instance.CustomAnimationParameter = new Dictionary<int, CustomAnimation.CustomAnimationData>();
                     StateManager.Instance.CurrentHSceneInstance = hScene;
 
@@ -57,7 +58,7 @@ namespace HSceneCrowdReaction.HSceneScreen
             {
                 if (ActionScene.Instance != null)
                 {
-                    var actorList = GetActorsNotInvolvedInH(ActionScene.Instance, hScene);
+                    var actorList = Util.GetActorsNotInvolvedInH(ActionScene.Instance, hScene);
                     foreach (var actor in actorList)
                     {
                         if (StateManager.Instance.ActorBackUpData.ContainsKey(actor.GetInstanceID()))
@@ -80,7 +81,7 @@ namespace HSceneCrowdReaction.HSceneScreen
                 {
                     DestroyTempObject();
 
-                    List<Actor> actorList = GetActorsNotInvolvedInH(ActionScene.Instance, hScene);
+                    List<Actor> actorList = Util.GetActorsNotInvolvedInH(ActionScene.Instance, hScene);
                     foreach (var actor in actorList)
                     {
                         if (!StateManager.Instance.ActorHAnimationList.ContainsKey(actor.GetInstanceID()))
@@ -222,8 +223,8 @@ namespace HSceneCrowdReaction.HSceneScreen
                         StateManager.Instance.HSceneSetup = true;
 
                         //Find out all the characters that are not involved in H
-                        List<Actor> charList = GetActorsNotInvolvedInH(ActionScene.Instance, hScene);
-                        List<Actor> hCharList = GetActorsInvolvedInH(ActionScene.Instance, hScene);
+                        List<Actor> charList = Util.GetActorsNotInvolvedInH(ActionScene.Instance, hScene);
+                        List<Actor> hCharList = Util.GetActorsInvolvedInH(ActionScene.Instance, hScene);
 
                         //Get the H groups and stored the state
                         var groups = HAnimationGroup.GetHAnimationGroups(charList);
@@ -488,65 +489,7 @@ namespace HSceneCrowdReaction.HSceneScreen
 
 
 
-            internal static List<Actor> GetActorsNotInvolvedInH(ActionScene actionScene, HScene hScene)
-            {
-                List<Actor> result = new List<Actor>();
-                List<int> hCharList = new List<int>();
-                if (hScene._chaFemales != null)
-                {
-                    for (int i = 0; i < hScene._chaFemales.Count; i++)
-                    {
-                        if (hScene._chaFemales[i] != null)
-                            hCharList.Add(hScene._chaFemales[i].GetInstanceID());
-                    }
-                }
-
-                if (hScene._chaMales != null)
-                {
-                    for (int i = 0; i < hScene._chaMales.Count; i++)
-                    {
-                        if (hScene._chaMales[i] != null)
-                            hCharList.Add(hScene._chaMales[i].GetInstanceID());
-                    }
-                }
-                foreach (var actor in actionScene._actors)
-                {
-                    if (!hCharList.Contains(actor.Chara.GetInstanceID()))
-                        result.Add(actor);
-                }
-
-                return result;
-            }
-
-            internal static List<Actor> GetActorsInvolvedInH(ActionScene actionScene, HScene hScene)
-            {
-                List<Actor> result = new List<Actor>();
-                List<int> hCharList = new List<int>();
-                if (hScene._chaFemales != null)
-                {
-                    for (int i = 0; i < hScene._chaFemales.Count; i++)
-                    {
-                        if (hScene._chaFemales[i] != null)
-                            hCharList.Add(hScene._chaFemales[i].GetInstanceID());
-                    }
-                }
-
-                if (hScene._chaMales != null)
-                {
-                    for (int i = 0; i < hScene._chaMales.Count; i++)
-                    {
-                        if (hScene._chaMales[i] != null)
-                            hCharList.Add(hScene._chaMales[i].GetInstanceID());
-                    }
-                }
-                foreach (var actor in actionScene._actors)
-                {
-                    if (hCharList.Contains(actor.Chara.GetInstanceID()))
-                        result.Add(actor);
-                }
-
-                return result;
-            }
+            
 
             ////internal static List<Actor> GetActorsInvolvedInH(ActionScene actionScene, HScene hScene)
             ////{
@@ -577,7 +520,7 @@ namespace HSceneCrowdReaction.HSceneScreen
             {
                 if (ActionScene.Instance != null)
                 {
-                    var actorList = GetActorsNotInvolvedInH(ActionScene.Instance, hScene);
+                    var actorList = Util.GetActorsNotInvolvedInH(ActionScene.Instance, hScene);
                     foreach (var actor in actorList)
                     {
                         StateManager.BackUpInformation info = new StateManager.BackUpInformation();

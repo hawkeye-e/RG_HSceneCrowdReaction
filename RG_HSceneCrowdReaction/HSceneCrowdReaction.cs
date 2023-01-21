@@ -11,7 +11,7 @@ namespace HSceneCrowdReaction
     {
         public const string PluginName = "HSceneCrowdReaction";
         public const string GUID = "hawk.RG.HSceneCrowdReaction";
-        public const string Version = "0.2";
+        public const string Version = "0.3";
 
         internal static new ManualLogSource Log;
 

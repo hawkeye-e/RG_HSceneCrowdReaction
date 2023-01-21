@@ -4,6 +4,8 @@ using RG.Scene.Action.Core;
 using UnhollowerRuntimeLib;
 using System.IO;
 using HSceneCrowdReaction.InfoList;
+using RG.Scene;
+using System.Collections.Generic;
 
 namespace HSceneCrowdReaction
 {
@@ -367,6 +369,64 @@ namespace HSceneCrowdReaction
             return result;
         }
 
-        
+        internal static List<Actor> GetActorsNotInvolvedInH(ActionScene actionScene, HScene hScene)
+        {
+            List<Actor> result = new List<Actor>();
+            List<int> hCharList = new List<int>();
+            if (hScene._chaFemales != null)
+            {
+                for (int i = 0; i < hScene._chaFemales.Count; i++)
+                {
+                    if (hScene._chaFemales[i] != null)
+                        hCharList.Add(hScene._chaFemales[i].GetInstanceID());
+                }
+            }
+
+            if (hScene._chaMales != null)
+            {
+                for (int i = 0; i < hScene._chaMales.Count; i++)
+                {
+                    if (hScene._chaMales[i] != null)
+                        hCharList.Add(hScene._chaMales[i].GetInstanceID());
+                }
+            }
+            foreach (var actor in actionScene._actors)
+            {
+                if (!hCharList.Contains(actor.Chara.GetInstanceID()))
+                    result.Add(actor);
+            }
+
+            return result;
+        }
+
+        internal static List<Actor> GetActorsInvolvedInH(ActionScene actionScene, HScene hScene)
+        {
+            List<Actor> result = new List<Actor>();
+            List<int> hCharList = new List<int>();
+            if (hScene._chaFemales != null)
+            {
+                for (int i = 0; i < hScene._chaFemales.Count; i++)
+                {
+                    if (hScene._chaFemales[i] != null)
+                        hCharList.Add(hScene._chaFemales[i].GetInstanceID());
+                }
+            }
+
+            if (hScene._chaMales != null)
+            {
+                for (int i = 0; i < hScene._chaMales.Count; i++)
+                {
+                    if (hScene._chaMales[i] != null)
+                        hCharList.Add(hScene._chaMales[i].GetInstanceID());
+                }
+            }
+            foreach (var actor in actionScene._actors)
+            {
+                if (hCharList.Contains(actor.Chara.GetInstanceID()))
+                    result.Add(actor);
+            }
+
+            return result;
+        }
     }
 }

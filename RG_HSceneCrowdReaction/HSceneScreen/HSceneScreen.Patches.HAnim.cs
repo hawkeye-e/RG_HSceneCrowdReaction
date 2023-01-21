@@ -21,7 +21,7 @@ namespace HSceneCrowdReaction.HSceneScreen
             internal static void StartHAnimation(HAnimationGroup animGroup, bool requireInit = true)
             {
                 HPoint hPoint;
-
+                
                 if (requireInit)
                 {
                     InitBodyBoneForGroup(animGroup);
@@ -32,7 +32,7 @@ namespace HSceneCrowdReaction.HSceneScreen
                     InitHItemCtrlForGroup(animGroup);
 
                     //Get the HPoint
-                    hPoint = GetHPointForGroup(animGroup);
+                    hPoint = HAnimationGroup.GetHPointForGroup(animGroup);
                 }
                 else
                 {
@@ -159,9 +159,11 @@ namespace HSceneCrowdReaction.HSceneScreen
 
             internal static void RemoveAllClothesState(HScene hScene)
             {
-                if (ActionScene.Instance != null && !StateManager.Instance.HSceneSetup)
+                if (ActionScene.Instance != null && !StateManager.Instance.HasRemoveClothes)
                 {
-                    var actorList = General.GetActorsNotInvolvedInH(ActionScene.Instance, hScene);
+                    StateManager.Instance.HasRemoveClothes = true;
+
+                    var actorList = Util.GetActorsNotInvolvedInH(ActionScene.Instance, hScene);
 
                     foreach (var actor in actorList)
                     {
@@ -1062,136 +1064,9 @@ namespace HSceneCrowdReaction.HSceneScreen
 
             }
 
-            internal static List<HPoint> GetOccupiedHPointList(bool includeMainHScenePoint = true)
-            {
-                List<HPoint> lstOccupiedPoint = new List<HPoint>();
 
-                if (ActionScene.Instance == null) return lstOccupiedPoint;
 
-                List<Actor> charList = General.GetActorsNotInvolvedInH(ActionScene.Instance, StateManager.Instance.CurrentHSceneInstance);
-                
-                //single actor
-                foreach (var group in StateManager.Instance.ActorHGroupDictionary)
-                {
-                    foreach (var bgHChar in group.Value.GetActorList())
-                    {
-                        charList.RemoveAll(a => a.GetInstanceID() == bgHChar.GetInstanceID());
-                    }
-                }
 
-                foreach (var actor in charList)
-                {
-                    ActionPoint targetAP = actor.OccupiedActionPoint == null ? actor.Partner?.OccupiedActionPoint : actor.OccupiedActionPoint;
-
-                    foreach (var point in targetAP.HPointLink)
-                        if (lstOccupiedPoint.FindAll(p => p.GetInstanceID() == point.GetInstanceID()).Count == 0)
-                            lstOccupiedPoint.Add(point);
-                    foreach (var point in targetAP.HPoint3PLink)
-                        if (lstOccupiedPoint.FindAll(p => p.GetInstanceID() == point.GetInstanceID()).Count == 0)
-                            lstOccupiedPoint.Add(point);
-                }
-
-                //assigned background group
-                foreach (var group in StateManager.Instance.ActorHGroupDictionary)
-                {
-                    if (group.Value.hPoint != null)
-                    {
-                        var toAdd = GetHPointsByPosition(group.Value.hPoint.transform.position);
-                        foreach (var point in toAdd)
-                            if (lstOccupiedPoint.FindAll(p => p.GetInstanceID() == point.GetInstanceID()).Count == 0)
-                                lstOccupiedPoint.Add(point);
-                    }
-                }
-                
-                //main h scene actors
-                if (includeMainHScenePoint)
-                {
-                    List<Actor> hCharList = General.GetActorsInvolvedInH(ActionScene.Instance, StateManager.Instance.CurrentHSceneInstance);
-                    foreach (var actor in hCharList)
-                    {
-                        ActionPoint targetAP = actor.OccupiedActionPoint == null ? actor.Partner?.OccupiedActionPoint : actor.OccupiedActionPoint;
-                        foreach (var point in targetAP.HPointLink)
-                            if (lstOccupiedPoint.FindAll(p => p.GetInstanceID() == point.GetInstanceID()).Count == 0)
-                                lstOccupiedPoint.Add(point);
-                        foreach (var point in targetAP.HPoint3PLink)
-                            if (lstOccupiedPoint.FindAll(p => p.GetInstanceID() == point.GetInstanceID()).Count == 0)
-                                lstOccupiedPoint.Add(point);
-                    }
-                }
-                
-                return lstOccupiedPoint;
-            }
-
-            internal static List<HPoint> GetHPointsByPosition(Vector3 pos)
-            {
-                List<HPoint> hPoints = new List<HPoint>();
-                foreach (var lst in StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst)
-                    foreach (var point in lst.value.HPoints)
-                        if(point.transform.position == pos)
-                            hPoints.Add(point);
-                return hPoints;
-            }
-
-            private static HPoint GetHPointForGroup(HAnimationGroup group)
-            {
-                return GetHPoint(group.female1, group.situationType);
-            }
-
-            private static HPoint GetHPoint(Actor actor, HAnimation.SituationType situationType)
-            {
-                
-
-                ActionPoint targetAP = actor.OccupiedActionPoint == null ? actor.Partner.OccupiedActionPoint : actor.OccupiedActionPoint;
-                System.Random rnd = new System.Random();
-
-                List<HPoint> availablePoint = new List<HPoint>();
-                List<HPoint> occupyiedPoints = GetOccupiedHPointList();
-
-                Il2CppReferenceArray<HPoint> pointArray = targetAP.HPointLink;
-                if (situationType == HAnimation.SituationType.MMF || situationType == HAnimation.SituationType.FFM)
-                    pointArray = targetAP.HPoint3PLink;
-                foreach (var hpoint in pointArray)
-                {
-                    if (!hpoint.NowUsing && occupyiedPoints.FindAll(p => p.GetInstanceID() == hpoint.GetInstanceID()).Count == 0)
-                        availablePoint.Add(hpoint);
-                }
-
-                if (availablePoint.Count == 0)
-                {
-                    int[] validHPointTypes = null;
-                    if (situationType == HAnimation.SituationType.MF)
-                        validHPointTypes = HAnimation.ValidHPointTypeMF;
-                    else if (situationType == HAnimation.SituationType.FF)
-                        validHPointTypes = HAnimation.ValidHPointTypeFF;
-                    else if (situationType == HAnimation.SituationType.FFM)
-                        validHPointTypes = HAnimation.ValidHPointTypeFFM;
-                    else if (situationType == HAnimation.SituationType.MMF)
-                        validHPointTypes = HAnimation.ValidHPointTypeMMF;
-
-                    //the current linked hpoint is occupied, randomly choose a unused one
-                    foreach (var kvp in StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst)
-                    {
-                        if (Array.IndexOf(validHPointTypes, kvp.Key) > -1)
-                        {
-                            foreach (var hpoint in kvp.Value.HPoints)
-                            {
-                                if (!hpoint.NowUsing && occupyiedPoints.FindAll(p => p.GetInstanceID() == hpoint.GetInstanceID()).Count == 0)
-                                    availablePoint.Add(hpoint);
-                            }
-                        }
-                    }
-                }
-
-                int rndResult = rnd.Next(availablePoint.Count);
-
-                var lstPoint = GetHPointsByPosition(availablePoint[rndResult].transform.position);
-                Il2CppReferenceArray<HPoint> arrPoint = new Il2CppReferenceArray<HPoint>(lstPoint.Count);
-                for(int i=0; i<lstPoint.Count; i++)
-                    arrPoint[i] = lstPoint[i];
-                StateManager.Instance.CurrentHSceneInstance.HPointCtrl.AddMobActorPoints(arrPoint);
-                
-                return availablePoint[rndResult];
-            }
 
             private static void InitHPoint(HPoint hPoint)
             {

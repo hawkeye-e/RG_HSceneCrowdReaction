@@ -9,6 +9,7 @@ namespace HSceneCrowdReaction
         internal const string AnimatorParamSpeed = "speed";
         internal const string AnimatorParamMotion = "motion";
         internal const string AnimatorParamBreast = "breast";
+        internal const int ThreesomeHPointIndex = 8;
 
         internal class AnimType
         {
