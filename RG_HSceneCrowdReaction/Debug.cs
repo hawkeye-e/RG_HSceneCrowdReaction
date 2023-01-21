@@ -297,9 +297,12 @@ namespace HSceneCrowdReaction
         {
             GetComponentTypes(t);
 
-            Log.LogInfo("Visiting the parent of [" + t.name + "]" + ", position: " + t.position);
+            
             if (t.parent != null && (stopAt == null || t.name != stopAt))
+            {
+                Log.LogInfo("Visiting the parent of [" + t.name + "]" + ", position: " + t.position);
                 PrintTransformTreeUpward(t.parent, "[" + t.name + "]." + currentPath);
+            }
         }
 
         internal static string GetChaControl(Transform t)
@@ -323,7 +326,7 @@ namespace HSceneCrowdReaction
         {
             if (t != null)
             {
-                Log.LogInfo(t.gameObject.name);
+                Log.LogInfo(t.gameObject.name + ", id: " + t.GetInstanceID() + ", pos: " + t.position + ", rot: " + t.rotation.eulerAngles);
 
                 for (int i = 0; i < t.GetChildCount(); i++)
                 {
@@ -353,6 +356,8 @@ namespace HSceneCrowdReaction
 
                 Log.LogInfo("Position: " + t.position);
                 Log.LogInfo("LocalPosition: " + t.localPosition);
+                Log.LogInfo("Rotation: " + t.rotation.eulerAngles);
+                Log.LogInfo("LocalRotation: " + t.localRotation.eulerAngles);
                 var r = t.GetComponent<RectTransform>();
                 if (r != null)
                 {
@@ -452,6 +457,7 @@ namespace HSceneCrowdReaction
             OfficeSeatNoBack,
             OfficeDesk,
             Office3PFloor,
+            OfficeSeat,
 
             ClinicsPatientSeat,
             ClinicsSeatBack,
@@ -485,6 +491,8 @@ namespace HSceneCrowdReaction
             {
                 case HPointType.OfficeConferenceTable:
                     return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[5].HPoints[7];       //conference table
+                case HPointType.OfficeSeat:
+                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[3].HPoints[1];       //conference seat
                 case HPointType.OfficeConferenceSeat:
                     return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[3].HPoints[5];       //conference seat
                 case HPointType.OfficeSeatNoBack:

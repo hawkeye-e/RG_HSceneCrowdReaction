@@ -43,7 +43,7 @@ namespace HSceneCrowdReaction.HSceneScreen
 
                 //Get the chosen animation
                 var animInfo = GetHAnimation(hPoint, animGroup.situationType);
-                
+
                 //Setup HPoint
                 InitHPoint(hPoint);
 
@@ -1036,6 +1036,7 @@ namespace HSceneCrowdReaction.HSceneScreen
                 if (hAnimData.animationListInfo.IsNeedItem)
                 {
                     int animGroup = GetHAnimationGroup(animInfo);
+                    var extraInfo = HAnimation.ExtraHAnimationDataDictionary[(animGroup, animInfo.ID)];
                     itemCtrl.LoadItem(animGroup, animInfo.ID,
                         group.male1?.Chara.ObjBodyBone,
                         group.female1.Chara.ObjBodyBone,
@@ -1044,6 +1045,14 @@ namespace HSceneCrowdReaction.HSceneScreen
                         GetBashoKind(hPoint)
                         );
 
+                    //For unknown reason the object orientation for some position may be wrong, fix it here
+                    if (extraInfo.isItemInverse)
+                    {
+                        foreach (var item in itemCtrl._dicItem)
+                        {
+                            item.Value.ObjItem.transform.rotation = item.Value.ObjItem.transform.rotation * Quaternion.AngleAxis(180, Vector3.up);
+                        }
+                    }
                     itemCtrl.SetAnimatorParamFloat(Constant.AnimatorParamHeight, hAnimData.height);
                     itemCtrl.SetAnimatorParamFloat(Constant.AnimatorParamSpeed, hAnimData.speed);
                 }
@@ -1130,7 +1139,8 @@ namespace HSceneCrowdReaction.HSceneScreen
 
             private static HPoint GetHPoint(Actor actor, HAnimation.SituationType situationType)
             {
-                //TODO: need to refine the logic as automatch is introduced
+                
+
                 ActionPoint targetAP = actor.OccupiedActionPoint == null ? actor.Partner.OccupiedActionPoint : actor.OccupiedActionPoint;
                 System.Random rnd = new System.Random();
 

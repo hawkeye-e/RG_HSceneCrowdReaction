@@ -38,13 +38,9 @@ namespace HSceneCrowdReaction
         internal Dictionary<int, HItemCtrl> CharacterHItemCtrlDictionary = null;
         internal Dictionary<int, HPoint> CharacterHPointDictionary = null;
 
-        internal Dictionary<int, bool> CharacterCtrlInitFinishedDictionary = null;
-
         internal Dictionary<int, Transform> ForceBlowJobTarget = null;
 
         internal List<int> HSceneParticipantActorIDList = null;
-
-        internal List<int> HSceneOccupiedHPointIDList = null;
 
         internal Dictionary<int, BackUpInformation> ActorBackUpData = null;
         internal Dictionary<int, HAnimationGroup> ActorHGroupDictionary = null;

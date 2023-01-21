@@ -47,13 +47,8 @@ namespace HSceneCrowdReaction.HSceneScreen
 
                     StateManager.Instance.ForceBlowJobTarget = new Dictionary<int, Transform>();
 
-                    StateManager.Instance.CharacterCtrlInitFinishedDictionary = new Dictionary<int, bool>();
-
                     StateManager.Instance.ActorBackUpData = new Dictionary<int, StateManager.BackUpInformation>();
-                    StateManager.Instance.ActorHGroupDictionary = new Dictionary<int, BackgroundHAnimation.HAnimationGroup>();
-
-                    StateManager.Instance.HSceneOccupiedHPointIDList = new List<int>();
-
+                    StateManager.Instance.ActorHGroupDictionary = new Dictionary<int, HAnimationGroup>();
 
                 }
             }
@@ -179,12 +174,6 @@ namespace HSceneCrowdReaction.HSceneScreen
                     StateManager.Instance.CharacterDynamicBoneCtrlDictionary = null;
                 }
 
-                if (StateManager.Instance.CharacterCtrlInitFinishedDictionary != null)
-                {
-                    StateManager.Instance.CharacterCtrlInitFinishedDictionary.Clear();
-                    StateManager.Instance.CharacterCtrlInitFinishedDictionary = null;
-                }
-
                 if (StateManager.Instance.CharacterHLayerCtrlDictionary != null)
                 {
                     StateManager.Instance.CharacterHLayerCtrlDictionary.Clear();
@@ -205,12 +194,6 @@ namespace HSceneCrowdReaction.HSceneScreen
                 {
                     StateManager.Instance.CharacterHPointDictionary.Clear();
                     StateManager.Instance.CharacterHPointDictionary = null;
-                }
-
-                if (StateManager.Instance.HSceneOccupiedHPointIDList != null)
-                {
-                    StateManager.Instance.HSceneOccupiedHPointIDList.Clear();
-                    StateManager.Instance.HSceneOccupiedHPointIDList = null;
                 }
 
                 if (StateManager.Instance.ActorBackUpData != null)

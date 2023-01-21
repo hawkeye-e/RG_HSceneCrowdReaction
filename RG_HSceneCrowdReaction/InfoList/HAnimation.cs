@@ -63,13 +63,13 @@ namespace HSceneCrowdReaction.InfoList
                 int categoryID = int.Parse(rowData[2]);
                 int animID = int.Parse(rowData[3]);
 
-                if (rowData[28] == "1")
+                if (rowData[29] == "1")
                 {
                     //Include in game
                     Vector3 offsetVector = Vector3.zeroVector;
-                    if (rowData[27] != "")
+                    if (rowData[28] != "")
                     {
-                        string[] strOffset = rowData[27].Split(';');
+                        string[] strOffset = rowData[28].Split(';');
                         offsetVector.x = float.Parse(strOffset[0]);
                         offsetVector.y = float.Parse(strOffset[1]);
                         offsetVector.z = float.Parse(strOffset[2]);
@@ -100,6 +100,8 @@ namespace HSceneCrowdReaction.InfoList
                     dataInfo.isMale2Inverse = rowData[7] == "1";
                     dataInfo.isFemale1Inverse = rowData[8] == "1";
                     dataInfo.isFemale2Inverse = rowData[9] == "1";
+
+                    dataInfo.isItemInverse = rowData[27] == "1";
 
                     dataInfo.mouthTypeMale1 = ParseMouthType(rowData[10]);
                     dataInfo.mouthTypeMale2 = ParseMouthType(rowData[11]);
@@ -304,6 +306,8 @@ namespace HSceneCrowdReaction.InfoList
             internal bool isMale2Inverse = false;
             internal bool isFemale1Inverse = false;
             internal bool isFemale2Inverse = false;
+
+            internal bool isItemInverse = false;
 
             internal Dictionary<string, MouthType> mouthTypeMale1;
             internal Dictionary<string, MouthType> mouthTypeMale2;
