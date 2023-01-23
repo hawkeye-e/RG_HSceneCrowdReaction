@@ -21,7 +21,6 @@ namespace HSceneCrowdReaction.HSceneScreen
         [HarmonyPatch(typeof(HScene), nameof(HScene.CharaInit))]
         private static void CharaInitPost(HScene __instance)
         {
-            StateManager.Instance.CurrentHSceneInstance = __instance;
             Patches.General.InitHScene(__instance);
             Patches.General.BackupCharacterLookInfo(__instance);
         }
@@ -76,17 +75,17 @@ namespace HSceneCrowdReaction.HSceneScreen
 
         //Change the animation of actors not involved in HHScene.StartPointSelectPre
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(Chara.ChaControl), nameof(Chara.ChaControl.LateUpdateForce))]
-        private static void LateUpdateForcePost(Chara.ChaControl __instance)
+        [HarmonyPatch(typeof(Chara.ChaControl), nameof(Chara.ChaControl.UpdateForce))]
+        private static void UpdateForcePost(Chara.ChaControl __instance)
         {
             Patches.HAnim.CheckUpdateHAnim(__instance);
             Patches.HAnim.ForceBlowJob(__instance);
             Patches.HAnim.HandleHAnimationCtrlsUpdate(__instance);
-        }
+            }
 
 
-        //Force showing the penis of the male characters if flag is set
-        [HarmonyPostfix]
+            //Force showing the penis of the male characters if flag is set
+            [HarmonyPostfix]
         [HarmonyPatch(typeof(GameObject), nameof(GameObject.SetActive))]
         private static void SetActivePost(GameObject __instance, bool value)
         {

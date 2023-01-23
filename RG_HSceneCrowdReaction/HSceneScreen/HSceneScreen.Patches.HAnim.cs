@@ -198,7 +198,7 @@ namespace HSceneCrowdReaction.HSceneScreen
             {
                 if (ActionScene.Instance != null && StateManager.Instance.CurrentHSceneInstance != null)
                 {
-
+                    
                     if (StateManager.Instance.ActorHAnimationList != null)
                     {
 
@@ -209,10 +209,11 @@ namespace HSceneCrowdReaction.HSceneScreen
                         {
                             var animInfo = StateManager.Instance.ActorHAnimationList[actor.GetInstanceID()];
 
-                            for (int i = 0; i < character.CmpBoneBody.dynamicBonesBustAndHip.Count; i++)
-                            {
-                                character.CmpBoneBody.EnableDynamicBonesBustAndHip(true, i);
-                            }
+                            ////This loop cause the layer animation not working
+                            //for (int i = 0; i < character.CmpBoneBody.dynamicBonesBustAndHip.Count; i++)
+                            //{
+                            //    character.CmpBoneBody.EnableDynamicBonesBustAndHip(true, i);
+                            //}
 
 
                             if (StateManager.Instance.CharacterHLayerCtrlDictionary != null)
@@ -231,7 +232,7 @@ namespace HSceneCrowdReaction.HSceneScreen
                             var extraLayer = GetExtraLayerID(character, animInfo.characterType, animInfo.clipType);
                             if (extraLayer != 0)
                             {
-                                for (int i = 1; i <= 8; i++)
+                                for (int i = 1; i < character._animBody.layerCount; i++)
                                 {
                                     if (extraLayer != i)
                                         character.SetLayerWeight(0, i);
