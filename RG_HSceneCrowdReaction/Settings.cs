@@ -14,6 +14,8 @@ namespace HSceneCrowdReaction
 
         internal const int HChangePositionThreshold = 3;                //if the pair has accumulated value exceed this number, there is a chance the pair change sex position
 
+        internal const int ExtendCharaChoiceDropDownViewportHeight = 200;
+
         internal static readonly string[] ValidPlayableHClipType =  
             { 
                 InfoList.HAnimation.HAnimationClipType.WLoop,

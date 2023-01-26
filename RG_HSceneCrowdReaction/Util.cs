@@ -428,5 +428,15 @@ namespace HSceneCrowdReaction
 
             return result;
         }
+
+        internal static Transform GetParentTransformByName(Transform t, string parentName)
+        {
+            if (t == null)
+                return null;
+            else if (t.name == parentName)
+                return t;
+            else
+                return GetParentTransformByName(t.parent, parentName);
+        }
     }
 }

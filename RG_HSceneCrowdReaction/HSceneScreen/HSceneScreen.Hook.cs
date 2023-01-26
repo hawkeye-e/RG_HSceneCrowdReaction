@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using UnhollowerBaseLib;
+using UnityEngine.UI;
 
 
 namespace HSceneCrowdReaction.HSceneScreen
@@ -36,6 +37,7 @@ namespace HSceneCrowdReaction.HSceneScreen
             Patches.General.RestoreActorsLookingDirection(__instance);
             Patches.General.DestroyTempObject();
             Patches.General.DestroyStateManagerList();
+            Patches.General.RemoveStateManagerValue();
         }
 
         //Reset the looking direction when H point moved
@@ -54,7 +56,7 @@ namespace HSceneCrowdReaction.HSceneScreen
             Patches.General.UpdateNonHActorsLookAt(__instance);
         }
 
-        
+
         [HarmonyPostfix]
         [HarmonyPatch(typeof(HScene), nameof(HScene.SetPosition), new[] { typeof(Vector3), typeof(Quaternion), typeof(Vector3), typeof(Vector3), typeof(bool), typeof(bool) })]
         private static void SetPosition2Post(HScene __instance, Vector3 pos, Quaternion rot, Vector3 offsetpos, Vector3 offsetrot, bool _FadeStart, bool isWorld)
@@ -81,11 +83,11 @@ namespace HSceneCrowdReaction.HSceneScreen
             Patches.HAnim.CheckUpdateHAnim(__instance);
             Patches.HAnim.ForceBlowJob(__instance);
             Patches.HAnim.HandleHAnimationCtrlsUpdate(__instance);
-            }
+        }
 
 
-            //Force showing the penis of the male characters if flag is set
-            [HarmonyPostfix]
+        //Force showing the penis of the male characters if flag is set
+        [HarmonyPostfix]
         [HarmonyPatch(typeof(GameObject), nameof(GameObject.SetActive))]
         private static void SetActivePost(GameObject __instance, bool value)
         {
@@ -103,6 +105,112 @@ namespace HSceneCrowdReaction.HSceneScreen
         {
             Patches.HAnim.RemoveOccupiedHPoints(points);
         }
+
+        //Initialize the h reaction animation group
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HSceneSprite), nameof(HSceneSprite.Init))]
+        private static void InitPost(HSceneSprite __instance)
+        {
+            Patches.HAnim.SetupAnimationGroups(StateManager.Instance.CurrentHSceneInstance);
+        }
+
+
+
+        //Alter the drop down list of character selection
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HSceneSpriteChaChoice), nameof(HSceneSpriteChaChoice.Init))]
+        private static void InitPost(HSceneSpriteChaChoice __instance)
+        {
+            if (ActionScene.Instance != null && StateManager.Instance.HAnimationGroupsList != null)
+            {
+                Patches.MenuItems.AddMainHSceneToggleToState(StateManager.Instance.CurrentHSceneInstance);
+                Patches.MenuItems.ExpandCharaChoiceArrayPerGroup(StateManager.Instance.HAnimationGroupsList.Count);
+                Patches.MenuItems.AddAnimationGroupsToCharaChoiceToggles(StateManager.Instance.HAnimationGroupsList);
+
+                //Resize the drop down list
+                Patches.MenuItems.ResizeCharaChoiceDropDownViewport();
+            }
+        }
+
+        //Alter the checking result as the original coding does not process the extended toggles
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(ToggleGroup), nameof(ToggleGroup.AnyTogglesOn))]
+        private static void AnyTogglesOnPost(ToggleGroup __instance, ref bool __result)
+        {
+            if (StateManager.Instance.CurrentHSceneInstance != null)
+                if (__instance.GetInstanceID() == StateManager.Instance.CurrentHSceneInstance._sprite.CharaChoice.tglGroup.GetInstanceID())
+                    if (!__result && StateManager.Instance.HSceneDropDownSelectedToggle != null)
+                        __result = true;
+        }
+
+        //Handles the click action on the added toggles
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Toggle), nameof(Toggle.OnPointerClick))]
+        private static void OnPointerClick(Toggle __instance)
+        {
+            Patches.MenuItems.HandleToggleClick(__instance);
+        }
+
+        //Handle drop down reset when switching category
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HSceneSprite), nameof(HSceneSprite.OnClickCloth))]
+        private static void OnClickCloth(int mode)
+        {
+            Patches.MenuItems.HandleClickClothMenuButton(mode);
+        }
+
+        //Prevent the drop down selection reset to female 1 upon clicking
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Toggle), nameof(Toggle.Set))]
+        private static void SetPre(Toggle __instance, ref bool value)
+        {
+            Patches.MenuItems.SpoofToggleSetValue(__instance, ref value);
+        }
+
+        //Backup the clothes states when change clothes state button clicked
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HSceneSpriteClothCondition), nameof(HSceneSpriteClothCondition.OnClickCloth))]
+        private static void OnClickClothPre(int _cloth)
+        {
+            if (ActionScene.Instance != null && StateManager.Instance.HSceneDropDownSelectedToggle != null)
+                Patches.MenuItems.BackupAllCharacterClothesStateToStateMananger();
+
+        }
+
+        //Apply clothes states change
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HSceneSpriteClothCondition), nameof(HSceneSpriteClothCondition.OnClickCloth))]
+        private static void OnClickClothPost(int _cloth)
+        {
+            if (ActionScene.Instance != null && StateManager.Instance.HSceneDropDownSelectedToggle != null)
+            {
+                Patches.MenuItems.RestoreAllCharacterClothesStateFromStateMananger();
+                Patches.MenuItems.ChangeClothesState(_cloth);
+            }
+        }
+
+        //Backup the clothes states when change clothes state button clicked
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HSceneSpriteClothCondition), nameof(HSceneSpriteClothCondition.OnClickAllCloth))]
+        private static void OnClickAllClothPre()
+        {
+            if (ActionScene.Instance != null && StateManager.Instance.HSceneDropDownSelectedToggle != null)
+                Patches.MenuItems.BackupAllCharacterClothesStateToStateMananger();
+        }
+
+        //Apply clothes states change
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HSceneSpriteClothCondition), nameof(HSceneSpriteClothCondition.OnClickAllCloth))]
+        private static void OnClickAllClothPost(HSceneSpriteClothCondition __instance)
+        {
+            if (ActionScene.Instance != null && StateManager.Instance.HSceneDropDownSelectedToggle != null)
+            {
+                Patches.MenuItems.RestoreAllCharacterClothesStateFromStateMananger();
+                Patches.MenuItems.ChangeAllClothesState();
+            }
+        }
+
+
 
     }
 }

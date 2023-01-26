@@ -51,6 +51,12 @@ namespace HSceneCrowdReaction.HSceneScreen
                     StateManager.Instance.ActorBackUpData = new Dictionary<int, StateManager.BackUpInformation>();
                     StateManager.Instance.ActorHGroupDictionary = new Dictionary<int, HAnimationGroup>();
 
+                    StateManager.Instance.HAnimationGroupsList = new List<HAnimationGroup>();
+
+                    StateManager.Instance.HSceneDropDownSelectedToggle = null;
+                    StateManager.Instance.HSceneDropDownSelectedCharaText = null;
+                    StateManager.Instance.ToggleIDCharacterList = new Dictionary<int, Chara.ChaControl>();
+
                 }
             }
 
@@ -98,6 +104,13 @@ namespace HSceneCrowdReaction.HSceneScreen
                     StateManager.Instance.HeadDownLookTarget = null;
                 }
 
+            }
+
+            internal static void RemoveStateManagerValue()
+            {
+                StateManager.Instance.CurrentHSceneInstance = null;
+                StateManager.Instance.HSceneDropDownSelectedToggle = null;
+                StateManager.Instance.HSceneDropDownSelectedCharaText = null;
             }
 
             internal static void DestroyStateManagerList()
@@ -209,6 +222,18 @@ namespace HSceneCrowdReaction.HSceneScreen
                     StateManager.Instance.ActorHGroupDictionary = null;
                 }
 
+                if (StateManager.Instance.HAnimationGroupsList != null)
+                {
+                    StateManager.Instance.HAnimationGroupsList.Clear();
+                    StateManager.Instance.HAnimationGroupsList = null;
+                }
+
+                if (StateManager.Instance.ToggleIDCharacterList != null)
+                {
+                    StateManager.Instance.ToggleIDCharacterList.Clear();
+                    StateManager.Instance.ToggleIDCharacterList = null;
+                }
+
             }
 
 
@@ -226,12 +251,7 @@ namespace HSceneCrowdReaction.HSceneScreen
                         List<Actor> charList = Util.GetActorsNotInvolvedInH(ActionScene.Instance, hScene);
                         List<Actor> hCharList = Util.GetActorsInvolvedInH(ActionScene.Instance, hScene);
 
-                        //Get the H groups and stored the state
-                        var groups = HAnimationGroup.GetHAnimationGroups(charList);
-                        foreach (var group in groups)
-                            StateManager.UpdateHGroupDictionary(group);
-
-                        foreach (var group in groups)
+                        foreach (var group in StateManager.Instance.HAnimationGroupsList)
                         {
                             //Recover the clothes state as all actors are forced to take off the clothes before enter H scene in order to fix a rendering issue
                             HAnim.RecoverClothesState(group);
@@ -316,21 +336,21 @@ namespace HSceneCrowdReaction.HSceneScreen
                 switch (Util.GetCharacterType(actor))
                 {
                     case Constant.CharacterType.Honesty:
-                        if(Config.EnableSeriousAwkward)
+                        if (Config.EnableSeriousAwkward)
                             possibleReaction.Add(Constant.PossibleReactionType.Awkward);
-                        if(Config.EnableSeriousAngry)
+                        if (Config.EnableSeriousAngry)
                             possibleReaction.Add(Constant.PossibleReactionType.Angry);
                         break;
                     case Constant.CharacterType.Naughty:
-                        if(Config.EnablePlayfulHurray)
+                        if (Config.EnablePlayfulHurray)
                             possibleReaction.Add(Constant.PossibleReactionType.Hurray);
-                        if(Config.EnablePlayfulExcited)
+                        if (Config.EnablePlayfulExcited)
                             possibleReaction.Add(Constant.PossibleReactionType.Excited);
                         break;
                     case Constant.CharacterType.Unique:
-                        if(Config.EnableUniqueWorry)
+                        if (Config.EnableUniqueWorry)
                             possibleReaction.Add(Constant.PossibleReactionType.Worry);
-                        if(Config.EnableUniqueHappy)
+                        if (Config.EnableUniqueHappy)
                             possibleReaction.Add(Constant.PossibleReactionType.Happy);
                         break;
                 }
@@ -338,7 +358,7 @@ namespace HSceneCrowdReaction.HSceneScreen
                 //Allow masturbation if female and sex desire is high enough
                 if (actor.Sex == 1 && actor._status.Parameters[(int)RG.Define.Action.StatusCategory.Libido] >= Config.MasturbationLibidoThreshold)
                 {
-                    if(Config.EnableStandardMasturbation)
+                    if (Config.EnableStandardMasturbation)
                         possibleReaction.Add(Constant.PossibleReactionType.Libido);
                 }
 
@@ -347,7 +367,7 @@ namespace HSceneCrowdReaction.HSceneScreen
                 {
                     if (ActionScene.IsGTERelationState(actor, target, RG.Define.Action.RelationType.Partner) || !Config.StandardCryPrerequisite)
                     {
-                        if(Config.EnableStandardCry)
+                        if (Config.EnableStandardCry)
                             possibleReaction.Add(Constant.PossibleReactionType.Cry);
                     }
                 }
@@ -489,7 +509,7 @@ namespace HSceneCrowdReaction.HSceneScreen
 
 
 
-            
+
 
             ////internal static List<Actor> GetActorsInvolvedInH(ActionScene actionScene, HScene hScene)
             ////{

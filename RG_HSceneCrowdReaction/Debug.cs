@@ -295,9 +295,14 @@ namespace HSceneCrowdReaction
 
         internal static void PrintTransformTreeUpward(Transform t, string currentPath, string stopAt = null)
         {
+            Log.LogInfo("Name: " + t.name);
             GetComponentTypes(t);
+            var mono = t.GetComponent<MonoBehaviour>();
+            if (mono != null)
+            {
+                Log.LogInfo("GetScriptClassName: " + mono.GetScriptClassName());
+            }
 
-            
             if (t.parent != null && (stopAt == null || t.name != stopAt))
             {
                 Log.LogInfo("Visiting the parent of [" + t.name + "]" + ", position: " + t.position);
@@ -365,6 +370,8 @@ namespace HSceneCrowdReaction
                     Log.LogInfo("bottom: " + r.rect.bottom + ", top: " + r.rect.top);
                 }
                 Log.LogInfo("Child Count: " + t.childCount);
+                if (t.parent != null)
+                    Log.LogInfo("Parent: " + t.parent.name);
 
                 Log.LogInfo("");
                 for (int i = 0; i < t.GetChildCount(); i++)

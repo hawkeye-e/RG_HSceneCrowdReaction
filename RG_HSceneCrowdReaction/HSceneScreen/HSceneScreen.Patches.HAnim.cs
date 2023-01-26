@@ -17,6 +17,20 @@ namespace HSceneCrowdReaction.HSceneScreen
         {
             private static ManualLogSource Log = HSceneCrowdReactionPlugin.Log;
 
+            internal static void SetupAnimationGroups(HScene hScene)
+            {
+                if (ActionScene.Instance != null)
+                {
+                    //Find out all the characters that are not involved in H
+                    List<Actor> charList = Util.GetActorsNotInvolvedInH(ActionScene.Instance, hScene);
+
+                    //Get the H groups and stored the state
+                    var groups = HAnimationGroup.GetHAnimationGroups(charList);
+                    foreach (var group in groups)
+                        StateManager.UpdateHGroupDictionary(group);
+                }
+            }
+
             //Handle animation for group with >1 actors
             internal static void StartHAnimation(HAnimationGroup animGroup, bool requireInit = true)
             {
@@ -1313,10 +1327,15 @@ namespace HSceneCrowdReaction.HSceneScreen
 
                 if (index != -1)
                 {
-                    character.FileStatus.clothesState[0] = (byte)animInfo.FemaleUpperCloths[index];
-                    character.FileStatus.clothesState[2] = (byte)animInfo.FemaleUpperCloths[index];
-                    character.FileStatus.clothesState[1] = (byte)animInfo.FemaleLowerCloths[index];
-                    character.FileStatus.clothesState[3] = (byte)animInfo.FemaleLowerCloths[index];
+                    //character.FileStatus.clothesState[0] = (byte)animInfo.FemaleUpperCloths[index];
+                    //character.FileStatus.clothesState[2] = (byte)animInfo.FemaleUpperCloths[index];
+                    //character.FileStatus.clothesState[1] = (byte)animInfo.FemaleLowerCloths[index];
+                    //character.FileStatus.clothesState[3] = (byte)animInfo.FemaleLowerCloths[index];
+
+                    character.FileStatus.clothesState[0] = Math.Max((byte)animInfo.FemaleUpperCloths[index], character.FileStatus.clothesState[0]);
+                    character.FileStatus.clothesState[2] = Math.Max((byte)animInfo.FemaleUpperCloths[index], character.FileStatus.clothesState[2]);
+                    character.FileStatus.clothesState[1] = Math.Max((byte)animInfo.FemaleLowerCloths[index], character.FileStatus.clothesState[1]);
+                    character.FileStatus.clothesState[3] = Math.Max((byte)animInfo.FemaleLowerCloths[index], character.FileStatus.clothesState[3]);
                 }
             }
 

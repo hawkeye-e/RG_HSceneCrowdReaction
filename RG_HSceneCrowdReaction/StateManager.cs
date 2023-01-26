@@ -4,6 +4,7 @@ using System.Timers;
 using HSceneCrowdReaction.InfoList;
 using HSceneCrowdReaction.BackgroundHAnimation;
 using RG.Scene.Action.Core;
+using UnityEngine.UI;
 
 namespace HSceneCrowdReaction
 {
@@ -45,7 +46,16 @@ namespace HSceneCrowdReaction
 
         internal Dictionary<int, BackUpInformation> ActorBackUpData = null;
         internal Dictionary<int, HAnimationGroup> ActorHGroupDictionary = null;
+        internal List<HAnimationGroup> HAnimationGroupsList = null;
 
+        
+        internal Toggle HSceneDropDownSelectedToggle = null;
+        
+        internal Text HSceneDropDownSelectedCharaText = null;
+
+        internal Dictionary<int, Chara.ChaControl> ToggleIDCharacterList = null;
+
+        internal Dictionary<int, Dictionary<int, byte>> CharacterClothesStateDictionary = null;
 
         internal class BackUpInformation
         {
@@ -61,6 +71,7 @@ namespace HSceneCrowdReaction
             UpdateHGroupDictionary(group.male2, group);
             UpdateHGroupDictionary(group.female1, group);
             UpdateHGroupDictionary(group.female2, group);
+            Instance.HAnimationGroupsList.Add(group);
         }
 
         internal static void UpdateHGroupDictionary(Actor actor, HAnimationGroup group)

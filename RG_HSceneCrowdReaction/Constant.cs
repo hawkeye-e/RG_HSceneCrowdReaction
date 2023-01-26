@@ -10,6 +10,10 @@ namespace HSceneCrowdReaction
         internal const string AnimatorParamMotion = "motion";
         internal const string AnimatorParamBreast = "breast";
         internal const int ThreesomeHPointIndex = 8;
+        internal const int ClothesPartCount = 8;
+
+        internal const string CharaChoiceTogglePrefixMale = "m";
+        internal const string CharaChoiceTogglePrefixFemale = "f";
 
         internal class AnimType
         {
@@ -101,5 +105,29 @@ namespace HSceneCrowdReaction
             internal const char NearOrgasm = 'O';
         }
 
+        internal static class ClothesPart
+        {
+            internal const int Top = 0;
+            internal const int Bottom = 1;
+            internal const int InnerTop = 2;
+            internal const int InnerBottom = 3;
+            internal const int Gloves = 4;
+            internal const int PantyHose = 5;
+            internal const int Socks = 6;
+            internal const int Shoes = 7;
+        }
+
+        internal static class GeneralClothesStates
+        {
+            internal const int Full = 0;
+            internal const int Half = 1;
+            internal const int Nude = 2;
+        }
+
+        internal static class TwoStateClothesStates
+        {
+            internal const int Full = 0;
+            internal const int Nude = 1;
+        }
     }
 }
