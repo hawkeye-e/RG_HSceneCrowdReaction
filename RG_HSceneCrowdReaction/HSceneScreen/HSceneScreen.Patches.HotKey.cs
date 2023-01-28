@@ -287,9 +287,6 @@ namespace HSceneCrowdReaction.HSceneScreen
 
                     character.ChangeLookNeckTarget(backupInfo.lookNeckPtn, StateManager.Instance.CurrentHSceneInstance.CtrlFlag.CameraCtrl.transform);
                     character.ChangeLookNeckPtn(backupInfo.lookNeckPtn);
-
-                    Debug.PrintDetail(character.NeckLookCtrl.neckLookScript);
-
                 }
                 else
                 {
