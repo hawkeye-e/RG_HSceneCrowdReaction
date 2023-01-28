@@ -216,7 +216,7 @@ namespace HSceneCrowdReaction.HSceneScreen
                     if (StateManager.Instance.ActorHAnimationList != null)
                     {
 
-                        Actor actor = Patches.General.GetActorByChaControlID(character.GetInstanceID());
+                        Actor actor = Util.GetActorByChaControlID(character.GetInstanceID());
                         if (actor == null) return;
 
                         if (StateManager.Instance.ActorHAnimationList.ContainsKey(actor.GetInstanceID()))
@@ -682,7 +682,7 @@ namespace HSceneCrowdReaction.HSceneScreen
                 }
             }
 
-            private static Il2CppReferenceArray<GameObject> GetItemObjectsArrayForGroup(HAnimationGroup group)
+            internal static Il2CppReferenceArray<GameObject> GetItemObjectsArrayForGroup(HAnimationGroup group)
             {
                 Actor targetActor = group.female1;
 

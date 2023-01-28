@@ -13,6 +13,7 @@ namespace HSceneCrowdReaction
         public StateManager()
         {
             ActorClothesState = new Dictionary<int, byte[]>();
+            HotKeyState = new HotKeyData();
         }
 
         internal static StateManager Instance;
@@ -56,6 +57,27 @@ namespace HSceneCrowdReaction
         internal Dictionary<int, Chara.ChaControl> ToggleIDCharacterList = null;
 
         internal Dictionary<int, Dictionary<int, byte>> CharacterClothesStateDictionary = null;
+
+        internal HotKeyData HotKeyState;
+
+        internal class HotKeyData
+        {
+            public HotKeyData()
+            {
+                this.HReactionFemaleLookState = new Dictionary<int, BackUpInformation>();
+            }
+
+            internal bool HReactionFemaleEyeSightCameraState = false;
+            internal bool HReactionFemaleFaceDirectionCameraState = false;
+            internal bool HReactionMaleBodyVisibleState = true;
+            internal bool HReactionMalePenisVisibleState = true;
+            internal bool HReactionMaleClothesVisibleState = true;
+            internal bool HReactionMaleAccessoryVisibleState = true;
+            internal bool HReactionMaleShoesVisibleState = true;
+            internal bool HReactionMaleSimpleBodyState = false;
+
+            internal Dictionary<int, BackUpInformation> HReactionFemaleLookState;
+        }
 
         internal class BackUpInformation
         {

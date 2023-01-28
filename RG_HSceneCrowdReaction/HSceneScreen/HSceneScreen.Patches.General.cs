@@ -23,6 +23,7 @@ namespace HSceneCrowdReaction.HSceneScreen
                 {
                     StateManager.Instance.HSceneSetup = false;
                     StateManager.Instance.HasRemoveClothes = false;
+                    StateManager.Instance.HotKeyState = new StateManager.HotKeyData();
                     StateManager.Instance.CustomAnimationParameter = new Dictionary<int, CustomAnimation.CustomAnimationData>();
                     StateManager.Instance.CurrentHSceneInstance = hScene;
 
@@ -523,18 +524,6 @@ namespace HSceneCrowdReaction.HSceneScreen
 
             ////    return result;
             ////}
-
-
-            internal static Actor GetActorByChaControlID(int id)
-            {
-                if (ActionScene.Instance != null)
-                {
-                    foreach (var actor in ActionScene.Instance._actors)
-                        if (actor.Chara.GetInstanceID() == id)
-                            return actor;
-                }
-                return null;
-            }
 
             internal static void BackupCharacterLookInfo(HScene hScene)
             {

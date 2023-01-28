@@ -438,5 +438,16 @@ namespace HSceneCrowdReaction
             else
                 return GetParentTransformByName(t.parent, parentName);
         }
+
+        internal static Actor GetActorByChaControlID(int id)
+        {
+            if (ActionScene.Instance != null)
+            {
+                foreach (var actor in ActionScene.Instance._actors)
+                    if (actor.Chara.GetInstanceID() == id)
+                        return actor;
+            }
+            return null;
+        }
     }
 }

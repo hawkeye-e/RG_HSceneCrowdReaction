@@ -32,6 +32,7 @@ namespace HSceneCrowdReaction.HSceneScreen
         [HarmonyPatch(typeof(HScene), nameof(HScene.OnDestroy))]
         private static void OnDestroyPre(HScene __instance)
         {
+            Patches.HotKey.RestoreHReactionMaleStates();
             Patches.HAnim.RecoverAllClothesState(ActionScene.Instance);
             Patches.HAnim.RecoverActorBody(ActionScene.Instance);
             Patches.General.RestoreActorsLookingDirection(__instance);
@@ -210,7 +211,15 @@ namespace HSceneCrowdReaction.HSceneScreen
             }
         }
 
+        //Allow to change the state of males in H reaction
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.Update))]
+        private static bool Update()
+        {
+            bool isHotKeyPressed = Patches.HotKey.CheckHotKeyPressed();
 
+            return isHotKeyPressed;
+        }
 
     }
 }

@@ -23,9 +23,9 @@ namespace HSceneCrowdReaction
                     if (value != null)
                     {
                         if (value is Transform)
-                            Log.Log(LogLevel.Info, prop.Name + "=" + value + ", name: " + ((Transform)value).name);
+                            Log.Log(LogLevel.Info, prop.Name + "=" + value + ", name: " + ((Transform)value).name + ", active: " + ((Transform)value).gameObject.active);
                         else if (value is GameObject)
-                            Log.Log(LogLevel.Info, prop.Name + "=" + value + ", name: " + ((GameObject)value).name);
+                            Log.Log(LogLevel.Info, prop.Name + "=" + value + ", name: " + ((GameObject)value).name + ", active: " + ((GameObject)value).active);
                         else
                             Log.Log(LogLevel.Info, prop.Name + "=" + value);
                     }
@@ -293,9 +293,9 @@ namespace HSceneCrowdReaction
             }
         }
 
-        internal static void PrintTransformTreeUpward(Transform t, string currentPath, string stopAt = null)
+        internal static void PrintTransformTreeUpward(Transform t, string currentPath = "", string stopAt = null)
         {
-            Log.LogInfo("Name: " + t.name);
+            Log.LogInfo("Name: " + t.name + ", active: " + t.gameObject.active);
             GetComponentTypes(t);
             var mono = t.GetComponent<MonoBehaviour>();
             if (mono != null)
@@ -342,7 +342,7 @@ namespace HSceneCrowdReaction
 
 
 
-        internal static void PrintTransformTree(Transform t, string currentPath)
+        internal static void PrintTransformTree(Transform t, string currentPath = "")
         {
             if (t != null)
             {
@@ -359,16 +359,16 @@ namespace HSceneCrowdReaction
                     Log.LogInfo("GetScriptClassName: " + mono.GetScriptClassName());
                 }
 
-                Log.LogInfo("Position: " + t.position);
-                Log.LogInfo("LocalPosition: " + t.localPosition);
-                Log.LogInfo("Rotation: " + t.rotation.eulerAngles);
-                Log.LogInfo("LocalRotation: " + t.localRotation.eulerAngles);
-                var r = t.GetComponent<RectTransform>();
-                if (r != null)
-                {
-                    Log.LogInfo("Width: " + r.rect.width + ", height: " + r.rect.height);
-                    Log.LogInfo("bottom: " + r.rect.bottom + ", top: " + r.rect.top);
-                }
+                ////Log.LogInfo("Position: " + t.position);
+                ////Log.LogInfo("LocalPosition: " + t.localPosition);
+                ////Log.LogInfo("Rotation: " + t.rotation.eulerAngles);
+                ////Log.LogInfo("LocalRotation: " + t.localRotation.eulerAngles);
+                ////var r = t.GetComponent<RectTransform>();
+                ////if (r != null)
+                ////{
+                ////    Log.LogInfo("Width: " + r.rect.width + ", height: " + r.rect.height);
+                ////    Log.LogInfo("bottom: " + r.rect.bottom + ", top: " + r.rect.top);
+                ////}
                 Log.LogInfo("Child Count: " + t.childCount);
                 if (t.parent != null)
                     Log.LogInfo("Parent: " + t.parent.name);

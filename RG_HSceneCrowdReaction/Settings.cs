@@ -48,5 +48,7 @@ namespace HSceneCrowdReaction
         internal const string MaleGlansPath = "cf_J_Kosi01/cf_J_Kosi02/cm_J_dan_s/cm_J_dan_top/cm_J_dan100_00/cm_J_dan101_00/cm_J_dan109_00";
         internal const string HItemPath = "hsceneHDRP(Clone)/HSceneComponent/Place/HItem";
 
+        internal static readonly List<string> PenisRendererNameList = new List<string> { "cm_o_dan_f", "cm_o_dan00" };
+        internal static readonly List<string> SimpleBodyRendereNameList = new List<string> { "o_silhouette_cm" , "o_silhouette_cf" };
     }
 }
