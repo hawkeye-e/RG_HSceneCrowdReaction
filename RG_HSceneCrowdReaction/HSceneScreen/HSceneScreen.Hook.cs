@@ -221,5 +221,54 @@ namespace HSceneCrowdReaction.HSceneScreen
             return isHotKeyPressed;
         }
 
+        //Backup the accessory slot of the main female character and apply change to the correct character
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HSceneSpriteAccessoryCondition), nameof(HSceneSpriteAccessoryCondition.OnClickAccessory))]
+        private static void OnClickAccessoryPre(HSceneSpriteAccessoryCondition __instance, int _accessory, ref Dictionary<int, bool> __state)
+        {
+            Patches.MenuItems.HandleAccessorySlotClickPre(__instance, _accessory, ref __state);
+        }
+
+        //Restore the accessory slot of the main female character
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HSceneSpriteAccessoryCondition), nameof(HSceneSpriteAccessoryCondition.OnClickAccessory))]
+        private static void OnClickAccessoryPost(HSceneSpriteAccessoryCondition __instance, int _accessory, Dictionary<int, bool> __state)
+        {
+            Patches.MenuItems.HandleAccessorySlotClickPost(_accessory, __state);
+        }
+
+        //Backup the accessory slot of the main female character and apply change to the correct character
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HSceneSpriteAccessoryCondition), nameof(HSceneSpriteAccessoryCondition.OnClickAllAccessory))]
+        private static void OnClickAllAccessoryPre(HSceneSpriteAccessoryCondition __instance, ref Dictionary<int, Dictionary<int, bool>> __state)
+        {
+            Patches.MenuItems.HandleAllAccessoryClickPre(__instance, ref __state);
+        }
+
+        //Restore the accessory slot of the main female character
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HSceneSpriteAccessoryCondition), nameof(HSceneSpriteAccessoryCondition.OnClickAllAccessory))]
+        private static void OnClickAllAccessoryPost(Dictionary<int, Dictionary<int, bool>> __state)
+        {
+            Patches.MenuItems.HandleAllAccessoryClickPost(__state);
+        }
+
+        //Spoof the accessory list in order to populate the correct accessory list of the selected characters
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HSceneSpriteAccessoryCondition), nameof(HSceneSpriteAccessoryCondition.SetAccessoryCharacter))]
+        private static void SetAccessoryCharacterPre(HSceneSpriteAccessoryCondition __instance, ref Dictionary<int, Il2CppReferenceArray<Chara.ListInfoBase>> __state)
+        {
+            Patches.MenuItems.SpoofCharacterAccessoryList(ref __state);
+        }
+
+        //Restore the accessory list of the main character
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HSceneSpriteAccessoryCondition), nameof(HSceneSpriteAccessoryCondition.SetAccessoryCharacter))]
+        private static void SetAccessoryCharacterPost(HSceneSpriteAccessoryCondition __instance, Dictionary<int, Il2CppReferenceArray<Chara.ListInfoBase>> __state)
+        {
+            Patches.MenuItems.RestoreCharacterAccessoryList(__state);
+            Patches.MenuItems.UpdateAccessoryToggleState();
+        }
+
     }
 }

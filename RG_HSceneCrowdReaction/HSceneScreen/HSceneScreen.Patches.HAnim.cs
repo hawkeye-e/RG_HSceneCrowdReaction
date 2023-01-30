@@ -168,6 +168,8 @@ namespace HSceneCrowdReaction.HSceneScreen
                     {
                         character.FileStatus.clothesState[i] = originalClothesState[i];
                     }
+
+                    character.SetAccessoryStateAll(true);
                 }
             }
 

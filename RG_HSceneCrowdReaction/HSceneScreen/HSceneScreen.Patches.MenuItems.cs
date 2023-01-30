@@ -20,10 +20,10 @@ namespace HSceneCrowdReaction.HSceneScreen
 
             internal static void AddMainHSceneToggleToState(HScene hScene)
             {
-                if(ActionScene.Instance != null && hScene != null)
+                if (ActionScene.Instance != null && hScene != null)
                 {
                     StateManager.Instance.ToggleIDCharacterList.Add(hScene._sprite.CharaChoice.tglCharas[0].GetInstanceID(), hScene._chaFemales[0]);
-                    if(hScene._chaFemales[1] != null)
+                    if (hScene._chaFemales[1] != null)
                         StateManager.Instance.ToggleIDCharacterList.Add(hScene._sprite.CharaChoice.tglCharas[1].GetInstanceID(), hScene._chaFemales[1]);
                     if (hScene._chaMales[0] != null)
                         StateManager.Instance.ToggleIDCharacterList.Add(hScene._sprite.CharaChoice.tglCharas[2].GetInstanceID(), hScene._chaMales[0]);
@@ -109,7 +109,7 @@ namespace HSceneCrowdReaction.HSceneScreen
 
                 var chaChoice = StateManager.Instance.CurrentHSceneInstance._sprite.CharaChoice;
 
-                
+
 
                 chaChoice.tglCharas[4 + 4 * groupIndex + offsetMixed] = newToggle;
 
@@ -169,6 +169,10 @@ namespace HSceneCrowdReaction.HSceneScreen
                                 if (StateManager.Instance.CurrentHSceneInstance._sprite.ClothMode == 0)
                                 {
                                     UpdateClothesStateButtons(StateManager.Instance.ToggleIDCharacterList[t.GetInstanceID()]);
+                                }
+                                else if (StateManager.Instance.CurrentHSceneInstance._sprite.ClothMode == 1)
+                                {
+                                    StateManager.Instance.CurrentHSceneInstance._sprite.ObjAccessory.SetAccessoryCharacter();
                                 }
                             }
                             else
@@ -357,7 +361,7 @@ namespace HSceneCrowdReaction.HSceneScreen
                         var dict = character.GetClothesStateKind(i);
                         if (dict != null)
                             minState = Math.Min(minState, character.FileStatus.clothesState[i]);
-                        
+
                     }
 
                     minState++;
@@ -377,6 +381,197 @@ namespace HSceneCrowdReaction.HSceneScreen
                 foreach (var btn in clothCondSprite._clothAllObjSet.Obj.buttons)
                     btn.gameObject.active = false;
 
+            }
+
+            internal static void SpoofCharacterAccessoryList(ref Dictionary<int, Il2CppReferenceArray<Chara.ListInfoBase>> dictBackup)
+            {
+                dictBackup = null;
+
+                if (ActionScene.Instance != null && StateManager.Instance.HSceneDropDownSelectedToggle != null)
+                {
+                    if (StateManager.Instance.ToggleIDCharacterList.ContainsKey(StateManager.Instance.HSceneDropDownSelectedToggle.GetInstanceID()))
+                    {
+                        var character = StateManager.Instance.ToggleIDCharacterList[StateManager.Instance.HSceneDropDownSelectedToggle.GetInstanceID()];
+
+                        if (!IsSelectedCharacterMainFemale())
+                        {
+                            //backup and replace info accessory of the selected character in order to populate the list we want
+                            dictBackup = new Dictionary<int, Il2CppReferenceArray<Chara.ListInfoBase>>();
+                            foreach (var chaMainF in StateManager.Instance.CurrentHSceneInstance._chaFemales)
+                                if (chaMainF != null)
+                                {
+                                    dictBackup.Add(chaMainF.GetInstanceID(), chaMainF._infoAccessory);
+                                    chaMainF._infoAccessory = character._infoAccessory;
+                                }
+                        }
+                    }
+                }
+            }
+
+            internal static void RestoreCharacterAccessoryList(Dictionary<int, Il2CppReferenceArray<Chara.ListInfoBase>> dictBackup)
+            {
+                if (ActionScene.Instance != null)
+                {
+                    if (dictBackup != null)
+                    {
+                        //Restore the info accessory
+                        foreach (var chaMainF in StateManager.Instance.CurrentHSceneInstance._chaFemales)
+                            if (chaMainF != null)
+                                chaMainF._infoAccessory = dictBackup[chaMainF.GetInstanceID()];
+                    }
+                }
+
+
+            }
+
+            internal static void UpdateAccessoryToggleState()
+            {
+                if (ActionScene.Instance != null)
+                {
+                    if (StateManager.Instance.ToggleIDCharacterList.ContainsKey(StateManager.Instance.HSceneDropDownSelectedToggle.GetInstanceID()))
+                    {
+                        var character = StateManager.Instance.ToggleIDCharacterList[StateManager.Instance.HSceneDropDownSelectedToggle.GetInstanceID()];
+
+                        //Set the state of the toggles depend on the accessory slot on/off status of the selected character
+                        bool isAccessoryOn = false;
+                        for (int i = 0; i < character.CmpAccessory.Count; i++)
+                        {
+                            if (character.CmpAccessory[i] != null)
+                            {
+                                isAccessoryOn = isAccessoryOn || character.CmpAccessory[i].IsVisible;
+                                StateManager.Instance.CurrentHSceneInstance._sprite.ObjAccessory.AccessorySlots.SetCheck(character.CmpAccessory[i].isActiveAndEnabled, i);
+                                StateManager.Instance.CurrentHSceneInstance._sprite.ObjAccessory._toggles[i].SetIsOnWithoutNotify(character.CmpAccessory[i].isActiveAndEnabled);
+                            }
+
+                        }
+                        StateManager.Instance.CurrentHSceneInstance._sprite.ObjAccessory.AllChange.SetIsOnWithoutNotify(isAccessoryOn);
+                        FixAccessoryToggleCheckmark();
+                    }
+                }
+            }
+
+            internal static void HandleAccessorySlotClickPre(HSceneSpriteAccessoryCondition instance, int slot, ref Dictionary<int, bool> dictBackup)
+            {
+                dictBackup = null;
+                if (ActionScene.Instance != null && StateManager.Instance.HSceneDropDownSelectedToggle != null)
+                {
+
+                    if (StateManager.Instance.ToggleIDCharacterList.ContainsKey(StateManager.Instance.HSceneDropDownSelectedToggle.GetInstanceID()))
+                    {
+                        var character = StateManager.Instance.ToggleIDCharacterList[StateManager.Instance.HSceneDropDownSelectedToggle.GetInstanceID()];
+
+                        if (!IsSelectedCharacterMainFemale())
+                        {
+                            //Not main female, backup the slot status of main character
+                            dictBackup = new Dictionary<int, bool>();
+                            foreach (var chaMainF in StateManager.Instance.CurrentHSceneInstance._chaFemales)
+                                if (chaMainF != null && chaMainF.CmpAccessory[slot] != null)
+                                    dictBackup.Add(chaMainF.GetInstanceID(), chaMainF.CmpAccessory[slot].IsVisible);
+
+                            //Update the accessory status of the selected character
+                            character.SetAccessoryState(slot, instance._toggles[slot].isOn);
+                        }
+                    }
+                }
+            }
+
+            internal static void HandleAccessorySlotClickPost(int slot, Dictionary<int, bool> dictBackup)
+            {
+                //Restore the slot status if necessary
+                if (dictBackup != null)
+                {
+                    foreach (var chaMainF in StateManager.Instance.CurrentHSceneInstance._chaFemales)
+                        if (chaMainF != null && chaMainF.CmpAccessory[slot] != null)
+                            chaMainF.SetAccessoryState(slot, dictBackup[chaMainF.GetInstanceID()]);
+                    //chaMainF.ObjAccessory[_accessory].active = __state[chaMainF.GetInstanceID()];
+                }
+
+                FixAccessoryToggleCheckmark();
+            }
+
+            internal static void HandleAllAccessoryClickPre(HSceneSpriteAccessoryCondition instance, ref Dictionary<int, Dictionary<int, bool>> dictBackup)
+            {
+                dictBackup = null;
+
+                if (ActionScene.Instance != null && StateManager.Instance.HSceneDropDownSelectedToggle != null)
+                {
+
+                    if (StateManager.Instance.ToggleIDCharacterList.ContainsKey(StateManager.Instance.HSceneDropDownSelectedToggle.GetInstanceID()))
+                    {
+                        var character = StateManager.Instance.ToggleIDCharacterList[StateManager.Instance.HSceneDropDownSelectedToggle.GetInstanceID()];
+
+                        if (!IsSelectedCharacterMainFemale())
+                        {
+                            //Not main female, backup all slot status of main character
+                            dictBackup = new Dictionary<int, Dictionary<int, bool>>();
+                            foreach (var chaMainF in StateManager.Instance.CurrentHSceneInstance._chaFemales)
+                                if (chaMainF != null)
+                                {
+                                    var dictState = new Dictionary<int, bool>();
+                                    for (int i = 0; i < chaMainF.CmpAccessory.Count; i++)
+                                        if (chaMainF.CmpAccessory[i] != null)
+                                            dictState.Add(i, chaMainF.CmpAccessory[i].IsVisible);
+
+                                    dictBackup.Add(chaMainF.GetInstanceID(), dictState);
+                                }
+
+                            character.SetAccessoryStateAll(instance.AllChange.isOn);
+                        }
+                    }
+                }
+            }
+
+            internal static void HandleAllAccessoryClickPost(Dictionary<int, Dictionary<int, bool>> dictBackup)
+            {
+                if (dictBackup != null)
+                {
+                    foreach (var chaMainF in StateManager.Instance.CurrentHSceneInstance._chaFemales)
+                        if (chaMainF != null)
+                        {
+                            for (int i = 0; i < chaMainF.CmpAccessory.Count; i++)
+                                if (chaMainF.CmpAccessory[i] != null)
+                                    chaMainF.SetAccessoryState(i, dictBackup[chaMainF.GetInstanceID()][i]);
+                        }
+                }
+
+                FixAccessoryToggleCheckmark();
+            }
+
+            private static bool IsSelectedCharacterMainFemale()
+            {
+                bool result = false;
+                if (StateManager.Instance.ToggleIDCharacterList.ContainsKey(StateManager.Instance.HSceneDropDownSelectedToggle.GetInstanceID()))
+                {
+                    var character = StateManager.Instance.ToggleIDCharacterList[StateManager.Instance.HSceneDropDownSelectedToggle.GetInstanceID()];
+
+                    foreach (var chaMainF in StateManager.Instance.CurrentHSceneInstance._chaFemales)
+                        if (chaMainF != null && chaMainF.GetInstanceID() == character.GetInstanceID())
+                            return true;
+                }
+                return result;
+            }
+
+            //The checkmark of the toggle button may be wrong when switching between character and this function is attempt to fix it 
+            private static void FixAccessoryToggleCheckmark()
+            {
+                if (ActionScene.Instance != null && StateManager.Instance.ToggleIDCharacterList != null)
+                {
+                    if (StateManager.Instance.ToggleIDCharacterList.ContainsKey(StateManager.Instance.HSceneDropDownSelectedToggle.GetInstanceID()))
+                    {
+                        var character = StateManager.Instance.ToggleIDCharacterList[StateManager.Instance.HSceneDropDownSelectedToggle.GetInstanceID()];
+
+                        for (int i = 0; i < StateManager.Instance.CurrentHSceneInstance._sprite.ObjAccessory._toggles.Count; i++)
+                            if (character.CmpAccessory[i] != null)
+                                StateManager.Instance.CurrentHSceneInstance._sprite.ObjAccessory._toggles[i].transform.Find("state/stateOn").gameObject.SetActive(StateManager.Instance.CurrentHSceneInstance._sprite.ObjAccessory._toggles[i].isOn);
+
+                        ////The behaviour of the All accessory button is a bit strange. Since it is just layout problem, dont want to make things too complicated so leave it
+                        //if (StateManager.Instance.CurrentHSceneInstance._sprite.ObjAccessory.AllChange.isOn)
+                        //{
+                        //    Log.LogInfo("FixAccessoryToggleCheckmark AllChange.isOn " + character.FileParam.fullname);
+                        //    StateManager.Instance.CurrentHSceneInstance._sprite.ObjAccessory.AllChange.transform.Find("state/stateOn").gameObject.SetActive(StateManager.Instance.CurrentHSceneInstance._sprite.ObjAccessory.AllChange.isOn);
+                        //}
+                    }
+                }
             }
         }
     }

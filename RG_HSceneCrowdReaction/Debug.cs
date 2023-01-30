@@ -605,6 +605,10 @@ namespace HSceneCrowdReaction
             var c21 = t.GetComponent<ContentSizeFitter>(); if (c21 != null) Log.LogInfo("has ContentSizeFitter");
             var c22 = t.GetComponent<Canvas>(); if (c22 != null) Log.LogInfo("has Canvas");
             var c23 = t.GetComponent<ContentSizeFitter>(); if (c23 != null) Log.LogInfo("has ContentSizeFitter");
+
+            var c24 = t.GetComponent<Toggle>(); if (c24 != null) Log.LogInfo("has Toggle");
+            var c25 = t.GetComponent<UI_ToggleEx>(); if (c25 != null) Log.LogInfo("has UI_ToggleEx");
+            var c26 = t.GetComponent<UI_ToggleOnOffEx>(); if (c26 != null) Log.LogInfo("has UI_ToggleOnOffEx");
         }
     }
 }
