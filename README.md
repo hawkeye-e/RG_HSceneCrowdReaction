@@ -5,6 +5,8 @@ This mod is to change the reaction of the surrounding characters who see a H sce
 ## Features
 - Allow the Character to have different reaction when seeing a H scene instead of just staying awkward.
 - Allow the characters in pair to start H-animation even they are not involved in H scene. The position, speed of H-animation is randomly selected and will update periodically.
+- Allow player to change the clothing or accessory of the H reaction characters.
+- Add hotkeys to allow player to control the status of H reaction male characters. (Shift+3 to Shift+8, following the setup of the game)
 
 ## How to trigger H-animation:
 Before starting a H scene, get the other characters in pair and make sure they have already had sex with each other (Configurable).
@@ -25,18 +27,6 @@ Excluded H position list
       ソファーキス騎乗位
     </td>
     <td>Have not figured out the logic of kiss motion</td>
-  </tr>
-  <tr>
-    <td>
-      胸弄り, 後ろから胸もみ, しゃがみ胸もみ, <br>
-      机上胸もみ, サポート胸もみ, 診察胸いじり, <br>
-      診察台胸もみ, 鏡前もたれ胸もみ, パイズリ, <br>
-      パイズリ舐め, パイズリ咥え, 立ちパイズリ, <br>
-      立ちパイズリ舐め, 椅子パイズリ, 椅子パイズリ舐め, <br>
-      寝パイズリ, 胸もみ正常位, 胸もみ騎乗位, <br>
-      椅子胸もみ背面座位
-    </td>
-    <td>Unable to animate multiple animation layers</td>
   </tr>
   <tr>
     <td>
