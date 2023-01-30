@@ -132,10 +132,10 @@ namespace HSceneCrowdReaction.BackgroundHAnimation
             {
                 int minCount = 0;
                 var nonZeroMatch = dictPossibleMatch.Where(dictItem => dictItem.Value.Count > 0).ToList();
-                if(nonZeroMatch.Count > 0)
+                if (nonZeroMatch.Count > 0)
                     minCount = nonZeroMatch.Min(dictItem => dictItem.Value.Count);
 
-                if(minCount > 0)
+                if (minCount > 0)
                 {
                     var kvp = dictPossibleMatch.Where(a => a.Value.Count == minCount).First();
                     var actor = actorList.Where(a => a.GetInstanceID() == kvp.Key).First();
@@ -372,9 +372,10 @@ namespace HSceneCrowdReaction.BackgroundHAnimation
             {
                 ActionPoint targetAP = actor.OccupiedActionPoint == null ? actor.Partner?.OccupiedActionPoint : actor.OccupiedActionPoint;
 
-                foreach (var point in targetAP.HPointLink)
-                    if (lstOccupiedPoint.FindAll(p => p.GetInstanceID() == point.GetInstanceID()).Count == 0)
-                        lstOccupiedPoint.Add(point);
+                if (targetAP != null)
+                    foreach (var point in targetAP.HPointLink)
+                        if (lstOccupiedPoint.FindAll(p => p.GetInstanceID() == point.GetInstanceID()).Count == 0)
+                            lstOccupiedPoint.Add(point);
                 //foreach (var point in targetAP.HPoint3PLink)
                 //    if (lstOccupiedPoint.FindAll(p => p.GetInstanceID() == point.GetInstanceID()).Count == 0)
                 //        lstOccupiedPoint.Add(point);
@@ -411,7 +412,7 @@ namespace HSceneCrowdReaction.BackgroundHAnimation
                     lstOccupiedPoint.AddRange(toAdd);
                 }
 
-                   
+
 
             return lstOccupiedPoint;
         }

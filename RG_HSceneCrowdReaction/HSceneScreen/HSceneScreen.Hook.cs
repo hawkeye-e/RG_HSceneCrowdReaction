@@ -23,7 +23,7 @@ namespace HSceneCrowdReaction.HSceneScreen
         private static void CharaInitPost(HScene __instance)
         {
             Patches.General.InitHScene(__instance);
-            Patches.General.BackupCharacterLookInfo(__instance);
+            Patches.General.BackupActorStatus(__instance);
         }
 
 
@@ -35,7 +35,7 @@ namespace HSceneCrowdReaction.HSceneScreen
             Patches.HotKey.RestoreHReactionMaleStates();
             Patches.HAnim.RecoverAllClothesState(ActionScene.Instance);
             Patches.HAnim.RecoverActorBody(ActionScene.Instance);
-            Patches.General.RestoreActorsLookingDirection(__instance);
+            Patches.General.RestoreActorsStatus(__instance);
             Patches.General.DestroyTempObject();
             Patches.General.DestroyStateManagerList();
             Patches.General.RemoveStateManagerValue();
@@ -268,6 +268,42 @@ namespace HSceneCrowdReaction.HSceneScreen
         {
             Patches.MenuItems.RestoreCharacterAccessoryList(__state);
             Patches.MenuItems.UpdateAccessoryToggleState();
+        }
+
+        //Change to default outfit for the selected character
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HSceneSpriteCoordinatesCard), nameof(HSceneSpriteCoordinatesCard.ChangeDefCoode))]
+        private static bool ChangeDefCoodePre(HSceneSpriteCoordinatesCard __instance)
+        {
+            bool result = Patches.MenuItems.ChangeToDefaultOutfit();
+            return result;
+        }
+
+        //Spoof the main character sex so that correct cooridnate list is populated
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HSceneSpriteCoordinatesCard), nameof(HSceneSpriteCoordinatesCard.SetCoordinatesCharacter))]
+        private static void SetCoordinatesCharacterPre(HSceneSpriteCoordinatesCard __instance, ref bool __state)
+        {
+            __state = Patches.MenuItems.SpoofMainCharacterSex(__instance);
+        }
+
+        //Recover the sex info
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HSceneSpriteCoordinatesCard), nameof(HSceneSpriteCoordinatesCard.SetCoordinatesCharacter))]
+        private static void SetCoordinatesCharacterPost(HSceneSpriteCoordinatesCard __instance, bool __state)
+        {
+            if (__state)
+                Patches.MenuItems.RecoverMainCharacterSex(__instance);
+        }
+
+        //Change the outfit of the selected character
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Button), nameof(Button.Press))]
+        private static bool PressPre(Button __instance)
+        {
+            bool isContinue = Patches.MenuItems.HandleChangeOutfitClick(__instance);
+
+            return isContinue;
         }
 
     }

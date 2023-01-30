@@ -61,7 +61,7 @@ namespace HSceneCrowdReaction.HSceneScreen
                 }
             }
 
-            internal static void RestoreActorsLookingDirection(HScene hScene)
+            internal static void RestoreActorsStatus(HScene hScene)
             {
                 if (ActionScene.Instance != null)
                 {
@@ -76,6 +76,14 @@ namespace HSceneCrowdReaction.HSceneScreen
 
                             actor.Chara.ChangeLookEyesPtn(bkInfo.lookEyePtn);
                             actor.Chara.ChangeLookNeckPtn(bkInfo.lookNeckPtn);
+
+                            if (actor.Sex == 0)
+                                actor.Chara.ChangeNowCoordinate(true);
+                            else
+                            {
+                                for (int i = 0; i < Constant.ClothesPartCount; i++)
+                                    actor.Chara.NowCoordinate.clothes.parts[i].Copy(bkInfo.clothesPartInfos[i]);
+                            }
                         }
 
                     }
@@ -525,7 +533,7 @@ namespace HSceneCrowdReaction.HSceneScreen
             ////    return result;
             ////}
 
-            internal static void BackupCharacterLookInfo(HScene hScene)
+            internal static void BackupActorStatus(HScene hScene)
             {
                 if (ActionScene.Instance != null)
                 {
@@ -537,6 +545,13 @@ namespace HSceneCrowdReaction.HSceneScreen
                         info.lookNeckPtn = actor.Chara.GetLookNeckPtn();
                         info.lookEyeTarget = actor.Chara.EyeLookCtrl.target;
                         info.lookNeckTarget = actor.Chara.NeckLookCtrl.target;
+
+                        for (int i = 0; i < Constant.ClothesPartCount; i++)
+                        {
+                            Chara.ChaFileClothes.PartsInfo partsInfo = new Chara.ChaFileClothes.PartsInfo();
+                            partsInfo.Copy(actor.Chara.NowCoordinate.clothes.parts[i]);
+                            info.clothesPartInfos.Add(i, partsInfo);
+                        }
 
                         StateManager.Instance.ActorBackUpData.Add(actor.GetInstanceID(), info);
                     }

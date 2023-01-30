@@ -81,10 +81,17 @@ namespace HSceneCrowdReaction
 
         internal class BackUpInformation
         {
+            public BackUpInformation()
+            {
+                clothesPartInfos = new Dictionary<int, Chara.ChaFileClothes.PartsInfo>();
+            }
+
             internal int lookEyePtn;
             internal int lookNeckPtn;
             internal Transform lookEyeTarget;
             internal Transform lookNeckTarget;
+
+            internal Dictionary<int, Chara.ChaFileClothes.PartsInfo> clothesPartInfos;
         }
 
         internal static void UpdateHGroupDictionary(HAnimationGroup group)

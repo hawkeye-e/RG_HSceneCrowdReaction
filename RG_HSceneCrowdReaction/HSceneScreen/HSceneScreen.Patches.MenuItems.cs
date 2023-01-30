@@ -174,6 +174,10 @@ namespace HSceneCrowdReaction.HSceneScreen
                                 {
                                     StateManager.Instance.CurrentHSceneInstance._sprite.ObjAccessory.SetAccessoryCharacter();
                                 }
+                                else if (StateManager.Instance.CurrentHSceneInstance._sprite.ClothMode == 2)
+                                {
+                                    StateManager.Instance.CurrentHSceneInstance._sprite.ObjClothCard.SetCoordinatesCharacter();
+                                }
                             }
                             else
                             {
@@ -567,11 +571,81 @@ namespace HSceneCrowdReaction.HSceneScreen
                         ////The behaviour of the All accessory button is a bit strange. Since it is just layout problem, dont want to make things too complicated so leave it
                         //if (StateManager.Instance.CurrentHSceneInstance._sprite.ObjAccessory.AllChange.isOn)
                         //{
-                        //    Log.LogInfo("FixAccessoryToggleCheckmark AllChange.isOn " + character.FileParam.fullname);
                         //    StateManager.Instance.CurrentHSceneInstance._sprite.ObjAccessory.AllChange.transform.Find("state/stateOn").gameObject.SetActive(StateManager.Instance.CurrentHSceneInstance._sprite.ObjAccessory.AllChange.isOn);
                         //}
                     }
                 }
+            }
+
+            internal static bool ChangeToDefaultOutfit()
+            {
+                if (ActionScene.Instance != null && StateManager.Instance.HSceneDropDownSelectedToggle != null)
+                {
+                    if (StateManager.Instance.ToggleIDCharacterList.ContainsKey(StateManager.Instance.HSceneDropDownSelectedToggle.GetInstanceID()))
+                    {
+                        var character = StateManager.Instance.ToggleIDCharacterList[StateManager.Instance.HSceneDropDownSelectedToggle.GetInstanceID()];
+
+                        character.ChangeNowCoordinate(true, true);
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            internal static bool SpoofMainCharacterSex(HSceneSpriteCoordinatesCard instance)
+            {
+                bool isSpoofed = false;
+                if (ActionScene.Instance != null && StateManager.Instance.HSceneDropDownSelectedToggle != null)
+                {
+                    if (StateManager.Instance.ToggleIDCharacterList.ContainsKey(StateManager.Instance.HSceneDropDownSelectedToggle.GetInstanceID()))
+                    {
+                        var character = StateManager.Instance.ToggleIDCharacterList[StateManager.Instance.HSceneDropDownSelectedToggle.GetInstanceID()];
+
+                        foreach (var charMainF in instance.females)
+                            if (charMainF != null)
+                                charMainF.FileParam.sex = character.Sex;
+                        foreach (var charMainM in instance.males)
+                            if (charMainM != null)
+                                charMainM.FileParam.sex = character.Sex;
+                        instance.ChangeTargetSex(character.Sex);
+                        isSpoofed = true;
+                    }
+                }
+                return isSpoofed;
+            }
+
+            internal static void RecoverMainCharacterSex(HSceneSpriteCoordinatesCard instance)
+            {
+                foreach (var charMainF in instance.females)
+                    if (charMainF != null)
+                        charMainF.FileParam.sex = 1;
+                foreach (var charMainM in instance.males)
+                    if (charMainM != null)
+                        charMainM.FileParam.sex = 0;
+            }
+
+            internal static bool HandleChangeOutfitClick(Button button)
+            {
+                if (ActionScene.Instance != null && StateManager.Instance.CurrentHSceneInstance != null)
+                {
+                    if (StateManager.Instance.CurrentHSceneInstance._sprite.ObjClothCard.DecideCoode.GetInstanceID() == button.GetInstanceID())
+                    {
+                        if (StateManager.Instance.ToggleIDCharacterList.ContainsKey(StateManager.Instance.HSceneDropDownSelectedToggle.GetInstanceID()))
+                        {
+                            var character = StateManager.Instance.ToggleIDCharacterList[StateManager.Instance.HSceneDropDownSelectedToggle.GetInstanceID()];
+
+                            character.ChangeNowCoordinate(StateManager.Instance.CurrentHSceneInstance._sprite.ObjClothCard.filename, true, true,
+                                StateManager.Instance.CurrentHSceneInstance._sprite.ObjClothCard._toggleCloth.isOn,
+                                StateManager.Instance.CurrentHSceneInstance._sprite.ObjClothCard._toggleAcs.isOn,
+                                StateManager.Instance.CurrentHSceneInstance._sprite.ObjClothCard._toggleHair.isOn
+                                );
+                            return false;
+                        }
+                    }
+
+                }
+
+                return true;
             }
         }
     }
