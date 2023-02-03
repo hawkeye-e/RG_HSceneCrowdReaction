@@ -35,14 +35,14 @@ namespace HSceneCrowdReaction.HSceneScreen
             internal static void StartHAnimation(HAnimationGroup animGroup, bool requireInit = true)
             {
                 HPoint hPoint;
-                
+
                 if (requireInit)
                 {
                     InitBodyBoneForGroup(animGroup);
-                    
+
                     InitHAnimationCtrlForGroup(animGroup);
                     InitHLayerCtrlForGroup(animGroup);
-                    
+
                     InitHItemCtrlForGroup(animGroup);
 
                     //Get the HPoint
@@ -63,19 +63,19 @@ namespace HSceneCrowdReaction.HSceneScreen
 
                 //Assign the actor to the HPoint
                 SetActorToHPointForGroup(animGroup, hPoint, animInfo);
-                
+
                 //Set the animation of the actors
                 SetActorAnimatorForGroup(animGroup, animInfo);
-                
+
                 //Add animation data to StateManager                
                 AddActorHAnimationDataForGroup(animGroup, animInfo);
-                
+
                 //Play the animation
                 PlayAnimationForGroup(animGroup);
-                
+
                 //Update the clothes state of the actor
                 SetActorClothesStateForGroup(animGroup, animInfo);
-                
+
                 //Set timer for periodic update. Add only 1 actor to the next update list
                 AddOrUpdateHAnimNextUpdateTime(animGroup.female1);
             }
@@ -208,13 +208,23 @@ namespace HSceneCrowdReaction.HSceneScreen
                 }
             }
 
+            internal static void ResetHPointForGroup(ActionScene actionScene)
+            {
+                if (actionScene != null && StateManager.Instance.HAnimationGroupsList != null)
+                {
+                    foreach (var group in StateManager.Instance.HAnimationGroupsList)
+                        group.hPoint.ReInit();
+                    StateManager.Instance.CurrentHSceneInstance.CtrlFlag.NowHPoint.ReInit();
+                }
+            }
+
             //This function is following how the functions in the original code is called
             //This is supposed to be fixing the multiple layer animation problem but currently it is not working properly
             internal static void HandleHAnimationCtrlsUpdate(Chara.ChaControl character)
             {
                 if (ActionScene.Instance != null && StateManager.Instance.CurrentHSceneInstance != null)
                 {
-                    
+
                     if (StateManager.Instance.ActorHAnimationList != null)
                     {
 
@@ -301,6 +311,107 @@ namespace HSceneCrowdReaction.HSceneScreen
                 }
 
                 return 0;
+            }
+
+            private static List<HPoint> GetRelatedHPoints(HPoint point)
+            {
+                List<HPoint> relatedHPoints = new List<HPoint>();
+                foreach (var ap in Manager.Game.ActionMap.APTContainer._actionPoints)
+                {
+                    //if the HPoint hit any nonHPointLink of an Action Point, include all nonHPointLink to the result list
+                    bool isHit = false;
+                    for (int i = 0; i < ap._nonHPointLink.Count; i++)
+                        if (ap._nonHPointLink[i].GetInstanceID() == point.GetInstanceID())
+                        {
+                            isHit = true;
+                            break;
+                        }
+                    if (isHit)
+                        for (int i = 0; i < ap._nonHPointLink.Count; i++)
+                            relatedHPoints.Add(ap._nonHPointLink[i]);
+                }
+                if(!relatedHPoints.Contains(point))
+                    relatedHPoints.Add(point);
+
+                return relatedHPoints;
+            }
+
+            internal static void UpdateMobPoint()
+            {
+                if (ActionScene.Instance != null)
+                {
+                    StateManager.Instance.CurrentHSceneInstance.HPointCtrl.mobActorPoints.Clear();
+
+                    //1. Exclude the HPoint occupied by mob NPC
+                    if (Manager.Game.ActionMap.MobPTContainer != null)
+                        if (Manager.Game.ActionMap.MobPTContainer._allMobPointDic != null)
+                            foreach (var kvpMP in Manager.Game.ActionMap.MobPTContainer._allMobPointDic)
+                                if (kvpMP.Value._mobChaControl != null)
+                                    if (kvpMP.Value.NonHPointLink != null)
+                                        for (int i = 0; i < kvpMP.Value.NonHPointLink.Count; i++)
+                                            if (!StateManager.Instance.CurrentHSceneInstance.HPointCtrl.mobActorPoints.Contains(kvpMP.Value.NonHPointLink[i]))
+                                                StateManager.Instance.CurrentHSceneInstance.HPointCtrl.mobActorPoints.Add(kvpMP.Value.NonHPointLink[i]);
+
+                    //2. Exclude the HPoint occupied by main Scene if we are moving the H reaction group
+                    if (StateManager.Instance.MovingHPointGroup != null)
+                    {
+                        var pointsToAdd = GetRelatedHPoints(StateManager.Instance.MainSceneHPoint);
+                        foreach (var point in pointsToAdd)
+                            if (!StateManager.Instance.CurrentHSceneInstance.HPointCtrl.mobActorPoints.Contains(point))
+                                StateManager.Instance.CurrentHSceneInstance.HPointCtrl.mobActorPoints.Add(point);
+                    }
+
+                    //3. Exclude the HPoint occupied by other non moving groups
+                    foreach (var group in StateManager.Instance.ActorHGroupDictionary)
+                        if (StateManager.Instance.MovingHPointGroup != group.Value && group.Value.hPoint != null)
+                        {
+                            var pointsToAdd = GetRelatedHPoints(group.Value.hPoint);
+                            foreach (var point in pointsToAdd)
+                                if (!StateManager.Instance.CurrentHSceneInstance.HPointCtrl.mobActorPoints.Contains(point))
+                                    StateManager.Instance.CurrentHSceneInstance.HPointCtrl.mobActorPoints.Add(point);
+                        }
+
+                    //4. Exclude the HPoint occupied by remaining single actor
+                    foreach (var actor in StateManager.Instance.SingleActorList)
+                    {
+                        var ap = actor.OccupiedActionPoint;
+                        if (ap == null)
+                            ap = actor.Partner?.OccupiedActionPoint;
+                        if (ap == null)
+                            ap = actor.ThreesomeTarget?.OccupiedActionPoint;
+
+                        if (ap != null)
+                            foreach (var point in ap.NonHPointLink)
+                                if (!StateManager.Instance.CurrentHSceneInstance.HPointCtrl.mobActorPoints.Contains(point))
+                                    StateManager.Instance.CurrentHSceneInstance.HPointCtrl.mobActorPoints.Add(point);
+                    }
+                }
+            }
+
+            internal static void SetAvailableHPoints(ref Il2CppSystem.Collections.Generic.List<HPoint> points, int bashoKind)
+            {
+                if (ActionScene.Instance != null)
+                {
+                    //Clone the points
+                    points = new Il2CppSystem.Collections.Generic.List<HPoint>();
+                    foreach (var p in StateManager.Instance.FullHPointListInMap[bashoKind].HPoints)
+                        points.Add(p);
+
+
+                    //Remove points that have been occupied
+                    List<Vector3> lstOccupiedPos = new List<Vector3>();
+                    foreach (var group in StateManager.Instance.ActorHGroupDictionary)
+                        if (StateManager.Instance.MovingHPointGroup != group.Value && group.Value.hPoint != null)
+                            lstOccupiedPos.Add(group.Value.hPoint.transform.position);
+
+                    if (StateManager.Instance.MovingHPointGroup != null)
+                        lstOccupiedPos.Add(StateManager.Instance.MainSceneHPoint.transform.position);
+
+                    for (int i = points.Count - 1; i >= 0; i--)
+                        if (lstOccupiedPos.Contains(points[i].transform.position))
+                            points.RemoveAt(i);
+                    
+                }
             }
 
             internal static void RemoveOccupiedHPoints(Il2CppSystem.Collections.Generic.List<HPoint> points)
@@ -458,15 +569,15 @@ namespace HSceneCrowdReaction.HSceneScreen
 
                 int animGroup = GetHAnimationGroup(animInfo);
                 var extraInfo = HAnimation.ExtraHAnimationDataDictionary[(animGroup, animInfo.ID)];
-                
+
                 //Show the penis if necessary
                 ForcePenisVisible(actor.Chara, animInfo.MaleSon == 1);
-                
+
                 //reset state
                 actor.Chara.ChangeTongueState(0);
                 actor.Chara.ChangeMouthFixed(false);
                 actor.Chara.ChangeMouthPtn((int)HAnimation.MouthType.Common);
-                
+
                 //facial expression
                 HAnimation.MouthType mouthType = HAnimation.MouthType.Common;
                 if (characterType == Constant.HCharacterType.Female1)
@@ -576,7 +687,7 @@ namespace HSceneCrowdReaction.HSceneScreen
                 MotionIK motionIK = dictMotionIK[actor.GetInstanceID()];
 
                 var hAnimData = StateManager.Instance.ActorHAnimationList[actor.GetInstanceID()];
-                
+
                 motionIK.IKBaseOverride(hAnimData.animationListInfo.IKBaseOverride);
 
                 Il2CppReferenceArray<MotionIK> dummy = new Il2CppReferenceArray<MotionIK>(0);
@@ -642,7 +753,7 @@ namespace HSceneCrowdReaction.HSceneScreen
             private static void SetMotionIKsForGroup(HAnimationGroup group, string clipNameType)
             {
                 var hAnimData = StateManager.Instance.ActorHAnimationList[group.female1.GetInstanceID()];
-                
+
                 var assetPathSplit = hAnimData.animationListInfo.AssetpathFemale.Split('/');
 
                 string path = Util.GetAssetBundleBasePath() + Manager.HSceneManager.Instance.StrAssetIKListFolder + string.Format(Settings.HMotionIKAssetBundleFileName, assetPathSplit[assetPathSplit.Length - 2]);
@@ -944,6 +1055,17 @@ namespace HSceneCrowdReaction.HSceneScreen
                 SetMotionIKsForGroup(group, clipNameType);
 
                 SetVoiceToActorForGroup(group, clipNameType);
+
+                //Handle the case of move point button is clicked
+                if (StateManager.Instance.CurrentHSceneInstance.CtrlFlag.IsPointMoving)//is moving
+                {
+                    if (group == StateManager.Instance.MovingHPointGroup)
+                    {
+                        //group moving, should be temporary not visible
+                        MenuItems.SetAnimationGroupCharactersVisible(group, false);
+                    }
+                }
+
             }
 
             private static void SetupCtrlForGroup(HAnimationGroup group, string clipNameType)
@@ -1087,25 +1209,29 @@ namespace HSceneCrowdReaction.HSceneScreen
 
             private static void InitHPoint(HPoint hPoint)
             {
+                SetHPointObjectVisible(hPoint, true);
+            }
+
+            internal static void SetHPointObjectVisible(HPoint hPoint, bool isVisible)
+            {
                 hPoint.ChangeHideProcBefore();
                 hPoint.ChangeHideProcAll();
                 hPoint.HpointObjVisibleChange(true);
 
-                //move the object set
-                if (hPoint._moveObjects != null)
+                if (isVisible)
                 {
-                    foreach (var moveObj in hPoint._moveObjects)
-                    {
-                        for (int i = 0; i < moveObj.OffSetInfos.Count; i++)
-                            moveObj.SetOffset(i);
-                    }
+                    hPoint.SetOffset();
+                }
+                else
+                {
+                    hPoint.ReInit();
                 }
             }
 
             private static int GetBashoKind(HPoint hPoint)
             {
                 int result = -1;
-                foreach (var kvp in StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst)
+                foreach (var kvp in StateManager.Instance.FullHPointListInMap)
                 {
                     foreach (var point in kvp.Value.HPoints)
                     {
@@ -1122,7 +1248,7 @@ namespace HSceneCrowdReaction.HSceneScreen
             private static HScene.AnimationListInfo GetHAnimation(HPoint hPoint, HAnimation.SituationType situationType)
             {
                 int hPointType = GetHPointType(hPoint);
-                var possibleAnimList = GetAvailableHAnimationList(hPointType, situationType);
+                var possibleAnimList = GetAvailableHAnimationList(hPoint, hPointType, situationType);
 
                 System.Random rnd = new System.Random();
                 int rndResult = rnd.Next(possibleAnimList.Count);
@@ -1131,7 +1257,7 @@ namespace HSceneCrowdReaction.HSceneScreen
 
             private static int GetHPointType(HPoint hPoint)
             {
-                var listHPoint = StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst;
+                var listHPoint = StateManager.Instance.FullHPointListInMap;
                 foreach (var kvp in listHPoint)
                 {
                     foreach (var pt in kvp.Value.HPoints)
@@ -1139,11 +1265,11 @@ namespace HSceneCrowdReaction.HSceneScreen
                         if (pt.GetInstanceID() == hPoint.GetInstanceID())
                             return kvp.Key;
                     }
-                }
+                }    
                 return -1;
             }
 
-            private static List<HScene.AnimationListInfo> GetAvailableHAnimationList(int type, HAnimation.SituationType situationType)
+            private static List<HScene.AnimationListInfo> GetAvailableHAnimationList(HPoint hPoint, int type, HAnimation.SituationType situationType)
             {
                 List<HScene.AnimationListInfo> result = new List<HScene.AnimationListInfo>();
 
@@ -1151,10 +1277,15 @@ namespace HSceneCrowdReaction.HSceneScreen
                 {
                     foreach (var info in HPoint._animationLists[i])
                     {
-                        if (info.LstPositons.Contains(type)
-                            && (info.LimitMap[0] == -1 || info.LimitMap.Contains(ActionScene.Instance.MapID))
-                            && !HAnimation.IsInExcludeList(i, info.ID)
-                            && HAnimation.ExtraHAnimationDataDictionary[(i, info.ID)].situationType == situationType)
+                        bool hPointExcludeMotion = false;
+                        if (i < hPoint._limitData.Motion.Count)                                                                 //the array only have length=6 while that of animation list is length=7...
+                            hPointExcludeMotion = hPoint._limitData.Motion[i].MotionID.Contains(info.ID);
+
+                        if (info.LstPositons.Contains(type)                                                                     //check if the type of this HPoint is available for this animation
+                            && (info.LimitMap[0] == -1 || info.LimitMap.Contains(ActionScene.Instance.MapID))                   //check if the animation is available for current map
+                            && !HAnimation.IsInExcludeList(i, info.ID)                                                          //check if the animation is excluded by this mod due to technical issue etc
+                            && !hPointExcludeMotion                                                                             //check if the animation is excluded by this HPoint)
+                            && HAnimation.ExtraHAnimationDataDictionary[(i, info.ID)].situationType == situationType)           //check if the animation is available for current situation type 
                         {
                             result.Add(info);
                         }
@@ -1342,7 +1473,7 @@ namespace HSceneCrowdReaction.HSceneScreen
             }
 
 
-            private static void ForcePenisVisible(Chara.ChaControl character, bool isShowPenis)
+            internal static void ForcePenisVisible(Chara.ChaControl character, bool isShowPenis)
             {
                 if (character == null) return;
 

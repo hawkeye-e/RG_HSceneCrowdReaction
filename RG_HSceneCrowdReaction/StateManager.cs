@@ -24,8 +24,12 @@ namespace HSceneCrowdReaction
         internal HScene CurrentHSceneInstance = null;
         internal GameObject HeadDownLookTarget = null;
 
+        internal AssetBundle GroupSelectionAB = null;
+        internal GroupSelectionControl GroupSelection = null;
+
         internal List<int> ForceActiveInstanceID = null;
         internal List<Timer> HActionUpdateTimerList = null;
+        internal List<Actor> SingleActorList = null;
         internal Dictionary<int, HAnimation.ActorHAnimData> ActorHAnimationList = null;
         internal Dictionary<int, long> ActorHAnimNextUpdateTimeDictionary = null;
         internal Dictionary<int, bool> ActorHAnimNextUpdateProcessing = null;
@@ -59,6 +63,13 @@ namespace HSceneCrowdReaction
         internal Dictionary<int, Dictionary<int, byte>> CharacterClothesStateDictionary = null;
 
         internal HotKeyData HotKeyState;
+
+        internal HAnimationGroup MovingHPointGroup = null;
+        internal HAnimationGroup CurrentSelectedGroup = null;
+        internal HPoint MovingToHPoint = null;
+        internal HPoint MainSceneHPoint = null;
+        internal Il2CppSystem.Collections.Generic.List<int> MainSceneUsePlaces = null;
+        internal Dictionary<int, HPointList.HPointPlaceInfo> FullHPointListInMap = null;
 
         internal class HotKeyData
         {

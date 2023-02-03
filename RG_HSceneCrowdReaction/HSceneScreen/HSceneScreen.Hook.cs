@@ -33,6 +33,7 @@ namespace HSceneCrowdReaction.HSceneScreen
         private static void OnDestroyPre(HScene __instance)
         {
             Patches.HotKey.RestoreHReactionMaleStates();
+            Patches.HAnim.ResetHPointForGroup(ActionScene.Instance);
             Patches.HAnim.RecoverAllClothesState(ActionScene.Instance);
             Patches.HAnim.RecoverActorBody(ActionScene.Instance);
             Patches.General.RestoreActorsStatus(__instance);
@@ -99,13 +100,14 @@ namespace HSceneCrowdReaction.HSceneScreen
             }
         }
 
-        //Remove the HPoint occupied by groups
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(HPointCtrl), nameof(HPointCtrl.SetMarker), new[] { typeof(Il2CppSystem.Collections.Generic.List<HPoint>), typeof(int), typeof(Il2CppSystem.Collections.Generic.List<HScene.AnimationListInfo>), typeof(bool) })]
-        private static void SetMarkerPre(Il2CppSystem.Collections.Generic.List<HPoint> points)
-        {
-            Patches.HAnim.RemoveOccupiedHPoints(points);
-        }
+        //Abandoned as this will be handled by updating mob points
+        ////Remove the HPoint occupied by groups
+        //[HarmonyPrefix]
+        //[HarmonyPatch(typeof(HPointCtrl), nameof(HPointCtrl.SetMarker), new[] { typeof(Il2CppSystem.Collections.Generic.List<HPoint>), typeof(int), typeof(Il2CppSystem.Collections.Generic.List<HScene.AnimationListInfo>), typeof(bool) })]
+        //private static void SetMarkerPre(Il2CppSystem.Collections.Generic.List<HPoint> points)
+        //{
+        //    Patches.HAnim.RemoveOccupiedHPoints(points);
+        //}
 
         //Initialize the h reaction animation group
         [HarmonyPostfix]
@@ -113,6 +115,7 @@ namespace HSceneCrowdReaction.HSceneScreen
         private static void InitPost(HSceneSprite __instance)
         {
             Patches.HAnim.SetupAnimationGroups(StateManager.Instance.CurrentHSceneInstance);
+            Patches.MenuItems.InitGroupSelectionControl(__instance);
         }
 
 
@@ -304,6 +307,118 @@ namespace HSceneCrowdReaction.HSceneScreen
             bool isContinue = Patches.MenuItems.HandleChangeOutfitClick(__instance);
 
             return isContinue;
+        }
+
+        //Set the state when user click move button
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HSceneSprite), nameof(HSceneSprite.OnClickMoveBt))]
+        private static void OnClickMoveBtPre()
+        {
+            Patches.MenuItems.PrepareHPointChange();
+        }
+
+        //Update the visibility of the correct group when move button clicked
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HSceneSprite), nameof(HSceneSprite.OnClickMoveBt))]
+        private static void OnClickMoveBtPost()
+        {
+            Patches.MenuItems.PrepareHPointChange2();
+        }
+
+        //Show the group selection canvas whenever HPoint location marker is shown
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HPointCtrl), nameof(HPointCtrl.SetMarker), new[] {typeof(int) })]
+        private static void SetMarkerPre2(int kind)
+        {
+            Patches.MenuItems.CheckShowCanvas(true);
+        }
+
+        //Hide the group selection canvas and reset the visibility whenever HPoint location marker is removed
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HPointCtrl), nameof(HPointCtrl.DelMarker), new System.Type[] {})]
+        private static void DelMarkerPost()
+        {
+            Patches.MenuItems.FinishMoveForGroup();
+            Patches.MenuItems.CheckShowCanvas(false);
+        }
+
+        //Spoof the motion count for the selected group if it is setting HPoint marker
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HPointCtrl), nameof(HPointCtrl.CheckPointLimitMotion))]
+        private static void CheckPointLimitMotionPost(int place, HPoint hPoint, List<HScene.AnimationListInfo> changeInfos, bool SetMarker, ref int __result)
+        {
+            __result = Patches.MenuItems.GetSpoofMotionCount(place, SetMarker, __result);
+        }
+
+        //Move the selected group
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.SetMovePositionPoint))]
+        private static bool SetMovePositionPointPre(HScene __instance, Transform trans, Vector3 offsetpos, Vector3 offsetrot, bool isWorld)
+        {
+            bool isContinue = Patches.MenuItems.HandleSetPosition();
+            return isContinue;
+        }
+
+        //Move the selected group
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.SetPosition), new[] { typeof(Transform), typeof(Vector3), typeof(Vector3), typeof(bool), typeof(bool) })]
+        private static bool SetPosition1Pre(HScene __instance, Transform _trans, Vector3 offsetpos, Vector3 offsetrot, bool _FadeStart, bool _isWorld)
+        {
+            bool isContinue = Patches.MenuItems.HandleSetPosition();
+            return isContinue;
+        }
+
+        //Move the selected group
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.SetPosition), new[] { typeof(Vector3), typeof(Quaternion), typeof(Vector3), typeof(Vector3), typeof(bool), typeof(bool) })]
+        private static bool SetPosition2Pre(HScene __instance, Vector3 pos, Quaternion rot, Vector3 offsetpos, Vector3 offsetrot, bool _FadeStart, bool isWorld)
+        {
+            bool isContinue = Patches.MenuItems.HandleSetPosition();
+            return isContinue;
+        }
+
+        //Set the states when user click a HPoint
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HPointCtrl), nameof(HPointCtrl.HitPlace))]
+        private static void HitPlacePre(ref HPoint hpoint)
+        {
+            hpoint = Patches.MenuItems.HandleHPointClick(hpoint);
+        }
+
+        //Change the HPoint value to prevent incorrect motion changed for the main scene group
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HPointCtrl), nameof(HPointCtrl.ChangeMotion))]
+        private static void ChangeMotionPre(int place, ref HPoint hPoint)
+        {
+            if(ActionScene.Instance != null && StateManager.Instance.MovingHPointGroup != null)
+                hPoint = StateManager.Instance.MainSceneHPoint;
+        }
+
+        //Move the selected group
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ChangeAnimation))]
+        private static bool ChangeAnimationPre(HScene.AnimationListInfo _info, bool _isForceResetCamera, bool _isForceLoopAction = false, bool _UseFade = true, bool isLoadFirst = false)
+        {
+            bool isContinue = Patches.MenuItems.HandleSetPosition();
+            return isContinue;
+        }
+
+        //Move the selected group
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.ChangeAnimPosAndCamera))]
+        private static bool ChangeAnimPosAndCameraPre(HScene.AnimationListInfo _info, bool _isForceResetCamera, bool isLoadFirst)
+        {
+            bool isContinue = Patches.MenuItems.HandleSetPosition();
+            return isContinue;
+        }
+
+        //Rollback the HPoint value to prevent incorrect item loaded/removed for the main group
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HItemCtrl), nameof(HItemCtrl.LoadItem), new[] {typeof(int), typeof(int) , typeof(GameObject) , typeof(GameObject) , typeof(GameObject) , typeof(GameObject) , typeof(int) })]
+        private static void LoadItemPre(int _mode, int _id, GameObject _boneMale, GameObject _boneFemale, GameObject _boneMale1, GameObject _boneFemale1, int basho)
+        {
+            if (ActionScene.Instance != null && StateManager.Instance.MainSceneHPoint != null && StateManager.Instance.MovingHPointGroup != null)
+                StateManager.Instance.CurrentHSceneInstance.CtrlFlag.NowHPoint = StateManager.Instance.MainSceneHPoint;
         }
 
     }

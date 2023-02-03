@@ -27,8 +27,14 @@ namespace HSceneCrowdReaction.HSceneScreen
                     StateManager.Instance.CustomAnimationParameter = new Dictionary<int, CustomAnimation.CustomAnimationData>();
                     StateManager.Instance.CurrentHSceneInstance = hScene;
 
+                    StateManager.Instance.CurrentSelectedGroup = null;
+                    StateManager.Instance.MovingHPointGroup = null;
+                    StateManager.Instance.MovingToHPoint = null;
+                    StateManager.Instance.MainSceneHPoint = null;
+
                     StateManager.Instance.ForceActiveInstanceID = new List<int>();
                     StateManager.Instance.HActionUpdateTimerList = new List<Timer>();
+                    StateManager.Instance.SingleActorList = new List<Actor>();
                     StateManager.Instance.ActorHAnimationList = new Dictionary<int, HAnimation.ActorHAnimData>();
 
                     StateManager.Instance.ActorHAnimNextUpdateProcessing = new Dictionary<int, bool>();
@@ -58,6 +64,20 @@ namespace HSceneCrowdReaction.HSceneScreen
                     StateManager.Instance.HSceneDropDownSelectedCharaText = null;
                     StateManager.Instance.ToggleIDCharacterList = new Dictionary<int, Chara.ChaControl>();
 
+                    StateManager.Instance.FullHPointListInMap = new Dictionary<int, HPointList.HPointPlaceInfo>();
+
+                    foreach (var lst in hScene.HPointCtrl.HPointList.Lst)
+                    {
+                        HPointList.HPointPlaceInfo info = new HPointList.HPointPlaceInfo();
+                        Il2CppSystem.Collections.Generic.List<HPoint> hpointList = new Il2CppSystem.Collections.Generic.List<HPoint>();
+                        foreach (var point in lst.Value.HPoints)
+                        {
+                            hpointList.Add(point);
+                        }
+                        info.HPoints = hpointList;
+                        StateManager.Instance.FullHPointListInMap.Add(lst.Key, info);
+                    }
+                    StateManager.Instance.MainSceneUsePlaces = StateManager.Instance.CurrentHSceneInstance.HPointCtrl._usePlace;
                 }
             }
 
@@ -120,6 +140,10 @@ namespace HSceneCrowdReaction.HSceneScreen
                 StateManager.Instance.CurrentHSceneInstance = null;
                 StateManager.Instance.HSceneDropDownSelectedToggle = null;
                 StateManager.Instance.HSceneDropDownSelectedCharaText = null;
+
+                if(StateManager.Instance.GroupSelection != null)
+                    GameObject.Destroy(StateManager.Instance.GroupSelection.canvas);
+                StateManager.Instance.GroupSelection = null;
             }
 
             internal static void DestroyStateManagerList()
@@ -243,8 +267,19 @@ namespace HSceneCrowdReaction.HSceneScreen
                     StateManager.Instance.ToggleIDCharacterList = null;
                 }
 
-            }
+                if (StateManager.Instance.FullHPointListInMap != null)
+                {
+                    StateManager.Instance.FullHPointListInMap.Clear();
+                    StateManager.Instance.FullHPointListInMap = null;
+                }
 
+                if (StateManager.Instance.SingleActorList != null)
+                {
+                    StateManager.Instance.SingleActorList.Clear();
+                    StateManager.Instance.SingleActorList = null;
+                }
+                
+            }
 
 
             internal static void ChangeActorsAnimation(HScene hScene)
@@ -286,6 +321,7 @@ namespace HSceneCrowdReaction.HSceneScreen
 
 
                             //Otherwise set other single reaction
+                            StateManager.Instance.SingleActorList.Add(actor);
 
                             int animType = Util.GetCurrentAnimationType(ActionScene.Instance.MapID, actor.Sex, actor.Animation._param.ID);
 

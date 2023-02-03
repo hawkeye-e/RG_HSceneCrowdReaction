@@ -256,6 +256,32 @@ namespace HSceneCrowdReaction.InfoList
                 return HAnimationClipType.Unknown;
         }
 
+        internal static List<int> GetPlaceKindBySiuationType(SituationType type)
+        {
+            List<int> result = new List<int>();
+            int[] places = null;
+            switch (type)
+            {
+                case SituationType.FF:
+                    places = ValidHPointTypeFF;
+                    break;
+                case SituationType.MF:
+                    places = ValidHPointTypeMF;
+                    break;
+                case SituationType.MMF:
+                    places = ValidHPointTypeMMF;
+                    break;
+                case SituationType.FFM:
+                    places = ValidHPointTypeFFM;
+                    break;
+            }
+
+            if (places != null)
+                for (int i = 0; i < places.Length; i++)
+                    result.Add(places[i]);
+            return result;
+        }
+
 
         internal enum SituationType
         {

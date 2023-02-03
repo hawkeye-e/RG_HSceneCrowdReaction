@@ -359,8 +359,8 @@ namespace HSceneCrowdReaction
                     Log.LogInfo("GetScriptClassName: " + mono.GetScriptClassName());
                 }
 
-                ////Log.LogInfo("Position: " + t.position);
-                ////Log.LogInfo("LocalPosition: " + t.localPosition);
+                Log.LogInfo("Position: " + t.position);
+                Log.LogInfo("LocalPosition: " + t.localPosition);
                 ////Log.LogInfo("Rotation: " + t.rotation.eulerAngles);
                 ////Log.LogInfo("LocalRotation: " + t.localRotation.eulerAngles);
                 ////var r = t.GetComponent<RectTransform>();
@@ -424,7 +424,7 @@ namespace HSceneCrowdReaction
 
         internal static void PrintAllHPoint()
         {
-            var list = StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst;
+            var list = StateManager.Instance.FullHPointListInMap;
             foreach (var kvp in list)
             {
                 Log.LogInfo("HPoint kvp.Key: " + kvp.Key);
@@ -497,65 +497,65 @@ namespace HSceneCrowdReaction
             switch (type)
             {
                 case HPointType.OfficeConferenceTable:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[5].HPoints[7];       //conference table
+                    return StateManager.Instance.FullHPointListInMap[5].HPoints[7];       //conference table
                 case HPointType.OfficeSeat:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[3].HPoints[1];       //conference seat
+                    return StateManager.Instance.FullHPointListInMap[3].HPoints[1];       //conference seat
                 case HPointType.OfficeConferenceSeat:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[3].HPoints[5];       //conference seat
+                    return StateManager.Instance.FullHPointListInMap[3].HPoints[5];       //conference seat
                 case HPointType.OfficeSeatNoBack:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[3].HPoints[7];       //seat no back
+                    return StateManager.Instance.FullHPointListInMap[3].HPoints[7];       //seat no back
                 case HPointType.OfficeWall:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[2].HPoints[1];       //wall
+                    return StateManager.Instance.FullHPointListInMap[2].HPoints[1];       //wall
                 case HPointType.OfficeFloor:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[0].HPoints[2];       //floor
+                    return StateManager.Instance.FullHPointListInMap[0].HPoints[2];       //floor
                 case HPointType.OfficeToilet:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[9].HPoints[0];       //toilet
+                    return StateManager.Instance.FullHPointListInMap[9].HPoints[0];       //toilet
                 case HPointType.OfficeCounter:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[7].HPoints[0];       //counter
+                    return StateManager.Instance.FullHPointListInMap[7].HPoints[0];       //counter
                 case HPointType.OfficeDesk:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[5].HPoints[0];       //desk
+                    return StateManager.Instance.FullHPointListInMap[5].HPoints[0];       //desk
                 case HPointType.Office3PFloor:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[8].HPoints[2];       //3P
+                    return StateManager.Instance.FullHPointListInMap[8].HPoints[2];       //3P
                 case HPointType.SeminarCounter:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[7].HPoints[0];       //counter
+                    return StateManager.Instance.FullHPointListInMap[7].HPoints[0];       //counter
                 case HPointType.SeminarStudentSeat:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[3].HPoints[0];       //student seat
+                    return StateManager.Instance.FullHPointListInMap[3].HPoints[0];       //student seat
                 case HPointType.SeminarInstructorSeat:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[3].HPoints[3];       //instructor seat
+                    return StateManager.Instance.FullHPointListInMap[3].HPoints[3];       //instructor seat
                 case HPointType.ClinicsPatientSeat:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[3].HPoints[0];       //patient seat
+                    return StateManager.Instance.FullHPointListInMap[3].HPoints[0];       //patient seat
                 case HPointType.ClinicsSeat:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[3].HPoints[2];       //seat no back
+                    return StateManager.Instance.FullHPointListInMap[3].HPoints[2];       //seat no back
                 case HPointType.ClinicsSeatBack:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[3].HPoints[1];       //seat with back
+                    return StateManager.Instance.FullHPointListInMap[3].HPoints[1];       //seat with back
                 case HPointType.ClinicsBed:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[9].HPoints[3];       //patient bed 
+                    return StateManager.Instance.FullHPointListInMap[9].HPoints[3];       //patient bed 
                 case HPointType.ClinicsDeliveryTable:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[9].HPoints[1];       //delivery table 
+                    return StateManager.Instance.FullHPointListInMap[9].HPoints[1];       //delivery table 
                 case HPointType.ClinicsHospitalBed:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[9].HPoints[2];       //hospital bed
+                    return StateManager.Instance.FullHPointListInMap[9].HPoints[2];       //hospital bed
                 case HPointType.LivehouseMirror:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[9].HPoints[2];       //in front of mirror
+                    return StateManager.Instance.FullHPointListInMap[9].HPoints[2];       //in front of mirror
                 case HPointType.LivehouseRoundSeat:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[3].HPoints[2];       //round seat in front of mirror
+                    return StateManager.Instance.FullHPointListInMap[3].HPoints[2];       //round seat in front of mirror
                 case HPointType.LivehouseSeatBack:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[3].HPoints[0];       //seat with back
+                    return StateManager.Instance.FullHPointListInMap[3].HPoints[0];       //seat with back
                 case HPointType.CasinoPole:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[9].HPoints[1];       //pole
+                    return StateManager.Instance.FullHPointListInMap[9].HPoints[1];       //pole
                 case HPointType.CasinoTable:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[5].HPoints[0];       //gamble table
+                    return StateManager.Instance.FullHPointListInMap[5].HPoints[0];       //gamble table
                 case HPointType.CasinoSeat:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[3].HPoints[12];       //seat
+                    return StateManager.Instance.FullHPointListInMap[3].HPoints[12];       //seat
                 case HPointType.LivingRoomSofa:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[6].HPoints[0];       //sofa
+                    return StateManager.Instance.FullHPointListInMap[6].HPoints[0];       //sofa
                 case HPointType.LivingRoomCounter:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[7].HPoints[0];       //Counter
+                    return StateManager.Instance.FullHPointListInMap[7].HPoints[0];       //Counter
                 case HPointType.LivingRoomBathTub:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[9].HPoints[1];       //bath tub
+                    return StateManager.Instance.FullHPointListInMap[9].HPoints[1];       //bath tub
                 case HPointType.LivingRoomSeat:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[3].HPoints[0];       //Seat
+                    return StateManager.Instance.FullHPointListInMap[3].HPoints[0];       //Seat
                 case HPointType.ParkLongChair:
-                    return StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[4].HPoints[0];       //Long Chair
+                    return StateManager.Instance.FullHPointListInMap[4].HPoints[0];       //Long Chair
                 default:
                     return null;
             }
@@ -609,6 +609,7 @@ namespace HSceneCrowdReaction
             var c24 = t.GetComponent<Toggle>(); if (c24 != null) Log.LogInfo("has Toggle");
             var c25 = t.GetComponent<UI_ToggleEx>(); if (c25 != null) Log.LogInfo("has UI_ToggleEx");
             var c26 = t.GetComponent<UI_ToggleOnOffEx>(); if (c26 != null) Log.LogInfo("has UI_ToggleOnOffEx");
+            var c27 = t.GetComponent<Selectable>(); if (c27 != null) Log.LogInfo("has Selectable");
         }
     }
 }

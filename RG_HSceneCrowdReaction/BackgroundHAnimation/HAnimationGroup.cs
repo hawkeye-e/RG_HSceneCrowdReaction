@@ -334,7 +334,7 @@ namespace HSceneCrowdReaction.BackgroundHAnimation
                     validHPointTypes = HAnimation.ValidHPointTypeMMF;
 
                 //the current linked hpoint is occupied, randomly choose a unused one
-                foreach (var kvp in StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst)
+                foreach (var kvp in StateManager.Instance.FullHPointListInMap)
                 {
                     if (Array.IndexOf(validHPointTypes, kvp.Key) > -1)
                     {
@@ -396,7 +396,7 @@ namespace HSceneCrowdReaction.BackgroundHAnimation
             //main h scene actors
             if (includeMainHScenePoint)
             {
-                foreach (var lst in StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst)
+                foreach (var lst in StateManager.Instance.FullHPointListInMap)
                 {
                     foreach (var point in lst.Value.HPoints)
                         if (point.NowUsing)
@@ -405,7 +405,7 @@ namespace HSceneCrowdReaction.BackgroundHAnimation
             }
 
             //include the HPoint with same position in the list to avoid overlap due to pair and 3P difference
-            foreach (var lst in StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst)
+            foreach (var lst in StateManager.Instance.FullHPointListInMap)
                 foreach (var point in lst.Value.HPoints)
                 {
                     var toAdd = lstOccupiedPoint.FindAll(p => p.GetInstanceID() != point.GetInstanceID() && p.transform.position == point.transform.position).ToList();
@@ -422,7 +422,7 @@ namespace HSceneCrowdReaction.BackgroundHAnimation
             List<HPoint> list = new List<HPoint>();
 
             var lstOccupiedPoint = GetOccupiedHPointList();
-            foreach (var point in StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst[Constant.ThreesomeHPointIndex].HPoints)
+            foreach (var point in StateManager.Instance.FullHPointListInMap[Constant.ThreesomeHPointIndex].HPoints)
             {
                 if (!lstOccupiedPoint.Any(p => p.GetInstanceID() == point.GetInstanceID()))
                 {
@@ -436,8 +436,8 @@ namespace HSceneCrowdReaction.BackgroundHAnimation
         internal static List<HPoint> GetHPointsByPosition(Vector3 pos)
         {
             List<HPoint> hPoints = new List<HPoint>();
-            foreach (var lst in StateManager.Instance.CurrentHSceneInstance.HPointCtrl.HPointList.Lst)
-                foreach (var point in lst.value.HPoints)
+            foreach (var lst in StateManager.Instance.FullHPointListInMap)
+                foreach (var point in lst.Value.HPoints)
                     if (point.transform.position == pos)
                         hPoints.Add(point);
             return hPoints;
