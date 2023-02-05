@@ -6,6 +6,8 @@ This mod is to change the reaction of the surrounding characters who see a H sce
 - Allow the Character to have different reaction when seeing a H scene instead of just staying awkward.
 - Allow the characters in pair to start H-animation even they are not involved in H scene. The position, speed of H-animation is randomly selected and will update periodically.
 - Allow player to change the clothing or accessory of the H reaction characters.
+- Allow player to relocate the H reaction group.
+- Allow player to select the animatin of the H reaction group
 - Add hotkeys to allow player to control the status of H reaction male characters. (Shift+3 to Shift+8, following the setup of the game)
 
 ## How to trigger H-animation:
