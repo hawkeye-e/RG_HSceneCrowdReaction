@@ -64,12 +64,14 @@ namespace HSceneCrowdReaction
 
         internal HotKeyData HotKeyState;
 
-        internal HAnimationGroup MovingHPointGroup = null;
-        internal HAnimationGroup CurrentSelectedGroup = null;
         internal HPoint MovingToHPoint = null;
         internal HPoint MainSceneHPoint = null;
         internal Il2CppSystem.Collections.Generic.List<int> MainSceneUsePlaces = null;
         internal Dictionary<int, HPointList.HPointPlaceInfo> FullHPointListInMap = null;
+
+        internal HScene.AnimationListInfo MainSceneAnimationInfo = null;
+        internal int MotionChangeSelectedCategory = -1;
+        internal int MainSceneHEventID = -1;
 
         internal class HotKeyData
         {
@@ -94,7 +96,7 @@ namespace HSceneCrowdReaction
         {
             public BackUpInformation()
             {
-                clothesPartInfos = new Dictionary<int, Chara.ChaFileClothes.PartsInfo>();
+                coordinateInfo = new Chara.ChaFileCoordinate();
             }
 
             internal int lookEyePtn;
@@ -102,7 +104,7 @@ namespace HSceneCrowdReaction
             internal Transform lookEyeTarget;
             internal Transform lookNeckTarget;
 
-            internal Dictionary<int, Chara.ChaFileClothes.PartsInfo> clothesPartInfos;
+            internal Chara.ChaFileCoordinate coordinateInfo;
         }
 
         internal static void UpdateHGroupDictionary(HAnimationGroup group)

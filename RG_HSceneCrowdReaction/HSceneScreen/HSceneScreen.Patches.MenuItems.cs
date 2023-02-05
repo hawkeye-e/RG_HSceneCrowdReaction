@@ -166,7 +166,7 @@ namespace HSceneCrowdReaction.HSceneScreen
                             if (t.GetInstanceID() == toggle.GetInstanceID())
                             {
                                 toggle.transform.parent.gameObject.active = false;
-                                if(StateManager.Instance.HSceneDropDownSelectedCharaText != null)
+                                if (StateManager.Instance.HSceneDropDownSelectedCharaText != null)
                                     StateManager.Instance.HSceneDropDownSelectedCharaText.text = toggle.transform.Find("Label").GetComponent<Text>().text;
                                 StateManager.Instance.HSceneDropDownSelectedToggle = t;
                                 t.Set(true);
@@ -635,16 +635,19 @@ namespace HSceneCrowdReaction.HSceneScreen
                 {
                     if (StateManager.Instance.CurrentHSceneInstance._sprite.ObjClothCard.DecideCoode.GetInstanceID() == button.GetInstanceID())
                     {
-                        if (StateManager.Instance.ToggleIDCharacterList.ContainsKey(StateManager.Instance.HSceneDropDownSelectedToggle.GetInstanceID()))
+                        if (StateManager.Instance.ToggleIDCharacterList != null && StateManager.Instance.HSceneDropDownSelectedToggle != null)
                         {
-                            var character = StateManager.Instance.ToggleIDCharacterList[StateManager.Instance.HSceneDropDownSelectedToggle.GetInstanceID()];
+                            if (StateManager.Instance.ToggleIDCharacterList.ContainsKey(StateManager.Instance.HSceneDropDownSelectedToggle.GetInstanceID()))
+                            {
+                                var character = StateManager.Instance.ToggleIDCharacterList[StateManager.Instance.HSceneDropDownSelectedToggle.GetInstanceID()];
 
-                            character.ChangeNowCoordinate(StateManager.Instance.CurrentHSceneInstance._sprite.ObjClothCard.filename, true, true,
-                                StateManager.Instance.CurrentHSceneInstance._sprite.ObjClothCard._toggleCloth.isOn,
-                                StateManager.Instance.CurrentHSceneInstance._sprite.ObjClothCard._toggleAcs.isOn,
-                                StateManager.Instance.CurrentHSceneInstance._sprite.ObjClothCard._toggleHair.isOn
-                                );
-                            return false;
+                                character.ChangeNowCoordinate(StateManager.Instance.CurrentHSceneInstance._sprite.ObjClothCard.filename, true, true,
+                                    StateManager.Instance.CurrentHSceneInstance._sprite.ObjClothCard._toggleCloth.isOn,
+                                    StateManager.Instance.CurrentHSceneInstance._sprite.ObjClothCard._toggleAcs.isOn,
+                                    StateManager.Instance.CurrentHSceneInstance._sprite.ObjClothCard._toggleHair.isOn
+                                    );
+                                return false;
+                            }
                         }
                     }
 
@@ -676,7 +679,7 @@ namespace HSceneCrowdReaction.HSceneScreen
                     StateManager.Instance.CharacterHItemCtrlDictionary[group.female1.Chara.GetInstanceID()].SetVisible(isVisible);
                     Patches.HAnim.SetHPointObjectVisible(group.hPoint, isVisible);
                 }
-                
+
             }
 
             internal static void InitGroupSelectionControl(HSceneSprite instance)
@@ -693,17 +696,16 @@ namespace HSceneCrowdReaction.HSceneScreen
 
             internal static void PrepareHPointChange()
             {
-                if (ActionScene.Instance != null)
+                if (ActionScene.Instance != null && StateManager.Instance.GroupSelection != null)
                 {
-                    StateManager.Instance.MainSceneHPoint = StateManager.Instance.CurrentHSceneInstance.CtrlFlag.NowHPoint;
-
-                    if (StateManager.Instance.MovingHPointGroup != null)
+                    if (StateManager.Instance.GroupSelection.SelectedGroup != null)
                     {
                         StateManager.Instance.CurrentHSceneInstance.HPointCtrl._usePlace = new Il2CppSystem.Collections.Generic.List<int>();
-                        var usePlaces = InfoList.HAnimation.GetPlaceKindBySiuationType(StateManager.Instance.MovingHPointGroup.situationType);
+                        var usePlaces = InfoList.HAnimation.GetPlaceKindBySiuationType(StateManager.Instance.GroupSelection.SelectedGroup.situationType);
 
                         foreach (var place in usePlaces)
                             StateManager.Instance.CurrentHSceneInstance.HPointCtrl._usePlace.Add(place);
+
                     }
                     else
                     {
@@ -716,12 +718,10 @@ namespace HSceneCrowdReaction.HSceneScreen
 
             internal static void PrepareHPointChange2()
             {
-                if (ActionScene.Instance != null)
+                if (ActionScene.Instance != null && StateManager.Instance.GroupSelection != null)
                 {
-                    StateManager.Instance.MovingHPointGroup = StateManager.Instance.CurrentSelectedGroup;
-                    
                     if (StateManager.Instance.CurrentHSceneInstance.CtrlFlag.IsPointMoving)
-                        UpdateGroupVisibility(StateManager.Instance.MovingHPointGroup);
+                        UpdateGroupVisibility(StateManager.Instance.GroupSelection.SelectedGroup);
 
                 }
             }
@@ -733,7 +733,6 @@ namespace HSceneCrowdReaction.HSceneScreen
                     //Show all characters
                     ResetAllGroupVisibility();
 
-                    StateManager.Instance.MainSceneHPoint = null;
                     StateManager.Instance.MovingToHPoint = null;
                 }
             }
@@ -774,7 +773,7 @@ namespace HSceneCrowdReaction.HSceneScreen
                 HAnim.SetHPointObjectVisible(StateManager.Instance.CurrentHSceneInstance.CtrlFlag.NowHPoint, isVisible);
             }
 
-            internal static void CheckShowCanvas(bool isCanvasVisible)
+            internal static void ShowGroupSelectionCanvas(bool isCanvasVisible)
             {
                 if (ActionScene.Instance != null && StateManager.Instance.GroupSelection != null)
                     if (StateManager.Instance.HAnimationGroupsList != null)
@@ -784,16 +783,16 @@ namespace HSceneCrowdReaction.HSceneScreen
 
             internal static int GetSpoofMotionCount(int place, bool setMarker, int originalResult)
             {
-                if (ActionScene.Instance != null && StateManager.Instance.MovingHPointGroup != null && setMarker)
+                if (ActionScene.Instance != null && StateManager.Instance.GroupSelection != null && StateManager.Instance.GroupSelection.SelectedGroup != null && setMarker)
                 {
                     bool isValidPoint = false;
-                    if (StateManager.Instance.MovingHPointGroup.situationType == InfoList.HAnimation.SituationType.MF && InfoList.HAnimation.ValidHPointTypeMF.Contains(place))
+                    if (StateManager.Instance.GroupSelection.SelectedGroup.situationType == InfoList.HAnimation.SituationType.MF && InfoList.HAnimation.ValidHPointTypeMF.Contains(place))
                         isValidPoint = true;
-                    else if (StateManager.Instance.MovingHPointGroup.situationType == InfoList.HAnimation.SituationType.FF && InfoList.HAnimation.ValidHPointTypeFF.Contains(place))
+                    else if (StateManager.Instance.GroupSelection.SelectedGroup.situationType == InfoList.HAnimation.SituationType.FF && InfoList.HAnimation.ValidHPointTypeFF.Contains(place))
                         isValidPoint = true;
-                    else if (StateManager.Instance.MovingHPointGroup.situationType == InfoList.HAnimation.SituationType.FFM && InfoList.HAnimation.ValidHPointTypeFFM.Contains(place))
+                    else if (StateManager.Instance.GroupSelection.SelectedGroup.situationType == InfoList.HAnimation.SituationType.FFM && InfoList.HAnimation.ValidHPointTypeFFM.Contains(place))
                         isValidPoint = true;
-                    else if (StateManager.Instance.MovingHPointGroup.situationType == InfoList.HAnimation.SituationType.MMF && InfoList.HAnimation.ValidHPointTypeMMF.Contains(place))
+                    else if (StateManager.Instance.GroupSelection.SelectedGroup.situationType == InfoList.HAnimation.SituationType.MMF && InfoList.HAnimation.ValidHPointTypeMMF.Contains(place))
                         isValidPoint = true;
 
                     if (isValidPoint && originalResult == 0)
@@ -806,15 +805,15 @@ namespace HSceneCrowdReaction.HSceneScreen
 
             internal static bool HandleSetPosition()
             {
-                if (ActionScene.Instance != null && StateManager.Instance.MovingHPointGroup != null)
+                if (ActionScene.Instance != null && StateManager.Instance.GroupSelection != null && StateManager.Instance.GroupSelection.SelectedGroup != null)
                 {
-                    MoveGroupToHPoint(StateManager.Instance.MovingHPointGroup, StateManager.Instance.MovingToHPoint);
+                    MoveGroupToHPoint(StateManager.Instance.GroupSelection.SelectedGroup, StateManager.Instance.MovingToHPoint);
                     return false;
                 }
                 return true;
             }
 
-            private static void MoveGroupToHPoint(BackgroundHAnimation.HAnimationGroup group, HPoint hPoint)
+            private static void MoveGroupToHPoint(HAnimationGroup group, HPoint hPoint)
             {
                 if (ActionScene.Instance != null && group != null && hPoint != null)
                 {
@@ -836,13 +835,148 @@ namespace HSceneCrowdReaction.HSceneScreen
 
             internal static HPoint HandleHPointClick(HPoint point)
             {
-                if (ActionScene.Instance != null && StateManager.Instance.MovingHPointGroup != null)
+                if (ActionScene.Instance != null && StateManager.Instance.GroupSelection != null)
                 {
-                    StateManager.Instance.MovingToHPoint = point;
-                    point = StateManager.Instance.MainSceneHPoint;
-                    StateManager.Instance.CurrentHSceneInstance.CtrlFlag.NowHPoint = StateManager.Instance.MainSceneHPoint;
+                    if (StateManager.Instance.GroupSelection.SelectedGroup != null)
+                    {
+                        StateManager.Instance.MovingToHPoint = point;
+                        point = StateManager.Instance.MainSceneHPoint;
+                        StateManager.Instance.CurrentHSceneInstance.CtrlFlag.NowHPoint = StateManager.Instance.MainSceneHPoint;
+                    }
+                    else
+                    {
+                        //Update the StateManager HPoint that the main group i using
+                        StateManager.Instance.MainSceneHPoint = point;
+                    }
                 }
+                
                 return point;
+            }
+
+            internal static void UpdateSexPositionIconVisibility(HAnimationGroup selectedGroup)
+            {
+                if (ActionScene.Instance != null && StateManager.Instance.GroupSelection != null)
+                {
+                    HPoint pointToCheck;
+                    InfoList.HAnimation.SituationType situationType;
+                    if (selectedGroup == null)
+                    {
+                        pointToCheck = StateManager.Instance.CurrentHSceneInstance.CtrlFlag.NowHPoint;
+                        situationType = InfoList.HAnimation.GetSituationType(StateManager.Instance.CurrentHSceneInstance);
+                    }
+                    else
+                    {
+                        pointToCheck = selectedGroup.hPoint;
+                        situationType = selectedGroup.situationType;
+                    }
+                    
+                    //Get the available animation list for the HPoint
+                    List<string> lstAvailableIcon = new List<string>();
+                    int hPointType = Patches.HAnim.GetHPointType(pointToCheck);
+                    var possibleAnimList = Patches.HAnim.GetAvailableHAnimationList(pointToCheck, hPointType, situationType);
+
+                    foreach (var animInfo in possibleAnimList)
+                    {
+                        int animGroup = Util.GetHAnimationGroup(animInfo);
+                        var extraInfo = InfoList.HAnimation.ExtraHAnimationDataDictionary[(animGroup, animInfo.ID)];
+
+                        string iconName = InfoList.HAnimation.GetIconObjectNameByCategory(extraInfo.iconCategory);
+
+                        if (!lstAvailableIcon.Contains(iconName))
+                            lstAvailableIcon.Add(iconName);
+                    }
+
+                    foreach (var icon in StateManager.Instance.CurrentHSceneInstance._sprite.CategoryMain._categoryObjs)
+                    {
+                        if (lstAvailableIcon.Contains(icon.name))
+                            icon.SetActive(true);
+                        else
+                            icon.SetActive(false);
+                    }
+
+                }
+            }
+
+            internal static bool HandleChangeMotionClick(GameObject objClick)
+            {
+                if (ActionScene.Instance != null && StateManager.Instance.GroupSelection != null)
+                {
+                    string animName = objClick.transform.Find("Label").GetComponent<Text>().text;
+                    var lstInfo = Util.GetAnimationInfoByName(animName);
+
+                    HScene.AnimationListInfo selectedInfo = lstInfo[0];
+                    if (lstInfo.Count > 1)
+                    {
+                        //Handle the case of motions with same name
+
+                        foreach (var info in lstInfo)
+                        {
+                            int animGroup = Util.GetHAnimationGroup(info);
+                            int animCategoryNum = InfoList.HAnimation.GetIconValueByCategory(InfoList.HAnimation.ExtraHAnimationDataDictionary[(animGroup, info.ID)].iconCategory);
+                            if (animCategoryNum == StateManager.Instance.MotionChangeSelectedCategory)
+                            {
+                                selectedInfo = info;
+                                break;
+                            }
+                        }
+
+                    }
+
+                    if (StateManager.Instance.GroupSelection.SelectedGroup != null)
+                    {
+                        //Update the H animation for H reaction group
+                        Patches.HAnim.StartHAnimation(StateManager.Instance.GroupSelection.SelectedGroup, false, selectedInfo);
+                        StateManager.Instance.CurrentHSceneInstance._sprite.CategoryMain.SetNowIcon(StateManager.Instance.MotionChangeSelectedCategory);
+
+                        return false;
+                    }
+                    else
+                    {
+                        //it is the main scene group, let the original code do the work
+                        StateManager.Instance.MainSceneAnimationInfo = selectedInfo;
+                    }
+                }
+
+                return true;
+            }
+
+            internal static void SpoofGroupInfoForMotionClick()
+            {
+                if (ActionScene.Instance != null && StateManager.Instance.GroupSelection != null && StateManager.Instance.GroupSelection.SelectedGroup != null)
+                {
+                    StateManager.Instance.CurrentHSceneInstance.CtrlFlag.NowHPoint = StateManager.Instance.GroupSelection.SelectedGroup.hPoint;
+                    StateManager.Instance.CurrentHSceneInstance.CtrlFlag.NowAnimationInfo = StateManager.Instance.ActorHAnimationList[StateManager.Instance.GroupSelection.SelectedGroup.female1.GetInstanceID()].animationListInfo;
+
+                    //for the background group always spoof as no event
+                    StateManager.Instance.MainSceneHEventID = StateManager.Instance.CurrentHSceneInstance._sprite._eventNo;
+                    StateManager.Instance.CurrentHSceneInstance._sprite._eventNo = -1;
+                }
+            }
+
+            internal static void RestoreGroupInfoForMotionClick()
+            {
+                if (ActionScene.Instance != null && StateManager.Instance.GroupSelection != null && StateManager.Instance.GroupSelection.SelectedGroup != null)
+                {
+                    StateManager.Instance.CurrentHSceneInstance.CtrlFlag.NowHPoint = StateManager.Instance.MainSceneHPoint;
+                    StateManager.Instance.CurrentHSceneInstance.CtrlFlag.NowAnimationInfo = StateManager.Instance.MainSceneAnimationInfo;
+                    StateManager.Instance.CurrentHSceneInstance._sprite._eventNo = StateManager.Instance.MainSceneHEventID;
+                }
+            }
+
+            internal static void HighlightSelectedMotion()
+            {
+                if (ActionScene.Instance != null)
+                {
+                    HScene.AnimationListInfo animInfo;
+                    if (StateManager.Instance.GroupSelection != null && StateManager.Instance.GroupSelection.SelectedGroup != null)
+                        animInfo = StateManager.Instance.ActorHAnimationList[StateManager.Instance.GroupSelection.SelectedGroup.female1.GetInstanceID()].animationListInfo;
+                    else
+                        animInfo = StateManager.Instance.CurrentHSceneInstance.CtrlFlag.NowAnimationInfo;
+
+                    foreach (var tgl in StateManager.Instance.CurrentHSceneInstance._sprite.tglMotions)
+                        if (tgl.transform.Find("Label").GetComponent<Text>().text == animInfo.NameAnimation)
+                            tgl.DoStateTransition(Selectable.SelectionState.Highlighted, true);
+                }
             }
         }
     }

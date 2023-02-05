@@ -63,77 +63,75 @@ namespace HSceneCrowdReaction.InfoList
                 int categoryID = int.Parse(rowData[2]);
                 int animID = int.Parse(rowData[3]);
 
-                if (rowData[29] == "1")
+                if (rowData[29] != "1")
                 {
-                    //Include in game
-                    Vector3 offsetVector = Vector3.zeroVector;
-                    if (rowData[28] != "")
-                    {
-                        string[] strOffset = rowData[28].Split(';');
-                        offsetVector.x = float.Parse(strOffset[0]);
-                        offsetVector.y = float.Parse(strOffset[1]);
-                        offsetVector.z = float.Parse(strOffset[2]);
-                    }
+                    //Excluded in H reaction group, still need to load the info to the dictionary for the icon category info
+                    ExcludeList.Add((categoryID, animID));
+                }
+                
+                Vector3 offsetVector = Vector3.zeroVector;
+                if (rowData[28] != "")
+                {
+                    string[] strOffset = rowData[28].Split(';');
+                    offsetVector.x = float.Parse(strOffset[0]);
+                    offsetVector.y = float.Parse(strOffset[1]);
+                    offsetVector.z = float.Parse(strOffset[2]);
+                }
 
 
-                    SituationType situationType = (SituationType)Enum.Parse(typeof(SituationType), rowData[1]);
-                    HVoice.HVoiceType female1VoiceType = (HVoice.HVoiceType)Enum.Parse(typeof(HVoice.HVoiceType), rowData[4]);
-                    HVoice.HVoiceType female2VoiceType = (HVoice.HVoiceType)Enum.Parse(typeof(HVoice.HVoiceType), rowData[5]);
+                SituationType situationType = (SituationType)Enum.Parse(typeof(SituationType), rowData[1]);
+                HVoice.HVoiceType female1VoiceType = (HVoice.HVoiceType)Enum.Parse(typeof(HVoice.HVoiceType), rowData[4]);
+                HVoice.HVoiceType female2VoiceType = (HVoice.HVoiceType)Enum.Parse(typeof(HVoice.HVoiceType), rowData[5]);
 
-                    ExtraHAnimationData dataInfo;
-                    if (ExtraHAnimationDataDictionary.ContainsKey((categoryID, animID)))
-                    {
-                        dataInfo = ExtraHAnimationDataDictionary[(categoryID, animID)];
-                    }
-                    else
-                    {
-                        dataInfo = new ExtraHAnimationData();
-                        ExtraHAnimationDataDictionary.Add((categoryID, animID), dataInfo);
-                    }
-
-                    dataInfo.situationType = situationType;
-
-                    dataInfo.female1VoiceType = female1VoiceType;
-                    dataInfo.female2VoiceType = female2VoiceType;
-                    
-                    dataInfo.isMale1Inverse = rowData[6] == "1";
-                    dataInfo.isMale2Inverse = rowData[7] == "1";
-                    dataInfo.isFemale1Inverse = rowData[8] == "1";
-                    dataInfo.isFemale2Inverse = rowData[9] == "1";
-
-                    dataInfo.isItemInverse = rowData[27] == "1";
-
-                    dataInfo.mouthTypeMale1 = ParseMouthType(rowData[10]);
-                    dataInfo.mouthTypeMale2 = ParseMouthType(rowData[11]);
-                    dataInfo.mouthTypeFemale1 = ParseMouthType(rowData[12]);
-                    dataInfo.mouthTypeFemale2 = ParseMouthType(rowData[13]);
-
-                    dataInfo.eyeOpenMaxMale1 = ParseEyeOpenMax(rowData[14], true);
-                    dataInfo.eyeOpenMaxMale2 = ParseEyeOpenMax(rowData[15], true);
-                    dataInfo.eyeOpenMaxFemale1 = ParseEyeOpenMax(rowData[16], false);
-                    dataInfo.eyeOpenMaxFemale2 = ParseEyeOpenMax(rowData[17], false);
-
-                    dataInfo.eyePtnMale1 = ParseEyePtn(rowData[18], true);
-                    dataInfo.eyePtnMale2 = ParseEyePtn(rowData[19], true);
-                    dataInfo.eyePtnFemale1 = ParseEyePtn(rowData[20], false);
-                    dataInfo.eyePtnFemale2 = ParseEyePtn(rowData[21], false);
-
-                    dataInfo.eyebrowPtnMale1 = ParseEyebrowPtn(rowData[22], true);
-                    dataInfo.eyebrowPtnMale2 = ParseEyebrowPtn(rowData[23], true);
-                    dataInfo.eyebrowPtnFemale1 = ParseEyebrowPtn(rowData[24], false);
-                    dataInfo.eyebrowPtnFemale2 = ParseEyebrowPtn(rowData[25], false);
-
-                    if (rowData[26] != null)
-                        dataInfo.mmfFemale1Target = ParseMMFTargetType(rowData[26]);
-
-                    dataInfo.offsetVector = offsetVector;
+                ExtraHAnimationData dataInfo;
+                if (ExtraHAnimationDataDictionary.ContainsKey((categoryID, animID)))
+                {
+                    dataInfo = ExtraHAnimationDataDictionary[(categoryID, animID)];
                 }
                 else
                 {
-                    //Excluded in game
-                    ExcludeList.Add((categoryID, animID));
+                    dataInfo = new ExtraHAnimationData();
+                    ExtraHAnimationDataDictionary.Add((categoryID, animID), dataInfo);
                 }
 
+                dataInfo.situationType = situationType;
+
+                dataInfo.female1VoiceType = female1VoiceType;
+                dataInfo.female2VoiceType = female2VoiceType;
+
+                dataInfo.isMale1Inverse = rowData[6] == "1";
+                dataInfo.isMale2Inverse = rowData[7] == "1";
+                dataInfo.isFemale1Inverse = rowData[8] == "1";
+                dataInfo.isFemale2Inverse = rowData[9] == "1";
+
+                dataInfo.isItemInverse = rowData[27] == "1";
+
+                dataInfo.mouthTypeMale1 = ParseMouthType(rowData[10]);
+                dataInfo.mouthTypeMale2 = ParseMouthType(rowData[11]);
+                dataInfo.mouthTypeFemale1 = ParseMouthType(rowData[12]);
+                dataInfo.mouthTypeFemale2 = ParseMouthType(rowData[13]);
+
+                dataInfo.eyeOpenMaxMale1 = ParseEyeOpenMax(rowData[14], true);
+                dataInfo.eyeOpenMaxMale2 = ParseEyeOpenMax(rowData[15], true);
+                dataInfo.eyeOpenMaxFemale1 = ParseEyeOpenMax(rowData[16], false);
+                dataInfo.eyeOpenMaxFemale2 = ParseEyeOpenMax(rowData[17], false);
+
+                dataInfo.eyePtnMale1 = ParseEyePtn(rowData[18], true);
+                dataInfo.eyePtnMale2 = ParseEyePtn(rowData[19], true);
+                dataInfo.eyePtnFemale1 = ParseEyePtn(rowData[20], false);
+                dataInfo.eyePtnFemale2 = ParseEyePtn(rowData[21], false);
+
+                dataInfo.eyebrowPtnMale1 = ParseEyebrowPtn(rowData[22], true);
+                dataInfo.eyebrowPtnMale2 = ParseEyebrowPtn(rowData[23], true);
+                dataInfo.eyebrowPtnFemale1 = ParseEyebrowPtn(rowData[24], false);
+                dataInfo.eyebrowPtnFemale2 = ParseEyebrowPtn(rowData[25], false);
+
+                if (rowData[26] != null)
+                    dataInfo.mmfFemale1Target = ParseMMFTargetType(rowData[26]);
+
+                dataInfo.offsetVector = offsetVector;
+
+                dataInfo.iconCategory = rowData[30];
             }
         }
 
@@ -282,6 +280,59 @@ namespace HSceneCrowdReaction.InfoList
             return result;
         }
 
+        internal static string GetIconObjectNameByCategory(string iconCategory)
+        {
+            if (iconCategory == IconCategory.Caress) return IconName.Caress;
+            else if (iconCategory == IconCategory.Service) return IconName.Service;
+            else if (iconCategory == IconCategory.Insert) return IconName.Insert;
+            else if (iconCategory == IconCategory.FemaleLeading) return IconName.FemaleLeading;
+            else if (iconCategory == IconCategory.lesbian) return IconName.lesbian;
+            else if (iconCategory == IconCategory.FFM) return IconName.FFM;
+            else if (iconCategory == IconCategory.MMF) return IconName.MMF;
+            else if (iconCategory == IconCategory.Special) return IconName.Special;
+            else
+                return "";
+        }
+
+        internal static int GetIconValueByCategory(string iconCategory)
+        {
+            if (iconCategory == IconCategory.Caress) return IconCategoryValue.Caress;
+            else if (iconCategory == IconCategory.Service) return IconCategoryValue.Service;
+            else if (iconCategory == IconCategory.Insert) return IconCategoryValue.Insert;
+            else if (iconCategory == IconCategory.FemaleLeading) return IconCategoryValue.FemaleLeading;
+            else if (iconCategory == IconCategory.lesbian) return IconCategoryValue.lesbian;
+            else if (iconCategory == IconCategory.FFM) return IconCategoryValue.FFM;
+            else if (iconCategory == IconCategory.MMF) return IconCategoryValue.MMF;
+            else if (iconCategory == IconCategory.Special) return IconCategoryValue.Special;
+            else
+                return -1;
+        }
+
+        internal static SituationType GetSituationType(HScene hScene)
+        {
+            int femaleCount = 0;
+            int maleCount = 0;
+            for(int i=0; i<hScene._chaFemales.Count; i++)
+                if (hScene._chaFemales[i] != null)
+                    femaleCount++;
+            for (int i = 0; i < hScene._chaMales.Count; i++)
+                if (hScene._chaMales[i] != null)
+                    maleCount++;
+
+            if (femaleCount == 1 && maleCount == 0)
+                return SituationType.F;
+            else if (femaleCount == 1 && maleCount == 1)
+                return SituationType.MF;
+            else if (femaleCount == 1 && maleCount == 2)
+                return SituationType.MMF;
+            else if (femaleCount == 2 && maleCount == 0)
+                return SituationType.FF;
+            else if (femaleCount == 2 && maleCount == 1)
+                return SituationType.FFM;
+            else
+                return SituationType.Unknown;
+        }
+
 
         internal enum SituationType
         {
@@ -324,6 +375,42 @@ namespace HSceneCrowdReaction.InfoList
             public const string Common = "C";
         }
 
+        internal class IconCategory
+        {
+            public const string Caress = "Caress";
+            public const string Service = "Service";
+            public const string Insert = "Insert";
+            public const string FemaleLeading = "FemaleLeading";
+            public const string lesbian = "lesbian";
+            public const string FFM = "FFM";
+            public const string MMF = "MMF";
+            public const string Special = "Special";
+        }
+
+        internal class IconName
+        {
+            public const string Caress = "aibu";
+            public const string Service = "houshi";
+            public const string Insert = "sonyu";
+            public const string FemaleLeading = "LeavItToYou";
+            public const string lesbian = "multiLes";
+            public const string FFM = "multiF2";
+            public const string MMF = "multiM2";
+            public const string Special = "tokushu";
+        }
+
+        internal class IconCategoryValue
+        {
+            public const int Caress = 0;
+            public const int Service = 1;
+            public const int Insert = 2;
+            public const int FemaleLeading = 7;
+            public const int lesbian = 4;
+            public const int FFM = 5;
+            public const int MMF = 6;
+            public const int Special = 3;
+        }
+
         internal class ExtraHAnimationData
         {
             internal SituationType situationType;
@@ -362,6 +449,7 @@ namespace HSceneCrowdReaction.InfoList
 
             internal Vector3 offsetVector = Vector3.zero;
 
+            internal string iconCategory;
         }
 
         internal class ActorHAnimData

@@ -112,10 +112,13 @@ namespace HSceneCrowdReaction.HSceneScreen
         //Initialize the h reaction animation group
         [HarmonyPostfix]
         [HarmonyPatch(typeof(HSceneSprite), nameof(HSceneSprite.Init))]
-        private static void InitPost(HSceneSprite __instance)
+        private static void HSceneSpriteInitPost(HSceneSprite __instance)
         {
             Patches.HAnim.SetupAnimationGroups(StateManager.Instance.CurrentHSceneInstance);
             Patches.MenuItems.InitGroupSelectionControl(__instance);
+
+            if(StateManager.Instance.CurrentHSceneInstance != null)
+                StateManager.Instance.MainSceneHPoint = StateManager.Instance.CurrentHSceneInstance.CtrlFlag.NowHPoint;
         }
 
 
@@ -123,7 +126,7 @@ namespace HSceneCrowdReaction.HSceneScreen
         //Alter the drop down list of character selection
         [HarmonyPostfix]
         [HarmonyPatch(typeof(HSceneSpriteChaChoice), nameof(HSceneSpriteChaChoice.Init))]
-        private static void InitPost(HSceneSpriteChaChoice __instance)
+        private static void HSceneSpriteChaChoiceInitPost(HSceneSpriteChaChoice __instance)
         {
             if (ActionScene.Instance != null && StateManager.Instance.HAnimationGroupsList != null)
             {
@@ -161,6 +164,7 @@ namespace HSceneCrowdReaction.HSceneScreen
         private static void OnClickCloth(int mode)
         {
             Patches.MenuItems.HandleClickClothMenuButton(mode);
+            Patches.MenuItems.ShowGroupSelectionCanvas(false);
         }
 
         //Prevent the drop down selection reset to female 1 upon clicking
@@ -327,19 +331,19 @@ namespace HSceneCrowdReaction.HSceneScreen
 
         //Show the group selection canvas whenever HPoint location marker is shown
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(HPointCtrl), nameof(HPointCtrl.SetMarker), new[] {typeof(int) })]
+        [HarmonyPatch(typeof(HPointCtrl), nameof(HPointCtrl.SetMarker), new[] { typeof(int) })]
         private static void SetMarkerPre2(int kind)
         {
-            Patches.MenuItems.CheckShowCanvas(true);
+            Patches.MenuItems.ShowGroupSelectionCanvas(true);
         }
 
         //Hide the group selection canvas and reset the visibility whenever HPoint location marker is removed
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(HPointCtrl), nameof(HPointCtrl.DelMarker), new System.Type[] {})]
+        [HarmonyPatch(typeof(HPointCtrl), nameof(HPointCtrl.DelMarker), new System.Type[] { })]
         private static void DelMarkerPost()
         {
             Patches.MenuItems.FinishMoveForGroup();
-            Patches.MenuItems.CheckShowCanvas(false);
+            Patches.MenuItems.ShowGroupSelectionCanvas(false);
         }
 
         //Spoof the motion count for the selected group if it is setting HPoint marker
@@ -390,7 +394,7 @@ namespace HSceneCrowdReaction.HSceneScreen
         [HarmonyPatch(typeof(HPointCtrl), nameof(HPointCtrl.ChangeMotion))]
         private static void ChangeMotionPre(int place, ref HPoint hPoint)
         {
-            if(ActionScene.Instance != null && StateManager.Instance.MovingHPointGroup != null)
+            if (ActionScene.Instance != null && StateManager.Instance.GroupSelection != null && StateManager.Instance.GroupSelection.SelectedGroup != null)
                 hPoint = StateManager.Instance.MainSceneHPoint;
         }
 
@@ -414,12 +418,102 @@ namespace HSceneCrowdReaction.HSceneScreen
 
         //Rollback the HPoint value to prevent incorrect item loaded/removed for the main group
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(HItemCtrl), nameof(HItemCtrl.LoadItem), new[] {typeof(int), typeof(int) , typeof(GameObject) , typeof(GameObject) , typeof(GameObject) , typeof(GameObject) , typeof(int) })]
+        [HarmonyPatch(typeof(HItemCtrl), nameof(HItemCtrl.LoadItem), new[] { typeof(int), typeof(int), typeof(GameObject), typeof(GameObject), typeof(GameObject), typeof(GameObject), typeof(int) })]
         private static void LoadItemPre(int _mode, int _id, GameObject _boneMale, GameObject _boneFemale, GameObject _boneMale1, GameObject _boneFemale1, int basho)
         {
-            if (ActionScene.Instance != null && StateManager.Instance.MainSceneHPoint != null && StateManager.Instance.MovingHPointGroup != null)
+            if (ActionScene.Instance != null && StateManager.Instance.MainSceneHPoint != null
+                && StateManager.Instance.GroupSelection.SelectedGroup != null && StateManager.Instance.CurrentHSceneInstance.CtrlFlag.IsPointMoving)
                 StateManager.Instance.CurrentHSceneInstance.CtrlFlag.NowHPoint = StateManager.Instance.MainSceneHPoint;
         }
 
+        //Change the animation of the selected group
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HSceneSprite), nameof(HSceneSprite.OnChangePlaySelect), new[] { typeof(GameObject) })]
+        private static bool OnChangePlaySelectPre(GameObject objClick)
+        {
+            bool isMainSceneGroup = Patches.MenuItems.HandleChangeMotionClick(objClick);
+            return isMainSceneGroup;
+        }
+
+        //Spoof the main group info to display the correct icons and motion list
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HSceneSprite), nameof(HSceneSprite.OnClickMotion))]
+        private static void OnClickMotionPre(int _motion)
+        {
+            if(StateManager.Instance.GroupSelection != null)
+                Patches.MenuItems.UpdateSexPositionIconVisibility(StateManager.Instance.GroupSelection.SelectedGroup);
+            Patches.MenuItems.SpoofGroupInfoForMotionClick();   
+        }
+
+        //Recover the main group info and update the UI
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HSceneSprite), nameof(HSceneSprite.OnClickMotion))]
+        private static void OnClickMotionPost(int _motion)
+        {
+            Patches.MenuItems.RestoreGroupInfoForMotionClick();
+
+            if (ActionScene.Instance != null)
+            {
+                Patches.MenuItems.HighlightSelectedMotion();
+                StateManager.Instance.MotionChangeSelectedCategory = _motion;
+            }
+        }
+
+        //Spoof the main group info to display the correct icons and motion list
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HSceneSprite), nameof(HSceneSprite.OnClickMotionFemale))]
+        private static void OnClickMotionFemalePre()
+        {
+            if (StateManager.Instance.GroupSelection != null)
+                Patches.MenuItems.UpdateSexPositionIconVisibility(StateManager.Instance.GroupSelection.SelectedGroup);
+            Patches.MenuItems.SpoofGroupInfoForMotionClick();
+        }
+
+        //Recover the main group info and update the UI
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HSceneSprite), nameof(HSceneSprite.OnClickMotionFemale))]
+        private static void OnClickMotionFemalePost()
+        {
+            Patches.MenuItems.RestoreGroupInfoForMotionClick();
+            if (ActionScene.Instance != null)
+            {
+                Patches.MenuItems.HighlightSelectedMotion();
+                StateManager.Instance.MotionChangeSelectedCategory = InfoList.HAnimation.IconCategoryValue.FemaleLeading;
+            }
+        }
+
+        //Update the UI when change motion button is clicked
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HSceneSprite), nameof(HSceneSprite.OnClickTaiiCategory))]
+        private static void OnClickTaiiCategoryPost()
+        {
+            if (StateManager.Instance.CurrentHSceneInstance != null) {
+                //Save the main scene animation info to state if it is never set
+                if (StateManager.Instance.MainSceneAnimationInfo == null)
+                    StateManager.Instance.MainSceneAnimationInfo = StateManager.Instance.CurrentHSceneInstance.CtrlFlag.NowAnimationInfo;
+
+                Patches.MenuItems.ShowGroupSelectionCanvas(StateManager.Instance.CurrentHSceneInstance._sprite.ObjTaii.isFadeIn);
+            }
+
+            if (StateManager.Instance.GroupSelection != null)
+                StateManager.Instance.GroupSelection.UpdateUI();
+            
+        }
+
+        //Hide the group selection button
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HSceneSprite), nameof(HSceneSprite.OnClickConfig))]
+        private static void OnClickConfig()
+        {
+            Patches.MenuItems.ShowGroupSelectionCanvas(false);
+        }
+
+        //Hide the group selection button
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HSceneSprite), nameof(HSceneSprite.OnClickLight))]
+        private static void OnClickLightPost()
+        {
+            Patches.MenuItems.ShowGroupSelectionCanvas(false);
+        }
     }
 }

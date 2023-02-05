@@ -27,8 +27,6 @@ namespace HSceneCrowdReaction.HSceneScreen
                     StateManager.Instance.CustomAnimationParameter = new Dictionary<int, CustomAnimation.CustomAnimationData>();
                     StateManager.Instance.CurrentHSceneInstance = hScene;
 
-                    StateManager.Instance.CurrentSelectedGroup = null;
-                    StateManager.Instance.MovingHPointGroup = null;
                     StateManager.Instance.MovingToHPoint = null;
                     StateManager.Instance.MainSceneHPoint = null;
 
@@ -78,6 +76,10 @@ namespace HSceneCrowdReaction.HSceneScreen
                         StateManager.Instance.FullHPointListInMap.Add(lst.Key, info);
                     }
                     StateManager.Instance.MainSceneUsePlaces = StateManager.Instance.CurrentHSceneInstance.HPointCtrl._usePlace;
+
+                    StateManager.Instance.MainSceneAnimationInfo = null;
+                    StateManager.Instance.MotionChangeSelectedCategory = -1;
+                    StateManager.Instance.MainSceneHEventID = -1;
                 }
             }
 
@@ -101,9 +103,14 @@ namespace HSceneCrowdReaction.HSceneScreen
                                 actor.Chara.ChangeNowCoordinate(true);
                             else
                             {
-                                for (int i = 0; i < Constant.ClothesPartCount; i++)
-                                    actor.Chara.NowCoordinate.clothes.parts[i].Copy(bkInfo.clothesPartInfos[i]);
+                                actor.Chara.NowCoordinate.CopyClothes(bkInfo.coordinateInfo.clothes);
+                                actor.Chara.NowCoordinate.CopyAccessory(bkInfo.coordinateInfo.accessory);
+                                actor.Chara.NowCoordinate.CopyHair(bkInfo.coordinateInfo.hair);
+
+                                actor.Chara.Reload();
                             }
+
+                            actor.Chara.SetAccessoryStateAll(true);
                         }
 
                     }
@@ -278,7 +285,7 @@ namespace HSceneCrowdReaction.HSceneScreen
                     StateManager.Instance.SingleActorList.Clear();
                     StateManager.Instance.SingleActorList = null;
                 }
-                
+
             }
 
 
@@ -582,12 +589,9 @@ namespace HSceneCrowdReaction.HSceneScreen
                         info.lookEyeTarget = actor.Chara.EyeLookCtrl.target;
                         info.lookNeckTarget = actor.Chara.NeckLookCtrl.target;
 
-                        for (int i = 0; i < Constant.ClothesPartCount; i++)
-                        {
-                            Chara.ChaFileClothes.PartsInfo partsInfo = new Chara.ChaFileClothes.PartsInfo();
-                            partsInfo.Copy(actor.Chara.NowCoordinate.clothes.parts[i]);
-                            info.clothesPartInfos.Add(i, partsInfo);
-                        }
+                        info.coordinateInfo.CopyClothes(actor.Chara.NowCoordinate.clothes);
+                        info.coordinateInfo.CopyAccessory(actor.Chara.NowCoordinate.accessory);
+                        info.coordinateInfo.CopyHair(actor.Chara.NowCoordinate.hair);
 
                         StateManager.Instance.ActorBackUpData.Add(actor.GetInstanceID(), info);
                     }

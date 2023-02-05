@@ -224,6 +224,8 @@ namespace HSceneCrowdReaction
                         Log.LogInfo("LimitStart[" + k + "]: " + item.LimitStart[k]);
                     for (int k = 0; k < item.LstSystem.Count; k++)
                         Log.LogInfo("LstSystem[" + k + "]: " + item.LstSystem[k]);
+                    for (int k = 0; k < item.Event.Count; k++)
+                        Log.LogInfo("Event[" + k + "]: " + item.Event[k]);
                     Log.LogInfo("ActionCtrl.Item1: " + item.ActionCtrl.Item1 + ", ActionCtrl.Item2: " + item.ActionCtrl.Item2);
                     Log.LogInfo("%%%%%%%%%%%%%%%%%%%");
                 }
@@ -358,6 +360,11 @@ namespace HSceneCrowdReaction
                 {
                     Log.LogInfo("GetScriptClassName: " + mono.GetScriptClassName());
                 }
+                var text = t.GetComponent<Text>();
+                if (text != null)
+                {
+                    Log.LogInfo("Text: " + text.text);
+                }
 
                 Log.LogInfo("Position: " + t.position);
                 Log.LogInfo("LocalPosition: " + t.localPosition);
@@ -436,12 +443,35 @@ namespace HSceneCrowdReaction
                         + ", rotation: " + item.transform.rotation.eulerAngles
                         + ", localRotation: " + item.transform.localRotation.eulerAngles
                         + ", now using? " + item.NowUsing + ", instanceID: " + item.GetInstanceID());
-                    
+
                 }
 
             }
-            
+
         }
+
+        public static void PrintCoordinateInfo(Chara.ChaControl character)
+        {
+            Log.LogInfo("===========PrintCoordinateInfo===========");
+
+            Log.LogInfo("Character: " + character.FileParam.fullname);
+            for (int i = 0; i < character.ChaFile.Coordinate.Count; i++)
+            {
+                Log.LogInfo("Coordinate: " + i + ", part count: " + character.ChaFile.Coordinate[i].clothes.parts.Count);
+                for (int j = 0; j < Constant.ClothesPartCount; j++)
+                {
+                    Log.LogInfo("Coordinate: " + i + ", part : " + j + ", part id: " + character.ChaFile.Coordinate[i].clothes.parts[j].id + ", clothesState: " + character.FileStatus.clothesState[j]);
+
+                }
+            }
+            Log.LogInfo("Now coordinate part count: " + character.NowCoordinate.clothes.parts.Count);
+            for (int j = 0; j < Constant.ClothesPartCount; j++)
+            {
+                Log.LogInfo("Now coordinate, part : " + j + ", part id: " + character.NowCoordinate.clothes.parts[j].id + ", clothesState: " + character.FileStatus.clothesState[j]);
+            }
+            Log.LogInfo("=========================================");
+        }
+
 
         internal static HScene.AnimationListInfo GetAnimFromTable(int cat, int id)
         {

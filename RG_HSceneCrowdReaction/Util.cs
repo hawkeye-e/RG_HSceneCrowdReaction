@@ -449,5 +449,44 @@ namespace HSceneCrowdReaction
             }
             return null;
         }
+
+        internal static int GetHAnimationGroup(HScene.AnimationListInfo animInfo)
+        {
+            int i = 0;
+
+            while (i < Manager.HSceneManager.HResourceTables.LstAnimInfo.Count)
+            {
+                foreach (var info in Manager.HSceneManager.HResourceTables.LstAnimInfo[i])
+                {
+                    if (info.ID == animInfo.ID && info.NameAnimation == animInfo.NameAnimation)
+                    {
+                        return i;
+                    }
+                }
+                i++;
+            }
+
+            return -1;
+        }
+
+        internal static List<HScene.AnimationListInfo> GetAnimationInfoByName(string animName)
+        {
+            List<HScene.AnimationListInfo> result = new List<HScene.AnimationListInfo>();
+
+            int i = 0;
+            while (i < Manager.HSceneManager.HResourceTables.LstAnimInfo.Count)
+            {
+                foreach (var info in Manager.HSceneManager.HResourceTables.LstAnimInfo[i])
+                {
+                    if (animName == info.NameAnimation)
+                    {
+                        result.Add(info);
+                    }
+                }
+                i++;
+            }
+
+            return result;
+        }
     }
 }
