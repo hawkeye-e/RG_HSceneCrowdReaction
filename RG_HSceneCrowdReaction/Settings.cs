@@ -7,8 +7,8 @@ namespace HSceneCrowdReaction
     {
         internal const int DefaultLibidoThreshold = 50;
 
-        internal const int HActionMinMilliSecond = 10000;
-        internal const int HActionRandomMilliSecond = 10000;
+        internal const int DefaultHActionMinSecond = 30;
+        internal const int HActionRandomMilliSecond = 30000;
 
         internal const int HVoiceMaxDistance = 200;
 

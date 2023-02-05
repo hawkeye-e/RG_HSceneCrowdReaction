@@ -80,6 +80,9 @@ namespace HSceneCrowdReaction.HSceneScreen
                     StateManager.Instance.MainSceneAnimationInfo = null;
                     StateManager.Instance.MotionChangeSelectedCategory = -1;
                     StateManager.Instance.MainSceneHEventID = -1;
+
+                    StateManager.Instance.ConfigRandomAnimationChange = Config.RandomChangeAnimation;
+                    StateManager.Instance.ConfigAnimationChangeInterval = Config.AnimationChangeInterval * 1000;
                 }
             }
 

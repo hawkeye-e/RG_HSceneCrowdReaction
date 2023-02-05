@@ -123,7 +123,7 @@ namespace HSceneCrowdReaction.HSceneScreen
             {
                 System.Random rnd = new System.Random();
                 int rndSexPositionResult = rnd.Next(StateManager.Instance.ActorHAnimationList[actor.GetInstanceID()].changePositionFactor);
-                if (rndSexPositionResult > Settings.HChangePositionThreshold)
+                if (rndSexPositionResult > Settings.HChangePositionThreshold && StateManager.Instance.ConfigRandomAnimationChange)
                 {
                     StartHAnimation(StateManager.Instance.ActorHGroupDictionary[actor.GetInstanceID()], false);
                 }
@@ -975,7 +975,7 @@ namespace HSceneCrowdReaction.HSceneScreen
             {
                 System.Random rnd = new System.Random();
                 int rndResult = rnd.Next(Settings.HActionRandomMilliSecond);
-                long nextUpdateTime = (DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond) + (rndResult + Settings.HActionMinMilliSecond);
+                long nextUpdateTime = (DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond) + (rndResult + StateManager.Instance.ConfigAnimationChangeInterval);
 
                 if (StateManager.Instance.ActorHAnimNextUpdateTimeDictionary.ContainsKey(actor.GetInstanceID()))
                     StateManager.Instance.ActorHAnimNextUpdateTimeDictionary[actor.GetInstanceID()] = nextUpdateTime;

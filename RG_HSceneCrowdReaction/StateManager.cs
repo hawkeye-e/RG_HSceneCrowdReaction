@@ -73,6 +73,9 @@ namespace HSceneCrowdReaction
         internal int MotionChangeSelectedCategory = -1;
         internal int MainSceneHEventID = -1;
 
+        internal bool ConfigRandomAnimationChange = false;
+        internal int ConfigAnimationChangeInterval = Settings.DefaultHActionMinSecond * 1000;
+
         internal class HotKeyData
         {
             public HotKeyData()

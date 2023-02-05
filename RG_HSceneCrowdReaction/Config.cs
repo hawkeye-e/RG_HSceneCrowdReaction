@@ -19,6 +19,12 @@ namespace HSceneCrowdReaction
         internal static bool SexExpPrerequisite { get { return _sexExpPrerequisite.Value; } }
         private static ConfigEntry<bool> _sexExpPrerequisite;
 
+        internal static bool RandomChangeAnimation { get { return _randomChangeAnimation.Value; } }
+        private static ConfigEntry<bool> _randomChangeAnimation;
+
+        internal static int AnimationChangeInterval { get { return _animationChangeInterval.Value; } }
+        private static ConfigEntry<int> _animationChangeInterval;
+
         internal static bool EnableSeriousAwkward { get { return _enableSeriousAwkward.Value; } }
         private static ConfigEntry<bool> _enableSeriousAwkward;
 
@@ -68,7 +74,8 @@ namespace HSceneCrowdReaction
             _enableStandardMasturbation = plugin.Config.Bind(STANDARD_REACTION, "Enable Masturbation reaction", true,
                 "If false, Masturbation reaction will not be included in the possible reaction list");
             _masturbationLibidoThreshold = plugin.Config.Bind(STANDARD_REACTION, "Masturbation Libido Threshold", Settings.DefaultLibidoThreshold,
-                "Range: 0 to 100. The lower the value it is, the easier for masturbation reaction to be included");
+                new ConfigDescription("Range: 0 to 100. The lower the value it is, the easier for masturbation reaction to be included", new AcceptableValueRange<int>(0, 100))
+                );
             _enableStandardCry = plugin.Config.Bind(STANDARD_REACTION, "Enable Cry reaction", true,
                 "If false, Cry reaction will not be included in the possible reaction list");
             _standardCryPrerequisite = plugin.Config.Bind(STANDARD_REACTION, "Cry reaction requirement", true,
@@ -84,6 +91,14 @@ namespace HSceneCrowdReaction
                 + "For MMF, the male character need to have sex with both female beforehand\n"
                 + "For FFM, the female character need to have sex with both male beforehand"
                 );
+            _randomChangeAnimation = plugin.Config.Bind(H_REACTION, "Random Animation Change", false,
+                "If true, the pair/group will change their sex animation over time (requires H scene restart)\n"
+                );
+
+            _animationChangeInterval = plugin.Config.Bind(H_REACTION, "Animation Change Interval", Settings.DefaultHActionMinSecond, 
+                new ConfigDescription("The minimum time in seconds needed for the pair/group to switch to another sex animation or change the speed (requires H scene restart)", new AcceptableValueRange<int>(10, 100))
+                );
+                
         }
 
         internal enum HAnimMatchingType
