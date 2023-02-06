@@ -515,5 +515,35 @@ namespace HSceneCrowdReaction.HSceneScreen
         {
             Patches.MenuItems.ShowGroupSelectionCanvas(false);
         }
+
+
+
+        //Test code for swapping
+        ////[HarmonyPostfix]
+        ////[HarmonyPatch(typeof(HSceneSprite), nameof(HSceneSprite.OnClickConfig))]
+        ////private static void OnClickConfig2()
+        ////{
+        ////    if(StateManager.Instance.HAnimationGroupsList != null)
+        ////    {
+        ////        if(StateManager.Instance.HAnimationGroupsList.Count >= 2)
+        ////        {
+
+
+        ////            
+        ////            //////var tmp = StateManager.Instance.HAnimationGroupsList[0].female1;
+        ////            //////StateManager.Instance.HAnimationGroupsList[0].female1 = StateManager.Instance.HAnimationGroupsList[1].female1;
+        ////            //////StateManager.Instance.HAnimationGroupsList[1].female1 = tmp;
+
+        ////            //////StateManager.Instance.CharacterHItemCtrlDictionary[StateManager.Instance.HAnimationGroupsList[0].female1.Chara.GetInstanceID()].ReleaseItem();
+        ////            //////StateManager.Instance.CharacterHItemCtrlDictionary[StateManager.Instance.HAnimationGroupsList[1].female1.Chara.GetInstanceID()].ReleaseItem();
+
+
+
+        ////            //////Patches.HAnim.StartHAnimation(StateManager.Instance.HAnimationGroupsList[0], true, StateManager.Instance.ActorHAnimationList[StateManager.Instance.HAnimationGroupsList[0].female1.GetInstanceID()].animationListInfo);
+        ////            //////Patches.HAnim.StartHAnimation(StateManager.Instance.HAnimationGroupsList[1], true, StateManager.Instance.ActorHAnimationList[StateManager.Instance.HAnimationGroupsList[1].female1.GetInstanceID()].animationListInfo);
+
+        ////        }
+        ////    }
+        ////}
     }
 }

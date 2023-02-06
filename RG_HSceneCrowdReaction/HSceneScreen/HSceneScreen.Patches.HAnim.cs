@@ -44,14 +44,13 @@ namespace HSceneCrowdReaction.HSceneScreen
                     InitHLayerCtrlForGroup(animGroup);
 
                     InitHItemCtrlForGroup(animGroup);
-
-                    //Get the HPoint
+                }
+                //Get the HPoint
+                if(!StateManager.Instance.CharacterHPointDictionary.ContainsKey(animGroup.female1.Chara.GetInstanceID()))
                     hPoint = HAnimationGroup.GetHPointForGroup(animGroup);
-                }
                 else
-                {
                     hPoint = StateManager.Instance.CharacterHPointDictionary[animGroup.female1.Chara.GetInstanceID()];
-                }
+                
 
                 animGroup.hPoint = hPoint;
 
@@ -447,12 +446,27 @@ namespace HSceneCrowdReaction.HSceneScreen
                 {
                     DynamicBoneReferenceCtrl boneCtrl = new DynamicBoneReferenceCtrl();
                     boneCtrl.Init(actor.Chara);
-                    StateManager.Instance.CharacterDynamicBoneCtrlDictionary.Add(actor.Chara.GetInstanceID(), boneCtrl);
+                    if(!StateManager.Instance.CharacterDynamicBoneCtrlDictionary.ContainsKey(actor.Chara.GetInstanceID()))
+                        StateManager.Instance.CharacterDynamicBoneCtrlDictionary.Add(actor.Chara.GetInstanceID(), boneCtrl);
+                    else
+                        StateManager.Instance.CharacterDynamicBoneCtrlDictionary[actor.Chara.GetInstanceID()] = boneCtrl;
                 }
 
-                StateManager.Instance.CharacterCollisionCtrlDictionary.Add(actor.Chara.GetInstanceID(), collisionCtrl);
-                StateManager.Instance.CharacterHitObjectCtrlDictionary.Add(actor.Chara.GetInstanceID(), hitObjectCtrl);
-                StateManager.Instance.CharacterYureCtrlDictionary.Add(actor.Chara.GetInstanceID(), yureCtrl);
+                if(!StateManager.Instance.CharacterCollisionCtrlDictionary.ContainsKey(actor.Chara.GetInstanceID()))
+                    StateManager.Instance.CharacterCollisionCtrlDictionary.Add(actor.Chara.GetInstanceID(), collisionCtrl);
+                else
+                    StateManager.Instance.CharacterCollisionCtrlDictionary[actor.Chara.GetInstanceID()] = collisionCtrl;
+
+                if (!StateManager.Instance.CharacterHitObjectCtrlDictionary.ContainsKey(actor.Chara.GetInstanceID()))
+                    StateManager.Instance.CharacterHitObjectCtrlDictionary.Add(actor.Chara.GetInstanceID(), hitObjectCtrl);
+                else
+                    StateManager.Instance.CharacterHitObjectCtrlDictionary[actor.Chara.GetInstanceID()] = hitObjectCtrl;
+
+                if (!StateManager.Instance.CharacterYureCtrlDictionary.ContainsKey(actor.Chara.GetInstanceID()))
+                    StateManager.Instance.CharacterYureCtrlDictionary.Add(actor.Chara.GetInstanceID(), yureCtrl);
+                else
+                    StateManager.Instance.CharacterYureCtrlDictionary[actor.Chara.GetInstanceID()] = yureCtrl;
+                
 
             }
 
@@ -461,7 +475,12 @@ namespace HSceneCrowdReaction.HSceneScreen
                 HItemCtrl itemCtrl = new HItemCtrl();
                 itemCtrl.HItemInit(Manager.HSceneManager.Instance.transform.Find(Settings.HItemPath));
 
-                StateManager.Instance.CharacterHItemCtrlDictionary.Add(group.female1.Chara.GetInstanceID(), itemCtrl);
+                if (!StateManager.Instance.CharacterHItemCtrlDictionary.ContainsKey(group.female1.Chara.GetInstanceID()))
+                    StateManager.Instance.CharacterHItemCtrlDictionary.Add(group.female1.Chara.GetInstanceID(), itemCtrl);
+                else
+                    StateManager.Instance.CharacterHItemCtrlDictionary[group.female1.Chara.GetInstanceID()] = itemCtrl;
+
+
             }
 
             private static void InitHLayerCtrlForGroup(HAnimationGroup group)
@@ -478,13 +497,29 @@ namespace HSceneCrowdReaction.HSceneScreen
                 layerCtrl.ctrlFlag = new HSceneFlagCtrl();
                 layerCtrl.ctrlFlag.Motions = new Il2CppStructArray<float>(2);
 
-                StateManager.Instance.CharacterHLayerCtrlDictionary.Add(group.female1.Chara.GetInstanceID(), layerCtrl);
+                if(!StateManager.Instance.CharacterHLayerCtrlDictionary.ContainsKey(group.female1.Chara.GetInstanceID()))
+                    StateManager.Instance.CharacterHLayerCtrlDictionary.Add(group.female1.Chara.GetInstanceID(), layerCtrl);
+                else
+                    StateManager.Instance.CharacterHLayerCtrlDictionary[group.female1.Chara.GetInstanceID()] = layerCtrl;
                 if (group.male1 != null)
-                    StateManager.Instance.CharacterHLayerCtrlDictionary.Add(group.male1.Chara.GetInstanceID(), layerCtrl);
+                    if (!StateManager.Instance.CharacterHLayerCtrlDictionary.ContainsKey(group.male1.Chara.GetInstanceID()))
+                        StateManager.Instance.CharacterHLayerCtrlDictionary.Add(group.male1.Chara.GetInstanceID(), layerCtrl);
+                    else
+                        StateManager.Instance.CharacterHLayerCtrlDictionary[group.male1.Chara.GetInstanceID()] = layerCtrl;
+
                 if (group.male2 != null)
-                    StateManager.Instance.CharacterHLayerCtrlDictionary.Add(group.male2.Chara.GetInstanceID(), layerCtrl);
+                    if (!StateManager.Instance.CharacterHLayerCtrlDictionary.ContainsKey(group.male2.Chara.GetInstanceID()))
+                        StateManager.Instance.CharacterHLayerCtrlDictionary.Add(group.male2.Chara.GetInstanceID(), layerCtrl);
+                    else
+                        StateManager.Instance.CharacterHLayerCtrlDictionary[group.male2.Chara.GetInstanceID()] = layerCtrl;
+                
                 if (group.female2 != null)
-                    StateManager.Instance.CharacterHLayerCtrlDictionary.Add(group.female2.Chara.GetInstanceID(), layerCtrl);
+                    if (!StateManager.Instance.CharacterHLayerCtrlDictionary.ContainsKey(group.female2.Chara.GetInstanceID()))
+                        StateManager.Instance.CharacterHLayerCtrlDictionary.Add(group.female2.Chara.GetInstanceID(), layerCtrl);
+                    else
+                        StateManager.Instance.CharacterHLayerCtrlDictionary[group.female2.Chara.GetInstanceID()] = layerCtrl;
+
+                
             }
 
             private static void AddCharacterToArrayListByType(Chara.ChaControl character, Il2CppReferenceArray<Chara.ChaControl> maleList, Il2CppReferenceArray<Chara.ChaControl> femaleList, Constant.HCharacterType characterType)
