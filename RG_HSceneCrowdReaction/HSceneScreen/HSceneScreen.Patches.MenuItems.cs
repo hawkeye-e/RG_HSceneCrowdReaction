@@ -805,9 +805,19 @@ namespace HSceneCrowdReaction.HSceneScreen
 
             internal static bool HandleSetPosition()
             {
-                if (ActionScene.Instance != null && StateManager.Instance.GroupSelection != null && StateManager.Instance.GroupSelection.SelectedGroup != null)
+                if (ActionScene.Instance != null && StateManager.Instance.GroupSelection != null && StateManager.Instance.GroupSelection.SelectedGroup != null && StateManager.Instance.MovingToHPoint != null)
                 {
                     MoveGroupToHPoint(StateManager.Instance.GroupSelection.SelectedGroup, StateManager.Instance.MovingToHPoint);
+                    return false;
+                }
+                return true;
+            }
+
+            internal static bool HandleSetAnimation(HScene.AnimationListInfo animInfo)
+            {
+                if (ActionScene.Instance != null && StateManager.Instance.GroupSelection != null && StateManager.Instance.GroupSelection.SelectedGroup != null)
+                {
+                    HAnim.StartHAnimation(StateManager.Instance.GroupSelection.SelectedGroup, false, animInfo);
                     return false;
                 }
                 return true;
@@ -895,49 +905,6 @@ namespace HSceneCrowdReaction.HSceneScreen
                     }
 
                 }
-            }
-
-            internal static bool HandleChangeMotionClick(GameObject objClick)
-            {
-                if (ActionScene.Instance != null && StateManager.Instance.GroupSelection != null)
-                {
-                    string animName = objClick.transform.Find("Label").GetComponent<Text>().text;
-                    var lstInfo = Util.GetAnimationInfoByName(animName);
-
-                    HScene.AnimationListInfo selectedInfo = lstInfo[0];
-                    if (lstInfo.Count > 1)
-                    {
-                        //Handle the case of motions with same name
-
-                        foreach (var info in lstInfo)
-                        {
-                            int animGroup = Util.GetHAnimationGroup(info);
-                            int animCategoryNum = InfoList.HAnimation.GetIconValueByCategory(InfoList.HAnimation.ExtraHAnimationDataDictionary[(animGroup, info.ID)].iconCategory);
-                            if (animCategoryNum == StateManager.Instance.MotionChangeSelectedCategory)
-                            {
-                                selectedInfo = info;
-                                break;
-                            }
-                        }
-
-                    }
-
-                    if (StateManager.Instance.GroupSelection.SelectedGroup != null)
-                    {
-                        //Update the H animation for H reaction group
-                        Patches.HAnim.StartHAnimation(StateManager.Instance.GroupSelection.SelectedGroup, false, selectedInfo);
-                        StateManager.Instance.CurrentHSceneInstance._sprite.CategoryMain.SetNowIcon(StateManager.Instance.MotionChangeSelectedCategory);
-
-                        return false;
-                    }
-                    else
-                    {
-                        //it is the main scene group, let the original code do the work
-                        StateManager.Instance.MainSceneAnimationInfo = selectedInfo;
-                    }
-                }
-
-                return true;
             }
 
             internal static void SpoofGroupInfoForMotionClick()

@@ -404,6 +404,7 @@ namespace HSceneCrowdReaction.HSceneScreen
         private static bool ChangeAnimationPre(HScene.AnimationListInfo _info, bool _isForceResetCamera, bool _isForceLoopAction = false, bool _UseFade = true, bool isLoadFirst = false)
         {
             bool isContinue = Patches.MenuItems.HandleSetPosition();
+            isContinue = isContinue && Patches.MenuItems.HandleSetAnimation(_info);
             return isContinue;
         }
 
@@ -413,6 +414,7 @@ namespace HSceneCrowdReaction.HSceneScreen
         private static bool ChangeAnimPosAndCameraPre(HScene.AnimationListInfo _info, bool _isForceResetCamera, bool isLoadFirst)
         {
             bool isContinue = Patches.MenuItems.HandleSetPosition();
+            isContinue = isContinue && Patches.MenuItems.HandleSetAnimation(_info);
             return isContinue;
         }
 
@@ -424,15 +426,6 @@ namespace HSceneCrowdReaction.HSceneScreen
             if (ActionScene.Instance != null && StateManager.Instance.MainSceneHPoint != null
                 && StateManager.Instance.GroupSelection.SelectedGroup != null && StateManager.Instance.CurrentHSceneInstance.CtrlFlag.IsPointMoving)
                 StateManager.Instance.CurrentHSceneInstance.CtrlFlag.NowHPoint = StateManager.Instance.MainSceneHPoint;
-        }
-
-        //Change the animation of the selected group
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(HSceneSprite), nameof(HSceneSprite.OnChangePlaySelect), new[] { typeof(GameObject) })]
-        private static bool OnChangePlaySelectPre(GameObject objClick)
-        {
-            bool isMainSceneGroup = Patches.MenuItems.HandleChangeMotionClick(objClick);
-            return isMainSceneGroup;
         }
 
         //Spoof the main group info to display the correct icons and motion list
@@ -516,7 +509,26 @@ namespace HSceneCrowdReaction.HSceneScreen
             Patches.MenuItems.ShowGroupSelectionCanvas(false);
         }
 
+        //Prevent the main group to change the posture and change the selected group instead
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.CheckFaintness))]
+        private static bool CheckFaintnessPre(HScene.AnimationListInfo info)
+        {
+            bool isContinue = Patches.MenuItems.HandleSetAnimation(info);
+            return isContinue;
+        }
 
+
+        //Prevent the main group speaking if we are handling the H reaction group change
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(HScene), nameof(HScene.CheckState))]
+        private static bool CheckStatePre(int mode, int state)
+        {
+            if (ActionScene.Instance != null && StateManager.Instance.GroupSelection != null && StateManager.Instance.GroupSelection.SelectedGroup != null)
+                return false;
+
+            return true;
+        }
 
         //Test code for swapping
         ////[HarmonyPostfix]
