@@ -424,7 +424,8 @@ namespace HSceneCrowdReaction.HSceneScreen
         private static void LoadItemPre(int _mode, int _id, GameObject _boneMale, GameObject _boneFemale, GameObject _boneMale1, GameObject _boneFemale1, int basho)
         {
             if (ActionScene.Instance != null && StateManager.Instance.MainSceneHPoint != null
-                && StateManager.Instance.GroupSelection.SelectedGroup != null && StateManager.Instance.CurrentHSceneInstance.CtrlFlag.IsPointMoving)
+                && StateManager.Instance.GroupSelection != null && StateManager.Instance.GroupSelection.SelectedGroup != null 
+                && StateManager.Instance.CurrentHSceneInstance.CtrlFlag.IsPointMoving)
                 StateManager.Instance.CurrentHSceneInstance.CtrlFlag.NowHPoint = StateManager.Instance.MainSceneHPoint;
         }
 
