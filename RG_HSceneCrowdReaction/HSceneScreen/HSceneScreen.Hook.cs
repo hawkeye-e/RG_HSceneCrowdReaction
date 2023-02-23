@@ -420,8 +420,8 @@ namespace HSceneCrowdReaction.HSceneScreen
 
         //Rollback the HPoint value to prevent incorrect item loaded/removed for the main group
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(HItemCtrl), nameof(HItemCtrl.LoadItem), new[] { typeof(int), typeof(int), typeof(GameObject), typeof(GameObject), typeof(GameObject), typeof(GameObject), typeof(int) })]
-        private static void LoadItemPre(int _mode, int _id, GameObject _boneMale, GameObject _boneFemale, GameObject _boneMale1, GameObject _boneFemale1, int basho)
+        [HarmonyPatch(typeof(HItemCtrl), nameof(HItemCtrl.LoadItem), new[] { typeof(int), typeof(int), typeof(GameObject), typeof(GameObject), typeof(GameObject), typeof(GameObject), typeof(int), typeof(GameObject) })]
+        private static void LoadItemPre(int _mode, int _id, GameObject _boneMale, GameObject _boneFemale, GameObject _boneMale1, GameObject _boneFemale1, int basho, GameObject _boneMale2)
         {
             if (ActionScene.Instance != null && StateManager.Instance.MainSceneHPoint != null
                 && StateManager.Instance.GroupSelection != null && StateManager.Instance.GroupSelection.SelectedGroup != null 
