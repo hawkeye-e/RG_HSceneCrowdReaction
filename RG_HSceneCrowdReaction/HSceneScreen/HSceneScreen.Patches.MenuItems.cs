@@ -37,28 +37,27 @@ namespace HSceneCrowdReaction.HSceneScreen
             internal static void ExpandCharaChoiceArrayPerGroup(int groupCount)
             {
                 var chaChoice = StateManager.Instance.CurrentHSceneInstance._sprite.CharaChoice;
-
-                Il2CppReferenceArray<Toggle> toggles = new Il2CppReferenceArray<Toggle>(chaChoice.tglCharas.Count + 4 * groupCount);
-                for (int i = 0; i < 4; i++)
+                Il2CppReferenceArray<Toggle> toggles = new Il2CppReferenceArray<Toggle>(chaChoice.tglCharas.Count + Constant.characterCountInHGroup * groupCount);
+                for (int i = 0; i < chaChoice.tglCharas.Count; i++)
                     toggles[i] = chaChoice.tglCharas[i];
                 chaChoice.tglCharas = toggles;
 
-                Il2CppReferenceArray<Chara.ChaControl> females = new Il2CppReferenceArray<Chara.ChaControl>(chaChoice.females.Count + 2 * groupCount);
-                for (int i = 0; i < 2; i++)
+                Il2CppReferenceArray<Chara.ChaControl> females = new Il2CppReferenceArray<Chara.ChaControl>(chaChoice.females.Count + Constant.femaleCountInHGroup * groupCount);
+                for (int i = 0; i < chaChoice.females.Count; i++)
                     females[i] = chaChoice.females[i];
                 chaChoice.females = females;
 
-                Il2CppReferenceArray<Chara.ChaControl> males = new Il2CppReferenceArray<Chara.ChaControl>(chaChoice.males.Count + 2 * groupCount);
-                for (int i = 0; i < 2; i++)
+                Il2CppReferenceArray<Chara.ChaControl> males = new Il2CppReferenceArray<Chara.ChaControl>(chaChoice.males.Count + Constant.maleCountInHGroup * groupCount);
+                for (int i = 0; i < chaChoice.males.Count; i++)
                     males[i] = chaChoice.males[i];
                 chaChoice.males = males;
 
-                Il2CppStructArray<bool> femaleActives = new Il2CppStructArray<bool>(chaChoice.femaleActive.Count + 2 * groupCount);
+                Il2CppStructArray<bool> femaleActives = new Il2CppStructArray<bool>(chaChoice.femaleActive.Count + Constant.femaleCountInHGroup * groupCount);
                 for (int i = 0; i < chaChoice.femaleActive.Count; i++)
                     femaleActives[i] = chaChoice.femaleActive[i];
                 chaChoice.femaleActive = femaleActives;
 
-                Il2CppStructArray<bool> maleActives = new Il2CppStructArray<bool>(chaChoice.maleActive.Count + 2 * groupCount);
+                Il2CppStructArray<bool> maleActives = new Il2CppStructArray<bool>(chaChoice.maleActive.Count + Constant.maleCountInHGroup * groupCount);
                 for (int i = 0; i < chaChoice.maleActive.Count; i++)
                     maleActives[i] = chaChoice.maleActive[i];
                 chaChoice.maleActive = maleActives;
@@ -73,25 +72,25 @@ namespace HSceneCrowdReaction.HSceneScreen
                 string toggleName = "";
                 if (characterType == Constant.HCharacterType.Female1)
                 {
-                    toggleName = Constant.CharaChoiceTogglePrefixFemale + (3 + 2 * groupIndex + offsetBySex);
+                    toggleName = Constant.CharaChoiceTogglePrefixFemale + (3 + Constant.femaleCountInHGroup * groupIndex + offsetBySex);
                 }
                 else if (characterType == Constant.HCharacterType.Female2)
                 {
                     offsetMixed = 1;
                     offsetBySex = 1;
-                    toggleName = Constant.CharaChoiceTogglePrefixFemale + (3 + 2 * groupIndex + offsetBySex);
+                    toggleName = Constant.CharaChoiceTogglePrefixFemale + (3 + Constant.femaleCountInHGroup * groupIndex + offsetBySex);
                 }
                 else if (characterType == Constant.HCharacterType.Male1)
                 {
                     offsetMixed = 2;
                     offsetBySex = 0;
-                    toggleName = Constant.CharaChoiceTogglePrefixMale + (3 + 2 * groupIndex + offsetBySex);
+                    toggleName = Constant.CharaChoiceTogglePrefixMale + (3 + Constant.maleCountInHGroup * groupIndex + offsetBySex);
                 }
                 else if (characterType == Constant.HCharacterType.Male2)
                 {
                     offsetMixed = 3;
                     offsetBySex = 1;
-                    toggleName = Constant.CharaChoiceTogglePrefixMale + (3 + 2 * groupIndex + offsetBySex);
+                    toggleName = Constant.CharaChoiceTogglePrefixMale + (3 + Constant.maleCountInHGroup * groupIndex + offsetBySex);
                 }
 
 
@@ -112,17 +111,17 @@ namespace HSceneCrowdReaction.HSceneScreen
 
 
 
-                chaChoice.tglCharas[4 + 4 * groupIndex + offsetMixed] = newToggle;
+                chaChoice.tglCharas[Constant.characterCountInHGroup + Constant.characterCountInHGroup * groupIndex + offsetMixed] = newToggle;
 
                 if (character.Sex == 1)
                 {
-                    chaChoice.females[2 + 2 * groupIndex + offsetBySex] = character;
-                    chaChoice.femaleActive[2 + 2 * groupIndex + offsetBySex] = false;
+                    chaChoice.females[Constant.femaleCountInHGroup + Constant.femaleCountInHGroup * groupIndex + offsetBySex] = character;
+                    chaChoice.femaleActive[Constant.femaleCountInHGroup + Constant.femaleCountInHGroup * groupIndex + offsetBySex] = false;
                 }
                 else
                 {
-                    chaChoice.males[2 + 2 * groupIndex + offsetBySex] = character;
-                    chaChoice.maleActive[2 + 2 * groupIndex + offsetBySex] = false;
+                    chaChoice.males[Constant.maleCountInHGroup + Constant.maleCountInHGroup * groupIndex + offsetBySex] = character;
+                    chaChoice.maleActive[Constant.maleCountInHGroup + Constant.maleCountInHGroup * groupIndex + offsetBySex] = false;
                 }
 
                 StateManager.Instance.ToggleIDCharacterList.Add(newToggle.GetInstanceID(), character);

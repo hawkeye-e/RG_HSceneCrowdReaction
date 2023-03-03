@@ -15,6 +15,10 @@ namespace HSceneCrowdReaction
         internal const string CharaChoiceTogglePrefixMale = "m";
         internal const string CharaChoiceTogglePrefixFemale = "f";
 
+        internal const int characterCountInHGroup = 5;
+        internal const int femaleCountInHGroup = 2;
+        internal const int maleCountInHGroup = 3;
+
         internal class AnimType
         {
             internal const int NotDetermined = -1;
