@@ -139,6 +139,16 @@ namespace HSceneCrowdReaction.BackgroundHAnimation
                     hScene._sprite.OnClickMotion(0);
                     hScene._sprite.OnClickMotionFemale();
                 }
+                else if(targetIconName == HAnimation.IconName.MMMF)
+                {
+                    hScene._sprite.OnClickMotion(0);
+                    hScene._sprite.OnClickMotion4P(0);
+                }
+                else if (targetIconName == HAnimation.IconName.TwoPair)
+                {
+                    hScene._sprite.OnClickMotion(0);
+                    hScene._sprite.OnClickMotion4P(1);
+                }
                 else
                 {
                     int spoofCategory = targetCategoryValue == 0 ? 1 : 0;

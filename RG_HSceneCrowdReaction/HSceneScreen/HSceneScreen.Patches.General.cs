@@ -315,6 +315,8 @@ namespace HSceneCrowdReaction.HSceneScreen
                                 charList.Remove(group.male1);
                             if (group.male2 != null)
                                 charList.Remove(group.male2);
+                            if (group.male3 != null)
+                                charList.Remove(group.male3);
                             if (group.female1 != null)
                                 charList.Remove(group.female1);
                             if (group.female2 != null)
@@ -328,7 +330,6 @@ namespace HSceneCrowdReaction.HSceneScreen
 
                             if (StateManager.Instance.ActorHAnimationList.ContainsKey(actor.GetInstanceID()))
                                 continue;
-
 
                             //Otherwise set other single reaction
                             StateManager.Instance.SingleActorList.Add(actor);
@@ -367,7 +368,7 @@ namespace HSceneCrowdReaction.HSceneScreen
                             {
                                 if (reactionParam.assetBundle != null && reactionParam.assetName != null)
                                 {
-                                    var rac = actor.Chara.LoadAnimation(reactionParam.assetBundle, reactionParam.assetName);
+                                    var rac = actor.Chara.LoadAnimation(reactionParam.assetBundle, reactionParam.assetName, reactionParam.manifest);
                                     actor.Animation.SetAnimatorController(rac);
                                 }
                                 actor.PlayAnimOnce(reactionParam.animationParameter);

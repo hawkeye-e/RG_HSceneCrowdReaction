@@ -64,6 +64,15 @@ namespace HSceneCrowdReaction
                         return GetCurrentAnimationTypeHomeWorkplace(sex, animID);
                     case Constant.MapType.HomePrivate:
                         return GetCurrentAnimationTypeHomePrivate(sex, animID);
+
+                    case Constant.MapType.AlleyWorkplace:
+                        return GetCurrentAnimationTypeAlleyWorkplace(sex, animID);
+                    case Constant.MapType.AlleyPrivate:
+                        return GetCurrentAnimationTypeAlleyPrivate(sex, animID);
+                    case Constant.MapType.HotSpringWorkplace:
+                        return GetCurrentAnimationTypeHotSpringWorkplace(sex, animID);
+                    case Constant.MapType.HotSpringPrivate:
+                        return GetCurrentAnimationTypeHotSpringPrivate(sex, animID);
                 }
             }
 
@@ -294,6 +303,61 @@ namespace HSceneCrowdReaction
             return Constant.AnimType.Standing;
         }
 
+        internal static int GetCurrentAnimationTypeAlleyWorkplace(byte sex, int animID)
+        {
+            //no special handling
+            return Constant.AnimType.Standing;
+        }
+
+        internal static int GetCurrentAnimationTypeAlleyPrivate(byte sex, int animID)
+        {
+            //no special handling
+            return Constant.AnimType.Standing;
+        }
+
+        internal static int GetCurrentAnimationTypeHotSpringWorkplace(byte sex, int animID)
+        {
+            if (sex == 1)
+            {
+                switch (animID)
+                {
+                    case 10015:
+                    case 10016:
+                        return Constant.AnimType.Standing;
+                }
+            }
+            else
+            {
+                switch (animID)
+                {
+                    case 10020:
+                        return Constant.AnimType.Standing;
+                }
+            }
+            return Constant.AnimType.Standing;
+        }
+
+        internal static int GetCurrentAnimationTypeHotSpringPrivate(byte sex, int animID)
+        {
+            if (sex == 1)
+            {
+                switch (animID)
+                {
+                    case 10045:
+                    case 10046:
+                        return Constant.AnimType.Standing;
+                }
+            }
+            else
+            {
+                switch (animID)
+                {
+                    case 10014:
+                        return Constant.AnimType.Standing;
+                }
+            }
+            return Constant.AnimType.Standing;
+        }
 
 
         internal static int GetCurrentAnimationTypeCommon(byte sex, int animID)

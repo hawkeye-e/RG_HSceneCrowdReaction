@@ -4,7 +4,7 @@ namespace HSceneCrowdReaction
 {
     internal class Constant
     {
-        internal const int TotalPersonalityCount = 12;
+        internal const int TotalPersonalityCount = 16;
         internal const string AnimatorParamHeight = "height";
         internal const string AnimatorParamSpeed = "speed";
         internal const string AnimatorParamMotion = "motion";
@@ -55,6 +55,12 @@ namespace HSceneCrowdReaction
             internal const int Restaurant = 13;
             internal const int Park = 14;
             internal const int Hotel = 15;
+
+            internal const int AlleyWorkplace = 20;
+            internal const int AlleyPrivate = 21;
+            internal const int HotSpringWorkplace = 22;
+            internal const int HotSpringPrivate = 23;
+            internal const int SMRoom = 24;
         }
 
         internal enum CharacterType
@@ -83,30 +89,7 @@ namespace HSceneCrowdReaction
             Female2 = 1,
             Male1 = 2,
             Male2 = 3,
-        }
-
-        internal class PersonalityType
-        {
-            public const int OfficeLadyTypeA = 0;
-            public const int OfficeLadyTypeB = 1;
-            public const int NurseTypeA = 2;
-            public const int NurseTypeB = 3;
-
-            public const int StudentTypeA = 4;
-            public const int StudentTypeB = 5;
-            public const int IdolTypeA = 6;
-            public const int IdolTypeB = 7;
-            public const int DealerTypeA = 8;
-            public const int DealerTypeB = 9;
-            public const int NeetTypeA = 10;
-            public const int NeetTypeB = 11;
-        }
-
-        internal class HAnimationClipNameKind
-        {
-            internal const char Normal = 'W';
-            internal const char Rapid = 'S';
-            internal const char NearOrgasm = 'O';
+            Male3 = 4,
         }
 
         internal static class ClothesPart

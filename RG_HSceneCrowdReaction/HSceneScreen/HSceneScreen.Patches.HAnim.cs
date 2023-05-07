@@ -154,6 +154,7 @@ namespace HSceneCrowdReaction.HSceneScreen
             {
                 RecoverClothesState(group.male1?.Chara);
                 RecoverClothesState(group.male2?.Chara);
+                RecoverClothesState(group.male3?.Chara);
                 RecoverClothesState(group.female1?.Chara);
                 RecoverClothesState(group.female2?.Chara);
             }
@@ -320,16 +321,22 @@ namespace HSceneCrowdReaction.HSceneScreen
                     //if the HPoint hit any nonHPointLink of an Action Point, include all nonHPointLink to the result list
                     bool isHit = false;
                     for (int i = 0; i < ap._nonHPointLink.Count; i++)
-                        if (ap._nonHPointLink[i].GetInstanceID() == point.GetInstanceID())
+                    {
+                        if (ap._nonHPointLink[i] != null && ap._nonHPointLink[i].GetInstanceID() == point.GetInstanceID())
                         {
                             isHit = true;
                             break;
                         }
+                    }
+                    
                     if (isHit)
                         for (int i = 0; i < ap._nonHPointLink.Count; i++)
+                        {
                             relatedHPoints.Add(ap._nonHPointLink[i]);
+                        }
                 }
-                if(!relatedHPoints.Contains(point))
+
+                if (!relatedHPoints.Contains(point))
                     relatedHPoints.Add(point);
 
                 return relatedHPoints;
@@ -1485,7 +1492,7 @@ namespace HSceneCrowdReaction.HSceneScreen
 
                 if (actor.Sex != 1)
                     return;
-
+                
                 var extraInfo = GetExtraHAnimationDataForActor(actor);
                 var characterType = StateManager.Instance.ActorHAnimationList[actor.GetInstanceID()].characterType;
                 HVoice.HVoiceType targetType;
@@ -1493,21 +1500,21 @@ namespace HSceneCrowdReaction.HSceneScreen
                     targetType = extraInfo.female1VoiceType;
                 else
                     targetType = extraInfo.female2VoiceType;
-
+                
                 var voiceDataList = HVoice.HVoiceDictionary[(actor.Chara.FileParam.personality, targetType, clipName)];
 
                 System.Random rnd = new System.Random();
                 int rndResult = rnd.Next(voiceDataList.Count);
-
+                
                 Manager.Voice.Loader loader = new Manager.Voice.Loader();
                 loader.Bundle = voiceDataList[rndResult].assetBundle;
                 loader.Asset = voiceDataList[rndResult].asset;
-
+                
                 loader.No = actor.Chara.FileParam.personality;
                 loader.Pitch = actor.Chara.FileParam.voicePitch;
                 loader.SettingNo = -1;
                 loader.VoiceTrans = actor.Chara.CmpBoneBody.targetEtc.trfHeadParent;
-
+                
                 var audioSource = Manager.Voice.Play(loader);
                 audioSource.maxDistance = Settings.HVoiceMaxDistance;
                 audioSource.rolloffMode = AudioRolloffMode.Linear;

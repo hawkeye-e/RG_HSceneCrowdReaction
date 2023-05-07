@@ -108,6 +108,7 @@ namespace HSceneCrowdReaction
                         Log.LogInfo("sex: " + i + ", Key: " + kvp.Key + ", name: " + kvp.Value.Name
                              + ", asset: " + kvp.Value.Asset
                              + ", assetBundle: " + kvp.Value.AssetBundle
+                             + ", Manifest: " + kvp.Value.Manifest
                             );
                     }
                 }
@@ -123,14 +124,17 @@ namespace HSceneCrowdReaction
                     {
 
                         foreach (var kvp2 in kvp.Value.Private)
-                            Log.LogInfo("sex: " + i + ", jobid: " + kvp.Key + ", Private, kvp2 key: " + kvp2.Key + ", name: "
-                                + kvp2.Value.Name
-                                                             + ", asset: " + kvp2.Value.Asset
-                             + ", assetBundle: " + kvp2.Value.AssetBundle);
+                            Log.LogInfo("sex: " + i + ", jobid: " + kvp.Key + ", Private, kvp2 key: " + kvp2.Key + ", name: " + kvp2.Value.Name
+                                + ", asset: " + kvp2.Value.Asset
+                                + ", assetBundle: " + kvp2.Value.AssetBundle
+                                + ", Manifest: " + kvp2.Value.Manifest
+                             );
                         foreach (var kvp2 in kvp.Value.Workplace)
                             Log.LogInfo("sex: " + i + ", jobid: " + kvp.Key + ", Workplace, kvp2 key: " + kvp2.Key + ", name: " + kvp2.Value.Name
                                 + ", asset: " + kvp2.Value.Asset
-                             + ", assetBundle: " + kvp2.Value.AssetBundle);
+                                + ", assetBundle: " + kvp2.Value.AssetBundle
+                                + ", Manifest: " + kvp2.Value.Manifest
+                             );
                     }
                 }
 
@@ -146,7 +150,9 @@ namespace HSceneCrowdReaction
                     {
                         Log.LogInfo("sex: " + i + ", Key: " + kvp.Key + ", name: " + kvp.Value.Name
                             + ", asset: " + kvp.Value.Asset
-                         + ", assetBundle: " + kvp.Value.AssetBundle);
+                            + ", assetBundle: " + kvp.Value.AssetBundle
+                            + ", Manifest: " + kvp.Value.Manifest
+                         );
                     }
                 }
 
@@ -161,7 +167,9 @@ namespace HSceneCrowdReaction
                     {
                         Log.LogInfo("i: " + i + ", Key: " + kvp.Key + ", name: " + kvp.Value.Name
                             + ", asset: " + kvp.Value.Asset
-                         + ", assetBundle: " + kvp.Value.AssetBundle);
+                            + ", assetBundle: " + kvp.Value.AssetBundle
+                            + ", Manifest: " + kvp.Value.Manifest
+                         );
                     }
                 }
 

@@ -24,6 +24,7 @@ namespace HSceneCrowdReaction
             };
 
         internal const string HVoiceAssetBundleFormat = "sound/data/pcm/c{0:D2}/h/00.unity3d";
+        internal const string HVoiceAssetBundleExpansionFormat = "sound/data/pcm/c{0:D2}/h/30.unity3d";
         internal const string HVoiceAssetNameFormat = "rg_hk_{0:D2}_{1:D3}";
         internal const string HMotionIKAssetBundleFileName = "{0:D2}.unity3d";
         

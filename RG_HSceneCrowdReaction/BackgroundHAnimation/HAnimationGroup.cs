@@ -16,6 +16,7 @@ namespace HSceneCrowdReaction.BackgroundHAnimation
 
         internal Actor male1;
         internal Actor male2;
+        internal Actor male3;
         internal Actor female1;
         internal Actor female2;
         internal HAnimation.SituationType situationType;
@@ -25,6 +26,7 @@ namespace HSceneCrowdReaction.BackgroundHAnimation
         {
             male1 = null;
             male2 = null;
+            male3 = null;
             female1 = null;
             female2 = null;
             situationType = HAnimation.SituationType.Unknown;
@@ -233,16 +235,20 @@ namespace HSceneCrowdReaction.BackgroundHAnimation
 
         public void UpdateSituationType()
         {
-            if (female2 != null && male1 == null && male2 == null)
+            if (female2 != null && male1 == null && male2 == null && male3 == null)
                 situationType = HAnimation.SituationType.FF;
-            else if (female2 != null && male1 != null && male2 == null)
+            else if (female2 != null && male1 != null && male2 == null && male3 == null)
                 situationType = HAnimation.SituationType.FFM;
-            else if (female2 == null && male1 != null && male2 != null)
+            else if (female2 == null && male1 != null && male2 != null && male3 == null)
                 situationType = HAnimation.SituationType.MMF;
-            else if (female2 == null && male1 != null && male2 == null)
+            else if (female2 == null && male1 != null && male2 == null && male3 == null)
                 situationType = HAnimation.SituationType.MF;
-            else if (female2 == null && male1 == null && male2 == null)
+            else if (female2 == null && male1 == null && male2 == null && male3 == null)
                 situationType = HAnimation.SituationType.F;
+            else if (female2 == null && male1 != null && male2 != null && male3 != null)
+                situationType = HAnimation.SituationType.MMMF;
+            else if (female2 != null && male1 != null && male2 != null && male3 == null)
+                situationType = HAnimation.SituationType.MMFF;
             else
                 situationType = HAnimation.SituationType.Unknown;
         }
@@ -252,6 +258,7 @@ namespace HSceneCrowdReaction.BackgroundHAnimation
             List<Actor> list = new List<Actor>();
             if (male1 != null) list.Add(male1);
             if (male2 != null) list.Add(male2);
+            if (male3 != null) list.Add(male3);
             if (female1 != null) list.Add(female1);
             if (female2 != null) list.Add(female2);
             return list;
@@ -304,9 +311,11 @@ namespace HSceneCrowdReaction.BackgroundHAnimation
 
         private static HPoint GetHPoint(Actor actor, HAnimation.SituationType situationType)
         {
+            ActionPoint targetAP = actor.OccupiedActionPoint == null ? actor.Partner?.OccupiedActionPoint : actor.OccupiedActionPoint;
 
+            if (targetAP == null)
+                targetAP = actor.PostedActionPoint;
 
-            ActionPoint targetAP = actor.OccupiedActionPoint == null ? actor.Partner.OccupiedActionPoint : actor.OccupiedActionPoint;
             System.Random rnd = new System.Random();
 
             List<HPoint> availablePoint = new List<HPoint>();

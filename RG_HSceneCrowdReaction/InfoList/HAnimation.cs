@@ -103,6 +103,7 @@ namespace HSceneCrowdReaction.InfoList
                 dataInfo.isMale2Inverse = rowData[7] == "1";
                 dataInfo.isFemale1Inverse = rowData[8] == "1";
                 dataInfo.isFemale2Inverse = rowData[9] == "1";
+                dataInfo.isMale3Inverse = rowData[31] == "1";
 
                 dataInfo.isItemInverse = rowData[27] == "1";
 
@@ -110,24 +111,30 @@ namespace HSceneCrowdReaction.InfoList
                 dataInfo.mouthTypeMale2 = ParseMouthType(rowData[11]);
                 dataInfo.mouthTypeFemale1 = ParseMouthType(rowData[12]);
                 dataInfo.mouthTypeFemale2 = ParseMouthType(rowData[13]);
+                dataInfo.mouthTypeMale3 = ParseMouthType(rowData[32]);
 
                 dataInfo.eyeOpenMaxMale1 = ParseEyeOpenMax(rowData[14], true);
                 dataInfo.eyeOpenMaxMale2 = ParseEyeOpenMax(rowData[15], true);
                 dataInfo.eyeOpenMaxFemale1 = ParseEyeOpenMax(rowData[16], false);
                 dataInfo.eyeOpenMaxFemale2 = ParseEyeOpenMax(rowData[17], false);
+                dataInfo.eyeOpenMaxMale3 = ParseEyeOpenMax(rowData[33], true);
 
                 dataInfo.eyePtnMale1 = ParseEyePtn(rowData[18], true);
                 dataInfo.eyePtnMale2 = ParseEyePtn(rowData[19], true);
                 dataInfo.eyePtnFemale1 = ParseEyePtn(rowData[20], false);
                 dataInfo.eyePtnFemale2 = ParseEyePtn(rowData[21], false);
+                dataInfo.eyePtnMale3 = ParseEyePtn(rowData[34], true);
 
                 dataInfo.eyebrowPtnMale1 = ParseEyebrowPtn(rowData[22], true);
                 dataInfo.eyebrowPtnMale2 = ParseEyebrowPtn(rowData[23], true);
                 dataInfo.eyebrowPtnFemale1 = ParseEyebrowPtn(rowData[24], false);
                 dataInfo.eyebrowPtnFemale2 = ParseEyebrowPtn(rowData[25], false);
+                dataInfo.eyebrowPtnMale3 = ParseEyebrowPtn(rowData[35], true);
 
                 if (rowData[26] != null)
                     dataInfo.mmfFemale1Target = ParseMMFTargetType(rowData[26]);
+                if (rowData[36] != null)
+                    dataInfo.orgyFemale2Target = ParseMMFTargetType(rowData[36]);
 
                 dataInfo.offsetVector = offsetVector;
 
@@ -290,6 +297,8 @@ namespace HSceneCrowdReaction.InfoList
             else if (iconCategory == IconCategory.FFM) return IconName.FFM;
             else if (iconCategory == IconCategory.MMF) return IconName.MMF;
             else if (iconCategory == IconCategory.Special) return IconName.Special;
+            else if (iconCategory == IconCategory.MMMF) return IconName.MMMF;
+            else if (iconCategory == IconCategory.TwoPair) return IconName.TwoPair;
             else
                 return "";
         }
@@ -304,6 +313,8 @@ namespace HSceneCrowdReaction.InfoList
             else if (iconCategory == IconCategory.FFM) return IconCategoryValue.FFM;
             else if (iconCategory == IconCategory.MMF) return IconCategoryValue.MMF;
             else if (iconCategory == IconCategory.Special) return IconCategoryValue.Special;
+            else if (iconCategory == IconCategory.MMMF) return IconCategoryValue.MMMF;
+            else if (iconCategory == IconCategory.TwoPair) return IconCategoryValue.TwoPair;
             else
                 return -1;
         }
@@ -329,6 +340,10 @@ namespace HSceneCrowdReaction.InfoList
                 return SituationType.FF;
             else if (femaleCount == 2 && maleCount == 1)
                 return SituationType.FFM;
+            else if (femaleCount == 2 && maleCount == 2)
+                return SituationType.MMFF;
+            else if (femaleCount == 1 && maleCount == 3)
+                return SituationType.MMMF;
             else
                 return SituationType.Unknown;
         }
@@ -341,6 +356,8 @@ namespace HSceneCrowdReaction.InfoList
             FF,
             MMF,
             FFM,
+            MMMF,
+            MMFF,
             Unknown
         }
 
@@ -385,6 +402,9 @@ namespace HSceneCrowdReaction.InfoList
             public const string FFM = "FFM";
             public const string MMF = "MMF";
             public const string Special = "Special";
+
+            public const string MMMF = "MMMF";
+            public const string TwoPair = "TwoPair";
         }
 
         internal class IconName
@@ -397,6 +417,9 @@ namespace HSceneCrowdReaction.InfoList
             public const string FFM = "multiF2";
             public const string MMF = "multiM2";
             public const string Special = "tokushu";
+
+            public const string MMMF = "multiM3";
+            public const string TwoPair = "multiW";
         }
 
         internal class IconCategoryValue
@@ -409,6 +432,9 @@ namespace HSceneCrowdReaction.InfoList
             public const int FFM = 5;
             public const int MMF = 6;
             public const int Special = 3;
+
+            public const int MMMF = 8;
+            public const int TwoPair = 9;
         }
 
         internal class ExtraHAnimationData
@@ -417,6 +443,7 @@ namespace HSceneCrowdReaction.InfoList
 
             internal bool isMale1Inverse = false;
             internal bool isMale2Inverse = false;
+            internal bool isMale3Inverse = false;
             internal bool isFemale1Inverse = false;
             internal bool isFemale2Inverse = false;
 
@@ -424,25 +451,30 @@ namespace HSceneCrowdReaction.InfoList
 
             internal Dictionary<string, MouthType> mouthTypeMale1;
             internal Dictionary<string, MouthType> mouthTypeMale2;
+            internal Dictionary<string, MouthType> mouthTypeMale3;
             internal Dictionary<string, MouthType> mouthTypeFemale1;
             internal Dictionary<string, MouthType> mouthTypeFemale2;
 
             internal Dictionary<string, float> eyeOpenMaxMale1;
             internal Dictionary<string, float> eyeOpenMaxMale2;
+            internal Dictionary<string, float> eyeOpenMaxMale3;
             internal Dictionary<string, float> eyeOpenMaxFemale1;
             internal Dictionary<string, float> eyeOpenMaxFemale2;
 
             internal Dictionary<string, int> eyePtnMale1;
             internal Dictionary<string, int> eyePtnMale2;
+            internal Dictionary<string, int> eyePtnMale3;
             internal Dictionary<string, int> eyePtnFemale1;
             internal Dictionary<string, int> eyePtnFemale2;
 
             internal Dictionary<string, int> eyebrowPtnMale1;
             internal Dictionary<string, int> eyebrowPtnMale2;
+            internal Dictionary<string, int> eyebrowPtnMale3;
             internal Dictionary<string, int> eyebrowPtnFemale1;
             internal Dictionary<string, int> eyebrowPtnFemale2;
 
             internal Dictionary<string, Constant.HCharacterType> mmfFemale1Target;
+            internal Dictionary<string, Constant.HCharacterType> orgyFemale2Target;
 
             internal HVoice.HVoiceType female1VoiceType;
             internal HVoice.HVoiceType female2VoiceType;

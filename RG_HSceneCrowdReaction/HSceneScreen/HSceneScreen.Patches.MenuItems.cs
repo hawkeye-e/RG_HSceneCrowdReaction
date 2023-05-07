@@ -883,12 +883,12 @@ namespace HSceneCrowdReaction.HSceneScreen
                     List<string> lstAvailableIcon = new List<string>();
                     int hPointType = Patches.HAnim.GetHPointType(pointToCheck);
                     var possibleAnimList = Patches.HAnim.GetAvailableHAnimationList(pointToCheck, hPointType, situationType);
-
+                    
                     foreach (var animInfo in possibleAnimList)
                     {
                         int animGroup = Util.GetHAnimationGroup(animInfo);
                         var extraInfo = InfoList.HAnimation.ExtraHAnimationDataDictionary[(animGroup, animInfo.ID)];
-
+                        
                         string iconName = InfoList.HAnimation.GetIconObjectNameByCategory(extraInfo.iconCategory);
 
                         if (!lstAvailableIcon.Contains(iconName))

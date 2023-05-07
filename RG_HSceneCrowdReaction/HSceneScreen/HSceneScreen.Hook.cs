@@ -117,7 +117,7 @@ namespace HSceneCrowdReaction.HSceneScreen
             Patches.HAnim.SetupAnimationGroups(StateManager.Instance.CurrentHSceneInstance);
             Patches.MenuItems.InitGroupSelectionControl(__instance);
 
-            if(StateManager.Instance.CurrentHSceneInstance != null)
+            if (StateManager.Instance.CurrentHSceneInstance != null)
                 StateManager.Instance.MainSceneHPoint = StateManager.Instance.CurrentHSceneInstance.CtrlFlag.NowHPoint;
         }
 
@@ -424,7 +424,7 @@ namespace HSceneCrowdReaction.HSceneScreen
         private static void LoadItemPre(int _mode, int _id, GameObject _boneMale, GameObject _boneFemale, GameObject _boneMale1, GameObject _boneFemale1, int basho, GameObject _boneMale2)
         {
             if (ActionScene.Instance != null && StateManager.Instance.MainSceneHPoint != null
-                && StateManager.Instance.GroupSelection != null && StateManager.Instance.GroupSelection.SelectedGroup != null 
+                && StateManager.Instance.GroupSelection != null && StateManager.Instance.GroupSelection.SelectedGroup != null
                 && StateManager.Instance.CurrentHSceneInstance.CtrlFlag.IsPointMoving)
                 StateManager.Instance.CurrentHSceneInstance.CtrlFlag.NowHPoint = StateManager.Instance.MainSceneHPoint;
         }
@@ -434,9 +434,9 @@ namespace HSceneCrowdReaction.HSceneScreen
         [HarmonyPatch(typeof(HSceneSprite), nameof(HSceneSprite.OnClickMotion))]
         private static void OnClickMotionPre(int _motion)
         {
-            if(StateManager.Instance.GroupSelection != null)
+            if (StateManager.Instance.GroupSelection != null)
                 Patches.MenuItems.UpdateSexPositionIconVisibility(StateManager.Instance.GroupSelection.SelectedGroup);
-            Patches.MenuItems.SpoofGroupInfoForMotionClick();   
+            Patches.MenuItems.SpoofGroupInfoForMotionClick();
         }
 
         //Recover the main group info and update the UI
@@ -481,7 +481,8 @@ namespace HSceneCrowdReaction.HSceneScreen
         [HarmonyPatch(typeof(HSceneSprite), nameof(HSceneSprite.OnClickTaiiCategory))]
         private static void OnClickTaiiCategoryPost()
         {
-            if (StateManager.Instance.CurrentHSceneInstance != null) {
+            if (StateManager.Instance.CurrentHSceneInstance != null)
+            {
                 //Save the main scene animation info to state if it is never set
                 if (StateManager.Instance.MainSceneAnimationInfo == null)
                     StateManager.Instance.MainSceneAnimationInfo = StateManager.Instance.CurrentHSceneInstance.CtrlFlag.NowAnimationInfo;
@@ -491,7 +492,7 @@ namespace HSceneCrowdReaction.HSceneScreen
 
             if (StateManager.Instance.GroupSelection != null)
                 StateManager.Instance.GroupSelection.UpdateUI();
-            
+
         }
 
         //Hide the group selection button

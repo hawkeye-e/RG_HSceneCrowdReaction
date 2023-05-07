@@ -54,7 +54,7 @@ namespace HSceneCrowdReaction.InfoList
                     true, false, true, true); }
             }
 
-            
+
         }
 
         internal class Female
@@ -129,8 +129,9 @@ namespace HSceneCrowdReaction.InfoList
             public bool isHeadDown;
             public bool requireBodyMove;
             public bool requireStanding;
+            public string manifest;
             internal CustomAnimationData(string assetBundle, string assetName, AnimationParameter animationParameter, 
-                bool isStaring = false, bool isHeadDown = false, bool requireBodyMove = false, bool requireStanding = false)
+                bool isStaring = false, bool isHeadDown = false, bool requireBodyMove = false, bool requireStanding = false, string manifest = null)
             {
                 this.assetBundle = assetBundle;
                 this.assetName = assetName;
@@ -139,6 +140,7 @@ namespace HSceneCrowdReaction.InfoList
                 this.isHeadDown = isHeadDown;
                 this.requireBodyMove = requireBodyMove;
                 this.requireStanding = requireStanding;
+                this.manifest = manifest;
             }
         }
     }

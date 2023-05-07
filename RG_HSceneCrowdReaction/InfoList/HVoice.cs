@@ -67,7 +67,13 @@ namespace HSceneCrowdReaction.InfoList
 
             public HVoiceAssetData(int personalityType, string asset)
             {
-                this.assetBundle = string.Format(Settings.HVoiceAssetBundleFormat, personalityType);
+                string abFormat;
+                if (personalityType < 12)
+                    abFormat = Settings.HVoiceAssetBundleFormat;
+                else
+                    abFormat = Settings.HVoiceAssetBundleExpansionFormat;
+
+                this.assetBundle = string.Format(abFormat, personalityType);
                 this.asset = asset;
             }
 
@@ -78,6 +84,7 @@ namespace HSceneCrowdReaction.InfoList
         {
             BlowJob,
             BlowJobIntercourse,
+            BlowJobExp,
             ForceBlowJob,
             HandAndLick,
             Kiss,
@@ -92,6 +99,8 @@ namespace HSceneCrowdReaction.InfoList
             Service,
             SixNine,
             SixNineLeading,
+            Tentacles
+
         }
     }
 }
