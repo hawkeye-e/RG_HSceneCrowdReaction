@@ -13,8 +13,6 @@ This mod is to change the reaction of the surrounding characters who see a H sce
 ## How to trigger H-animation:
 Before starting a H scene, get the other characters in pair and make sure they have already had sex with each other (Configurable).
 
-
-
 ---
 Excluded H position list
 <table>
@@ -26,7 +24,7 @@ Excluded H position list
     <td>
       キス, 添い寝キス, キスオナニー, 無理やりキス, <br>
       立ちキス, 立ちキス愛撫, 鏡前抱きつきキス立位, <br>
-      ソファーキス騎乗位
+      ソファーキス騎乗位, 胸もみ＋キス＋手マン
     </td>
     <td>Have not figured out the logic of kiss motion</td>
   </tr>
@@ -40,16 +38,33 @@ Excluded H position list
     <td>
       しゃがみオナニー, ディルドオナニー, <br>
       寝オナニー, 角オナニー, シャワーオナニー, <br>
-      椅子オナニー, 風呂オナニー, 机椅子オナニー
+      椅子オナニー, 風呂オナニー, 机椅子オナニー, <br>
+      階段オナニー
     </td>
     <td>Single Masturbation</td>
   </tr>
+    <tr>
+    <td>
+      机スパンキング, 椅子スパンキング, <br>
+      木馬鞭, 鞭
+    </td>
+  <td>motion require player control</td>
+  </tr>
+  <tr>
+    <td>
+      拘束玩具攻め, 拘束機械姦, 触手A, 触手B
+    </td>
+    <td>Single motion</td>
   </tr>
     <tr>
     <td>
-      机スパンキング, 椅子スパンキング
+      W手コキ＋正常位, 胸もみ＋クンニ＋手コキ<br>
+      手コキ＋フェラ＋後背位, 壁クンニ＋壁手マンA<br>
+      壁クンニ＋壁手マンB, W壁バックA, W壁バックB<br>
+      2ペアフェラA, 2ペアフェラB<br>
+      2ペア机椅子挿入A, 2ペア机椅子挿入B
     </td>
-    <td>motion require player control</td>
+    <td>4P motion, require logic update</td>
   </tr>
 </table>
 
@@ -95,3 +110,6 @@ Possible Reaction Type List
 ## Installation
 1. Download the plugin from [Releases](https://github.com/hawkeye-e/RG_HSceneCrowdReaction/releases)
 2. Extract the zip file and copy to the "BepInEx\plugins" folder in your RG installation directory
+
+## Note:
+If you have not installed the Room Gril Paradise expansion, please stay at the version 0.5.3.
