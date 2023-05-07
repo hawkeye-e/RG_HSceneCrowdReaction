@@ -112,4 +112,4 @@ Possible Reaction Type List
 2. Extract the zip file and copy to the "BepInEx\plugins" folder in your RG installation directory
 
 ## Note:
-If you have not installed the Room Gril Paradise expansion, please stay at the version 0.5.3.
+If you have not installed the Room Gril Paradise expansion, please stay at the version 0.5.4.
