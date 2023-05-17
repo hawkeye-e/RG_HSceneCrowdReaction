@@ -953,14 +953,19 @@ namespace HSceneCrowdReaction.HSceneScreen
                 }
                 else if (situationType == HAnimation.SituationType.MMF)
                 {
+                    //special case handling, the format of the new position added in expansion is not using the id
+                    int ikAssetID = animInfo.ID;
+                    if (animInfo.ID == 18)
+                        ikAssetID = 6;
+
                     switch (characterType)
                     {
                         case Constant.HCharacterType.Female1:
-                            return string.Format(Settings.HMotionIKAssetFormatThreesome.MMF_Female, animInfo.ID);
+                            return string.Format(Settings.HMotionIKAssetFormatThreesome.MMF_Female, ikAssetID);
                         case Constant.HCharacterType.Male1:
-                            return string.Format(Settings.HMotionIKAssetFormatThreesome.MMF_Male1, animInfo.ID);
+                            return string.Format(Settings.HMotionIKAssetFormatThreesome.MMF_Male1, ikAssetID);
                         case Constant.HCharacterType.Male2:
-                            return string.Format(Settings.HMotionIKAssetFormatThreesome.MMF_Male2, animInfo.ID);
+                            return string.Format(Settings.HMotionIKAssetFormatThreesome.MMF_Male2, ikAssetID);
                     }
                 }
                 else if (situationType == HAnimation.SituationType.FFM)
@@ -1177,6 +1182,11 @@ namespace HSceneCrowdReaction.HSceneScreen
                 {
                     int animGroup = Util.GetHAnimationGroup(animInfo);
                     var extraInfo = HAnimation.ExtraHAnimationDataDictionary[(animGroup, animInfo.ID)];
+
+                    //special case handling, the position added in expansion is not following the pattern...
+                    if (animGroup == 6 && animInfo.ID == 18)
+                        animGroup = 5;
+
                     itemCtrl.LoadItem(animGroup, animInfo.ID,
                         group.male1?.Chara.ObjBodyBone,
                         group.female1.Chara.ObjBodyBone,
