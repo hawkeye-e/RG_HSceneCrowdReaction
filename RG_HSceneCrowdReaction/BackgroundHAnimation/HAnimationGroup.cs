@@ -194,8 +194,9 @@ namespace HSceneCrowdReaction.BackgroundHAnimation
                         {
                             group.AssignActor(actor);
                             group.UpdateSituationType();
-
+                            
                             current3PCount++;
+                            break;
                         }
                     }
                     else if (group.situationType == HAnimation.SituationType.FF)
@@ -206,6 +207,7 @@ namespace HSceneCrowdReaction.BackgroundHAnimation
                             group.UpdateSituationType();
 
                             current3PCount++;
+                            break;
                         }
                     }
                 }
