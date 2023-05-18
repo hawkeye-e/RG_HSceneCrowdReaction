@@ -906,6 +906,29 @@ namespace HSceneCrowdReaction.HSceneScreen
                 }
             }
 
+            //Update the Sprite HAnimation List if a background group is selected
+            internal static void SpoofHAnimationListForBackgroundGroup(HSceneSprite instance)
+            {
+                if (StateManager.Instance.GroupSelection != null)
+                {
+                    if (StateManager.Instance.GroupSelection.SelectedGroup != null)
+                    {
+                        var spoofList = new Il2CppReferenceArray<Il2CppSystem.Collections.Generic.List<HScene.AnimationListInfo>>(instance._lstAnimInfo.Length);
+                        for (int i = 0; i < instance._lstAnimInfo.Length; i++)
+                        {
+                            Il2CppSystem.Collections.Generic.List<HScene.AnimationListInfo> lstSpoofInfo = new Il2CppSystem.Collections.Generic.List<HScene.AnimationListInfo>();
+                            foreach (var info in instance._lstAnimInfo[i])
+                            {
+                                if (!InfoList.HAnimation.ExcludeList.Contains((i, info.ID)))
+                                    lstSpoofInfo.Add(info);
+                            }
+                            spoofList[i] = lstSpoofInfo;
+                        }
+                        instance._lstAnimInfo = spoofList;
+                    }
+                }
+            }
+
             internal static void SpoofGroupInfoForMotionClick()
             {
                 if (ActionScene.Instance != null && StateManager.Instance.GroupSelection != null && StateManager.Instance.GroupSelection.SelectedGroup != null)

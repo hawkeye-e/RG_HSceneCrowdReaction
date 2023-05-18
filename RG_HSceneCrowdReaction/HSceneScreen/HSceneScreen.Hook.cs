@@ -432,17 +432,22 @@ namespace HSceneCrowdReaction.HSceneScreen
         //Spoof the main group info to display the correct icons and motion list
         [HarmonyPrefix]
         [HarmonyPatch(typeof(HSceneSprite), nameof(HSceneSprite.OnClickMotion))]
-        private static void OnClickMotionPre(int _motion)
+        private static void OnClickMotionPre(HSceneSprite __instance, int _motion, out Il2CppReferenceArray<Il2CppSystem.Collections.Generic.List<HScene.AnimationListInfo>> __state)
         {
+            __state = __instance._lstAnimInfo;
+
             if (StateManager.Instance.GroupSelection != null)
+            {
+                Patches.MenuItems.SpoofHAnimationListForBackgroundGroup(__instance);
                 Patches.MenuItems.UpdateSexPositionIconVisibility(StateManager.Instance.GroupSelection.SelectedGroup);
+            }
             Patches.MenuItems.SpoofGroupInfoForMotionClick();
         }
 
         //Recover the main group info and update the UI
         [HarmonyPostfix]
         [HarmonyPatch(typeof(HSceneSprite), nameof(HSceneSprite.OnClickMotion))]
-        private static void OnClickMotionPost(int _motion)
+        private static void OnClickMotionPost(HSceneSprite __instance, int _motion, Il2CppReferenceArray<Il2CppSystem.Collections.Generic.List<HScene.AnimationListInfo>> __state)
         {
             Patches.MenuItems.RestoreGroupInfoForMotionClick();
 
@@ -451,6 +456,8 @@ namespace HSceneCrowdReaction.HSceneScreen
                 Patches.MenuItems.HighlightSelectedMotion();
                 StateManager.Instance.MotionChangeSelectedCategory = _motion;
             }
+
+            __instance._lstAnimInfo = __state;
         }
 
         //Spoof the main group info to display the correct icons and motion list
