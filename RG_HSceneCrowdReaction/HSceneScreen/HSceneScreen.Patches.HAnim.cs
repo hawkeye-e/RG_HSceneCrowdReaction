@@ -1257,7 +1257,7 @@ namespace HSceneCrowdReaction.HSceneScreen
             private static HScene.AnimationListInfo GetHAnimation(HPoint hPoint, HAnimation.SituationType situationType)
             {
                 int hPointType = GetHPointType(hPoint);
-                var possibleAnimList = GetAvailableHAnimationList(hPoint, hPointType, situationType);
+                var possibleAnimList = GetAvailableHAnimationList(hPoint, hPointType, situationType, true);
 
                 System.Random rnd = new System.Random();
                 int rndResult = rnd.Next(possibleAnimList.Count);
@@ -1278,13 +1278,20 @@ namespace HSceneCrowdReaction.HSceneScreen
                 return -1;
             }
 
-            internal static List<HScene.AnimationListInfo> GetAvailableHAnimationList(HPoint hPoint, int type, HAnimation.SituationType situationType)
+            internal static List<HScene.AnimationListInfo> GetAvailableHAnimationList(HPoint hPoint, int type, HAnimation.SituationType situationType, bool isInit = false)
             {
                 List<HScene.AnimationListInfo> result = new List<HScene.AnimationListInfo>();
 
                 bool isMainSceneGroup = true;
-                if (StateManager.Instance.GroupSelection != null)
-                    isMainSceneGroup = StateManager.Instance.GroupSelection.SelectedGroup == null;
+                if (!isInit)
+                {
+                    if (StateManager.Instance.GroupSelection != null)
+                        isMainSceneGroup = StateManager.Instance.GroupSelection.SelectedGroup == null;
+                }
+                else
+                {
+                    isMainSceneGroup = false;
+                }
 
                 for (int i = 0; i < HPoint._animationLists.Count; i++)
                 {
